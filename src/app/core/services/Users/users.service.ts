@@ -1,0 +1,109 @@
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Observable, catchError, throwError, tap } from 'rxjs';
+import { Users } from '../../models/Users/Users';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class UsersService {
+
+  private baseUrl = 'https://localhost:7139/api/User';
+
+  constructor(private http: HttpClient) { }
+
+  /**
+   * 1. Enregistrement d'un nouvel utilisateur.
+   * @param userRequest - Les informations de l'utilisateur à enregistrer.
+   * @returns Un Observable contenant l'utilisateur enregistré.
+   */
+  registerUser(userRequest: Users): Observable<Users> {
+    return this.http.post<Users>(`${this.baseUrl}`, userRequest); // Envoie une requête POST pour enregistrer l'utilisateur.
+  }
+
+  /**
+   * 2. Obtention de tous les utilisateurs.
+   * @returns Un Observable contenant une liste d'utilisateurs.
+   */
+  getAllUsers(): Observable<Users[]> {
+    return this.http.get<Users[]>(`${this.baseUrl}`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * 3. Obtention d'un utilisateur par son ID.
+   * @param id - L'ID de l'utilisateur.
+   * @returns Un Observable contenant l'utilisateur ou null si non trouvé.
+   */
+  getUserById(id: string): Observable<Users | null> {
+    return this.http.get<Users | null>(`${this.baseUrl}/${id}`); // Envoie une requête GET pour récupérer l'utilisateur par ID.
+  }
+
+  /**
+   * 4. Activation/désactivation du compte utilisateur.
+   * @param id - L'ID de l'utilisateur dont le compte doit être activé ou désactivé.
+   * @returns Un Observable pour la mise à jour du compte.
+   */
+  toggleUserAccount(id: string): Observable<any> {
+    return this.http.put<any>(`${this.baseUrl}/${id}`, {}); // Envoie une requête PUT pour activer ou désactiver un compte utilisateur.
+  }
+
+  /**
+   * 5. Exportation des utilisateurs.
+   * @param fileType - Le type de fichier pour l'exportation (par exemple, 'CSV', 'PDF').
+   * @returns Un Observable contenant le fichier exporté en format Blob.
+   */
+  exportUsers(fileType: string): Observable<Blob> {
+    return this.http.get<Blob>(`${this.baseUrl}/export-users?fileType=${fileType}`, { responseType: 'blob' as 'json' }); // Récupère le fichier exporté dans le type demandé.
+  }
+
+  /**
+   * 6. Récupération des utilisateurs paginés.
+   * @param pageNumber - Le numéro de la page (par défaut 1).
+   * @param pageSize - Le nombre d'éléments par page (par défaut 10).
+   * @returns Un Observable contenant les utilisateurs paginés.
+   */
+  getPaginatedUsers(pageNumber: number = 1, pageSize: number = 10): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/paginated?pageNumber=${pageNumber}&pageSize=${pageSize}`); // Récupère les utilisateurs paginés selon les paramètres de la page.
+  }
+
+  /**
+   * 7. Mise à jour du rôle d'un utilisateur.
+   * @param userId - L'ID de l'utilisateur.
+   * @param newRole - Le nouveau rôle à assigner à l'utilisateur.
+   * @returns Un Observable contenant le résultat de la mise à jour.
+   */
+  updateUserRole(userId: string, newRole: string): Observable<any> {
+    // Vérifiez que userId et newRole sont bien des chaînes valides avant de les envoyer
+    if (!userId || !newRole) {
+      return throwError(() => new Error('userId et newRole sont nécessaires.'));
+    }
+
+    const url = `${this.baseUrl}/update-user-role?userId=${userId}&newRole=${newRole}`;
+
+    return this.http.put<any>(url, {}).pipe(
+      tap(() => {
+        console.log('Rôle mis à jour avec succès');
+        // Vous pouvez appeler un service de notification ou afficher un message à l'utilisateur ici
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+
+
+
+
+
+  private handleError(error: HttpErrorResponse) {
+    let errorMessage = 'Une erreur est survenue';
+    if (error.error instanceof ErrorEvent) {
+      errorMessage = `Erreur: ${error.error.message}`;
+    } else {
+      errorMessage = `Code d'erreur: ${error.status}\nMessage: ${error.message}`;
+    }
+    console.error(errorMessage);
+    return throwError(() => errorMessage);
+  }
+}
