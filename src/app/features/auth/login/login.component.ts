@@ -6,15 +6,14 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { AuthService } from '../../../core/services/Auth/auth.service';
 
 @Component({
-  selector: 'app-login',
-  standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule
-  ],
-  templateUrl: './login.component.html',
-  styleUrls: ['./login.component.scss']
+    selector: 'app-login',
+    imports: [
+        CommonModule,
+        FormsModule,
+        ReactiveFormsModule
+    ],
+    templateUrl: './login.component.html',
+    styleUrls: ['./login.component.scss']
 })
 export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
