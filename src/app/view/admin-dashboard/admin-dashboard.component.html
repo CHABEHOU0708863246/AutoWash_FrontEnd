@@ -1,1 +1,169 @@
-<p>admin-dashboard works!</p>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="sidebar" id="sidebar">
+        <div class="logo">
+            <i class="fas fa-hashtag"></i> AUTOWASH
+        </div>
+        <div class="user-profile">
+            <img src="https://media.licdn.com/dms/image/v2/D4E03AQFl4HpioZZvhQ/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1722776592369?e=1752105600&v=beta&t=rO8ASWATTrkWn2YaWXch8SnDzwUcyCtDkcAJsdEQ2n4" alt="User Profile">
+            <div class="user-info">
+                <h4>Afffery Auxence Delors CHABEHOU<span class="status-indicator"></span></h4>
+                <p>Administrateur</p>
+            </div>
+        </div>
+        <div class="nav-menu">
+    <!-- Dashboard -->
+    <a href="#" class="nav-item active">
+        <i class="fas fa-tachometer-alt"></i>
+        <span>Tableau de bord</span>
+    </a>
+
+    <!-- Gestion des Utilisateurs -->
+    <div class="nav-item">
+        <div class="dropdown-toggle" data-dropdown="users">
+            <div>
+                <i class="fas fa-users-cog"></i>
+                <span>Utilisateurs</span>
+            </div>
+        </div>
+        <div class="dropdown-menu" id="users-dropdown">
+            <a href="#"><i class="fas fa-list"></i> Liste des utilisateurs</a>
+            <a href="#"><i class="fas fa-user-plus"></i> Ajouter un utilisateur</a>
+            <a href="#"><i class="fas fa-user-shield"></i> Permissions</a>
+        </div>
+    </div>
+
+    <!-- Centres de Lavage -->
+    <div class="nav-item">
+        <div class="dropdown-toggle" data-dropdown="centers">
+            <div>
+                <i class="fa-solid fa-car"></i>
+                <span>Centres</span>
+            </div>
+        </div>
+        <div class="dropdown-menu" id="centers-dropdown">
+            <a href="#"><i class="fas fa-list"></i> Tous les centres</a>
+            <a href="#"><i class="fas fa-plus-circle"></i> Nouveau centre</a>
+            <a href="#"><i class="fas fa-user-tie"></i> Attribution gérants</a>
+        </div>
+    </div>
+
+    <!-- Statistiques & Rapports -->
+    <div class="nav-item">
+        <div class="dropdown-toggle" data-dropdown="reports">
+            <div>
+                <i class="fas fa-chart-pie"></i>
+                <span>Statistiques</span>
+            </div>
+        </div>
+        <div class="dropdown-menu" id="reports-dropdown">
+            <a href="#"><i class="fas fa-calendar-day"></i> Journalier</a>
+            <a href="#"><i class="fas fa-calendar-week"></i> Hebdomadaire</a>
+            <a href="#"><i class="fas fa-calendar-alt"></i> Mensuel</a>
+            <a href="#"><i class="fas fa-file-export"></i> Exports</a>
+            <a href="#"><i class="fas fa-balance-scale"></i> Comparaison</a>
+        </div>
+    </div>
+
+    <!-- Tarification -->
+    <div class="nav-item">
+        <div class="dropdown-toggle" data-dropdown="pricing">
+            <div>
+                <i class="fas fa-tags"></i>
+                <span>Tarification</span>
+            </div>
+        </div>
+        <div class="dropdown-menu" id="pricing-dropdown">
+            <a href="#"><i class="fas fa-car"></i> Par véhicule</a>
+            <a href="#"><i class="fas fa-concierge-bell"></i> Par prestation</a>
+            <a href="#"><i class="fas fa-percentage"></i> Remises</a>
+        </div>
+    </div>
+
+    <!-- Dépenses -->
+    <div class="nav-item">
+        <div class="dropdown-toggle" data-dropdown="expenses">
+            <div>
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>Dépenses</span>
+            </div>
+        </div>
+        <div class="dropdown-menu" id="expenses-dropdown">
+            <a href="#"><i class="fas fa-tint"></i> Eau/Électricité</a>
+            <a href="#"><i class="fas fa-shopping-basket"></i> Produits</a>
+            <a href="#"><i class="fas fa-home"></i> Loyer</a>
+            <a href="#"><i class="fas fa-chart-line"></i> Rentabilité</a>
+        </div>
+    </div>
+
+    <!-- Journal d'Activité -->
+    <a href="#" class="nav-item">
+        <i class="fas fa-clipboard-list"></i>
+        <span>Journal d'activité</span>
+    </a>
+
+    <!-- Paramètres -->
+    <div class="nav-item">
+        <div class="dropdown-toggle" data-dropdown="settings">
+            <div>
+                <i class="fas fa-cogs"></i>
+                <span>Paramètres</span>
+            </div>
+        </div>
+        <div class="dropdown-menu" id="settings-dropdown">
+            <a href="#"><i class="fas fa-clock"></i> Horaires</a>
+            <a href="#"><i class="fas fa-list-alt"></i> Types de prestations</a>
+            <a href="#"><i class="fas fa-sliders-h"></i> Préférences</a>
+        </div>
+    </div>
+</div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content" id="main-content">
+        <div class="top-bar">
+            <div class="menu-toggle" id="menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <div class="search-box">
+                <input type="text" placeholder="Search">
+            </div>
+            <div class="top-right">
+                <div class="icon-button">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="icon-button">
+                    <i class="fas fa-bell"></i>
+                    <span class="badge">3</span>
+                </div>
+                <div class="user-dropdown" id="user-dropdown">
+                    <img src="https://via.placeholder.com/32" alt="User">
+                    <span>Affery Auxence Delors CHABEHOU</span>
+                    <i class="fas fa-chevron-down"></i>
+                    <div class="user-dropdown-menu" id="user-dropdown-menu">
+                        <a href="#"><i class="fas fa-user"></i> Mon profil</a>
+                        <a href="#"><i class="fas fa-cog"></i> parametre</a>
+                        <a href="#"><i class="fas fa-envelope"></i> Inbox</a>
+                        <a href="#"><i class="fas fa-sign-out-alt"></i> Deconnexion</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="page-content">
+            <div class="blank-page">
+                This is blank page
+            </div>
+        </div>
+
+        <div class="footer">
+            <div>©2025 AutoWash, Tous droit reservé.</div>
+            <div>Crée par <a href="https://www.linkedin.com/in/afferyauxencedelorschabehou/">Affery Auxence Delors CHABEHOU</a></div>
+        </div>
+    </div>
+</body>
+</html>
