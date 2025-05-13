@@ -19,8 +19,8 @@
         <div class="nav-menu">
             <!-- Dashboard -->
             <div class="dropdown dropdown-hover">
-                <a class="nav-item active" data-mdb-dropdown-init>
-                    <i class="fas fa-tachometer-alt" [routerLink]="['/admin/dashboard']" ></i>
+                <a class="nav-item active" [routerLink]="['/admin/dashboard']" data-mdb-dropdown-init>
+                    <i class="fas fa-tachometer-alt"></i>
                     <span>Tableau de bord</span>
                 </a>
             </div>
@@ -155,96 +155,8 @@
         </div>
 
         <div class="page-content">
-            <!-- Cartes de statistiques (comme dans l'image) -->
-            <div class="stats-cards">
-                <div class="stat-card">
-                    <div class="stat-icon blue">
-                        <i class="fas fa-chart-line"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-title">Today Sale</div>
-                        <div class="stat-value">1234 €</div>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon green">
-                        <i class="fas fa-chart-bar"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-title">Total Sale</div>
-                        <div class="stat-value">1234 €</div>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon orange">
-                        <i class="fas fa-chart-area"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-title">Today Revenue</div>
-                        <div class="stat-value">1234 €</div>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon purple">
-                        <i class="fas fa-chart-pie"></i>
-                    </div>
-                    <div class="stat-content">
-                        <div class="stat-title">Total Revenue</div>
-                        <div class="stat-value">1234 €</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Graphiques (comme dans l'image) -->
-            <div class="charts-container">
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <div class="chart-title">Worldwide Sales</div>
-                        <a href="#" class="chart-action">Show All</a>
-                    </div>
-                    <div class="chart-content">
-                        <!-- Code pour simuler le graphique à barres -->
-                        <div style="width:100%; height:100%; background-image: url('/api/placeholder/600/300'); background-size: contain; background-repeat: no-repeat; background-position: center;"></div>
-                        <div class="chart-legend">
-                            <div class="legend-item">
-                                <div class="legend-color" style="background-color: #36a2eb;"></div>
-                                <span>USA</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background-color: #67e8f9;"></div>
-                                <span>UK</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background-color: #a5f3fc;"></div>
-                                <span>AU</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="chart-card">
-                    <div class="chart-header">
-                        <div class="chart-title">Salse & Revenue</div>
-                        <a href="#" class="chart-action">Show All</a>
-                    </div>
-                    <div class="chart-content">
-                        <!-- Code pour simuler le graphique en ligne -->
-                        <div style="width:100%; height:100%; background-image: url('/api/placeholder/600/300'); background-size: contain; background-repeat: no-repeat; background-position: center;"></div>
-                        <div class="chart-legend">
-                            <div class="legend-item">
-                                <div class="legend-color" style="background-color: #36a2eb;"></div>
-                                <span>Salse</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color" style="background-color: #a5f3fc;"></div>
-                                <span>Revenue</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="blank-page">
+                Permissions des utilisateurs
             </div>
         </div>
 
