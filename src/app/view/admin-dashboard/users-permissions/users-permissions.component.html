@@ -1,169 +1,523 @@
 <html lang="fr">
+
 <head>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet">
 </head>
+
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
-        <div class="logo">
-            <i class="fas fa-hashtag"></i> AUTOWASH
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fas fa-hashtag"></i> AUTOWASH
+    </div>
+    <div class="user-profile">
+      <img
+        src="https://media.licdn.com/dms/image/v2/D4E03AQFl4HpioZZvhQ/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1722776592369?e=1752105600&v=beta&t=rO8ASWATTrkWn2YaWXch8SnDzwUcyCtDkcAJsdEQ2n4"
+        alt="User Profile">
+      <div class="user-info">
+        <h4>Afffery Auxence Delors CHABEHOU<span class="status-indicator"></span></h4>
+        <p>Administrateur</p>
+      </div>
+    </div>
+    <div class="nav-menu">
+      <!-- Dashboard -->
+      <div class="dropdown dropdown-hover">
+        <a class="nav-item active" [routerLink]="['/admin/dashboard']" data-mdb-dropdown-init>
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
+
+      <!-- Gestion des Utilisateurs -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-users-cog"></i>
+          <span>Utilisateurs</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-list']"><i class="fas fa-list"></i> Liste des
+              utilisateurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-create']"><i class="fas fa-user-plus"></i> Ajouter
+              un utilisateur</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-permissions']"><i class="fas fa-user-shield"></i>
+              Permissions</a></li>
+        </ul>
+      </div>
+
+      <!-- Centres de Lavage -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fa-solid fa-car"></i>
+          <span>Centres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-list']"><i class="fas fa-list"></i> Tous les centres</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-create']"><i class="fas fa-plus-circle"></i> Nouveau centre</a></li>
+        </ul>
+      </div>
+
+      <!-- Statistiques & Rapports -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-chart-pie"></i>
+          <span>Statistiques</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-day"></i> Journalier</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-week"></i> Hebdomadaire</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-alt"></i> Mensuel</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-file-export"></i> Exports</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-balance-scale"></i> Comparaison</a></li>
+        </ul>
+      </div>
+
+      <!-- Tarification -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-tags"></i>
+          <span>Tarification</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" href="#"><i class="fas fa-car"></i> Par véhicule</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-concierge-bell"></i> Par prestation</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-percentage"></i> Remises</a></li>
+        </ul>
+      </div>
+
+      <!-- Dépenses -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-file-invoice-dollar"></i>
+          <span>Dépenses</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" href="#"><i class="fas fa-tint"></i> Eau/Électricité</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-shopping-basket"></i> Produits</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-home"></i> Loyer</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-chart-line"></i> Rentabilité</a></li>
+        </ul>
+      </div>
+
+      <!-- Journal d'Activité -->
+      <div class="dropdown dropdown-hover">
+        <a class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-clipboard-list"></i>
+          <span>Journal d'activité</span>
+        </a>
+      </div>
+
+      <!-- Paramètres -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-cogs"></i>
+          <span>Paramètres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" href="#"><i class="fas fa-clock"></i> Horaires</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-list-alt"></i> Types de prestations</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" id="main-content">
+    <div class="top-bar">
+      <div class="menu-toggle" id="menu-toggle">
+        <i class="fas fa-bars"></i>
+      </div>
+      <div class="search-box">
+        <input type="text" placeholder="Faire une recherche">
+      </div>
+      <div class="top-right">
+        <div class="icon-button">
+          <i class="fas fa-envelope"></i>
         </div>
-        <div class="user-profile">
-            <img src="https://media.licdn.com/dms/image/v2/D4E03AQFl4HpioZZvhQ/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1722776592369?e=1752105600&v=beta&t=rO8ASWATTrkWn2YaWXch8SnDzwUcyCtDkcAJsdEQ2n4" alt="User Profile">
-            <div class="user-info">
-                <h4>Afffery Auxence Delors CHABEHOU<span class="status-indicator"></span></h4>
-                <p>Administrateur</p>
-            </div>
+        <div class="icon-button">
+          <i class="fas fa-bell"></i>
+          <span class="badge">3</span>
         </div>
-        <div class="nav-menu">
-            <!-- Dashboard -->
-            <div class="dropdown dropdown-hover">
-                <a class="nav-item active" [routerLink]="['/admin/dashboard']" data-mdb-dropdown-init>
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Tableau de bord</span>
-                </a>
-            </div>
-
-            <!-- Gestion des Utilisateurs -->
-            <div class="dropdown dropdown-hover">
-                <button class="nav-item" data-mdb-dropdown-init>
-                    <i class="fas fa-users-cog"></i>
-                    <span>Utilisateurs</span>
-                    <i class="fas fa-chevron-right dropdown-arrow"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-hover">
-                    <li><a class="dropdown-item" [routerLink]="['/admin/users-list']"><i class="fas fa-list"></i> Liste des utilisateurs</a></li>
-                    <li><a class="dropdown-item" [routerLink]="['/admin/users-create']"><i class="fas fa-user-plus"></i> Ajouter un utilisateur</a></li>
-                    <li><a class="dropdown-item" [routerLink]="['/admin/users-permissions']"><i class="fas fa-user-shield"></i> Permissions</a></li>
-                </ul>
-            </div>
-
-            <!-- Centres de Lavage -->
-            <div class="dropdown dropdown-hover">
-                <button class="nav-item" data-mdb-dropdown-init>
-                    <i class="fa-solid fa-car"></i>
-                    <span>Centres</span>
-                    <i class="fas fa-chevron-right dropdown-arrow"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-hover">
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-list"></i> Tous les centres</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-plus-circle"></i> Nouveau centre</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-user-tie"></i> Attribution gérants</a></li>
-                </ul>
-            </div>
-
-            <!-- Statistiques & Rapports -->
-            <div class="dropdown dropdown-hover">
-                <button class="nav-item" data-mdb-dropdown-init>
-                    <i class="fas fa-chart-pie"></i>
-                    <span>Statistiques</span>
-                    <i class="fas fa-chevron-right dropdown-arrow"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-hover">
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-day"></i> Journalier</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-week"></i> Hebdomadaire</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-alt"></i> Mensuel</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-file-export"></i> Exports</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-balance-scale"></i> Comparaison</a></li>
-                </ul>
-            </div>
-
-            <!-- Tarification -->
-            <div class="dropdown dropdown-hover">
-                <button class="nav-item" data-mdb-dropdown-init>
-                    <i class="fas fa-tags"></i>
-                    <span>Tarification</span>
-                    <i class="fas fa-chevron-right dropdown-arrow"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-hover">
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-car"></i> Par véhicule</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-concierge-bell"></i> Par prestation</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-percentage"></i> Remises</a></li>
-                </ul>
-            </div>
-
-            <!-- Dépenses -->
-            <div class="dropdown dropdown-hover">
-                <button class="nav-item" data-mdb-dropdown-init>
-                    <i class="fas fa-file-invoice-dollar"></i>
-                    <span>Dépenses</span>
-                    <i class="fas fa-chevron-right dropdown-arrow"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-hover">
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-tint"></i> Eau/Électricité</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-shopping-basket"></i> Produits</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-home"></i> Loyer</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-chart-line"></i> Rentabilité</a></li>
-                </ul>
-            </div>
-
-            <!-- Journal d'Activité -->
-            <div class="dropdown dropdown-hover">
-                <a class="nav-item" data-mdb-dropdown-init>
-                    <i class="fas fa-clipboard-list"></i>
-                    <span>Journal d'activité</span>
-                </a>
-            </div>
-
-            <!-- Paramètres -->
-            <div class="dropdown dropdown-hover">
-                <button class="nav-item" data-mdb-dropdown-init>
-                    <i class="fas fa-cogs"></i>
-                    <span>Paramètres</span>
-                    <i class="fas fa-chevron-right dropdown-arrow"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-hover">
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-clock"></i> Horaires</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-list-alt"></i> Types de prestations</a></li>
-                </ul>
-            </div>
+        <div class="dropdown dropdown-hover">
+          <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
+            <img src="https://via.placeholder.com/32" alt="User">
+            <span>Affery Auxence Delors CHABEHOU</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
+            <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Mon profil</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
+          </ul>
         </div>
+      </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content" id="main-content">
-        <div class="top-bar">
-            <div class="menu-toggle" id="menu-toggle">
-                <i class="fas fa-bars"></i>
-            </div>
-            <div class="search-box">
-                <input type="text" placeholder="Faire une recherche">
-            </div>
-            <div class="top-right">
-                <div class="icon-button">
-                    <i class="fas fa-envelope"></i>
-                </div>
-                <div class="icon-button">
-                    <i class="fas fa-bell"></i>
-                    <span class="badge">3</span>
-                </div>
-                <div class="dropdown dropdown-hover">
-                    <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
-                        <img src="https://via.placeholder.com/32" alt="User">
-                        <span>Affery Auxence Delors CHABEHOU</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Mon profil</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
-                    </ul>
-                </div>
-            </div>
+    <div class="page-content">
+      <div class="blank-page">
+        <div class="permissions-header">
+          <div class="permissions-title">
+            <h1>Gestion des Permissions</h1>
+            <p>Définissez les droits d'accès pour chaque rôle d'utilisateur</p>
+          </div>
+          <div class="permissions-actions">
+            <button class="btn-save"><i class="fas fa-save"></i> Enregistrer</button>
+            <button class="btn-reset"><i class="fas fa-undo"></i> Réinitialiser</button>
+          </div>
         </div>
 
-        <div class="page-content">
-            <div class="blank-page">
-                Permissions des utilisateurs
+        <div class="roles-selector">
+          <div class="role-card active">
+            <div class="role-icon">
+              <i class="fas fa-user-shield"></i>
             </div>
+            <div class="role-info">
+              <h3>Administrateur</h3>
+              <span class="role-count">2 utilisateurs</span>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-icon">
+              <i class="fas fa-user-tie"></i>
+            </div>
+            <div class="role-info">
+              <h3>Gérant</h3>
+              <span class="role-count">8 utilisateurs</span>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-icon">
+              <i class="fas fa-user-clock"></i>
+            </div>
+            <div class="role-info">
+              <h3>Opérateur</h3>
+              <span class="role-count">15 utilisateurs</span>
+            </div>
+          </div>
+          <div class="role-card">
+            <div class="role-icon">
+              <i class="fas fa-user"></i>
+            </div>
+            <div class="role-info">
+              <h3>Employé</h3>
+              <span class="role-count">24 utilisateurs</span>
+            </div>
+          </div>
+          <div class="role-card add-role">
+            <div class="role-icon">
+              <i class="fas fa-plus"></i>
+            </div>
+            <div class="role-info">
+              <h3>Nouveau rôle</h3>
+            </div>
+          </div>
         </div>
 
-        <div class="footer">
-            <div>©2025 AutoWash, Tous droit reservé.</div>
-            <div>Crée par <a href="https://www.linkedin.com/in/afferyauxencedelorschabehou/">Affery Auxence Delors CHABEHOU</a></div>
+        <div class="permissions-container">
+          <div class="permission-group">
+            <div class="permission-group-header">
+              <div class="permission-group-title">
+                <i class="fas fa-tachometer-alt"></i>
+                <span>Tableau de bord</span>
+              </div>
+              <div class="permission-group-toggle">
+                <label class="master-toggle">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider round"></span>
+                  <span class="toggle-label">Tout activer</span>
+                </label>
+              </div>
+            </div>
+            <div class="permission-list">
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Afficher les statistiques générales</span>
+                  <p>Permettre l'accès aux données et graphiques du tableau de bord</p>
+                </div>
+              </div>
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Personnaliser les widgets</span>
+                  <p>Permettre la modification de l'affichage du tableau de bord</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="permission-group">
+            <div class="permission-group-header">
+              <div class="permission-group-title">
+                <i class="fas fa-users-cog"></i>
+                <span>Gestion des utilisateurs</span>
+              </div>
+              <div class="permission-group-toggle">
+                <label class="master-toggle">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider round"></span>
+                  <span class="toggle-label">Tout activer</span>
+                </label>
+              </div>
+            </div>
+            <div class="permission-list">
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Consulter les utilisateurs</span>
+                  <p>Voir la liste complète des utilisateurs du système</p>
+                </div>
+              </div>
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Créer des utilisateurs</span>
+                  <p>Ajouter de nouveaux utilisateurs au système</p>
+                </div>
+              </div>
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Modifier les utilisateurs</span>
+                  <p>Mettre à jour les informations des utilisateurs existants</p>
+                </div>
+              </div>
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Supprimer des utilisateurs</span>
+                  <p>Retirer des utilisateurs du système</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="permission-group">
+            <div class="permission-group-header">
+              <div class="permission-group-title">
+                <i class="fa-solid fa-car"></i>
+                <span>Centres de lavage</span>
+              </div>
+              <div class="permission-group-toggle">
+                <label class="master-toggle">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider round"></span>
+                  <span class="toggle-label">Tout activer</span>
+                </label>
+              </div>
+            </div>
+            <div class="permission-list">
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Consulter les centres</span>
+                  <p>Voir les informations de tous les centres de lavage</p>
+                </div>
+              </div>
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Créer un centre</span>
+                  <p>Ajouter un nouveau centre de lavage</p>
+                </div>
+              </div>
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Modifier un centre</span>
+                  <p>Mettre à jour les informations d'un centre existant</p>
+                </div>
+              </div>
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Attribuer des gérants</span>
+                  <p>Assigner des utilisateurs comme gérants d'un centre</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="permission-group">
+            <div class="permission-group-header">
+              <div class="permission-group-title">
+                <i class="fas fa-chart-pie"></i>
+                <span>Statistiques et rapports</span>
+              </div>
+              <div class="permission-group-toggle">
+                <label class="master-toggle">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider round"></span>
+                  <span class="toggle-label">Tout activer</span>
+                </label>
+              </div>
+            </div>
+            <div class="permission-list">
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Consulter les statistiques</span>
+                  <p>Accéder aux données statistiques de tous les centres</p>
+                </div>
+              </div>
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Exporter les rapports</span>
+                  <p>Générer et télécharger des rapports d'activité</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="permission-group">
+            <div class="permission-group-header">
+              <div class="permission-group-title">
+                <i class="fas fa-tags"></i>
+                <span>Tarification</span>
+              </div>
+              <div class="permission-group-toggle">
+                <label class="master-toggle">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider round"></span>
+                  <span class="toggle-label">Tout activer</span>
+                </label>
+              </div>
+            </div>
+            <div class="permission-list">
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Consulter les tarifs</span>
+                  <p>Voir les grilles tarifaires actuelles</p>
+                </div>
+              </div>
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Modifier les tarifs</span>
+                  <p>Ajuster les prix des prestations de lavage</p>
+                </div>
+              </div>
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Gérer les remises</span>
+                  <p>Créer et modifier les offres promotionnelles</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="permission-group">
+            <div class="permission-group-header">
+              <div class="permission-group-title">
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>Dépenses</span>
+              </div>
+              <div class="permission-group-toggle">
+                <label class="master-toggle">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider round"></span>
+                  <span class="toggle-label">Tout activer</span>
+                </label>
+              </div>
+            </div>
+            <div class="permission-list">
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Consulter les dépenses</span>
+                  <p>Voir le détail des dépenses par centre</p>
+                </div>
+              </div>
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Enregistrer des dépenses</span>
+                  <p>Ajouter de nouvelles dépenses au système</p>
+                </div>
+              </div>
+              <div class="permission-item">
+                <label class="toggle-switch">
+                  <input type="checkbox" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+                <div class="permission-text">
+                  <span>Analyser la rentabilité</span>
+                  <p>Accéder aux rapports de rentabilité détaillés</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
+
+    <div class="footer">
+      <div>©2025 AutoWash, Tous droit reservé.</div>
+      <div>Crée par <a href="https://www.linkedin.com/in/afferyauxencedelorschabehou/">Affery Auxence Delors
+          CHABEHOU</a></div>
+    </div>
+  </div>
 </body>
+
 </html>

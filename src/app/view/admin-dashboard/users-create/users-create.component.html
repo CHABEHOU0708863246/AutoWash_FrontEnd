@@ -1,299 +1,440 @@
 <html lang="fr">
+
 <head>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet">
 </head>
+
 <body>
-    <!-- Sidebar -->
-    <div class="sidebar" id="sidebar">
-        <div class="logo">
-            <i class="fas fa-hashtag"></i> AUTOWASH
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fas fa-hashtag"></i> AUTOWASH
+    </div>
+    <div class="user-profile">
+      <img
+        src="https://media.licdn.com/dms/image/v2/D4E03AQFl4HpioZZvhQ/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1722776592369?e=1752105600&v=beta&t=rO8ASWATTrkWn2YaWXch8SnDzwUcyCtDkcAJsdEQ2n4"
+        alt="User Profile">
+      <div class="user-info">
+        <h4>Afffery Auxence Delors CHABEHOU<span class="status-indicator"></span></h4>
+        <p>Administrateur</p>
+      </div>
+    </div>
+    <div class="nav-menu">
+      <!-- Dashboard -->
+      <div class="dropdown dropdown-hover">
+        <a class="nav-item active" [routerLink]="['/admin/dashboard']" data-mdb-dropdown-init>
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
+
+      <!-- Gestion des Utilisateurs -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-users-cog"></i>
+          <span>Utilisateurs</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-list']"><i class="fas fa-list"></i> Liste des
+              utilisateurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-create']"><i class="fas fa-user-plus"></i> Ajouter
+              un utilisateur</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-permissions']"><i class="fas fa-user-shield"></i>
+              Permissions</a></li>
+        </ul>
+      </div>
+
+      <!-- Centres de Lavage -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fa-solid fa-car"></i>
+          <span>Centres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-list']"><i class="fas fa-list"></i> Tous les centres</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-create']"><i class="fas fa-plus-circle"></i> Nouveau centre</a></li>
+        </ul>
+      </div>
+
+      <!-- Statistiques & Rapports -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-chart-pie"></i>
+          <span>Statistiques</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-day"></i> Journalier</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-week"></i> Hebdomadaire</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-alt"></i> Mensuel</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-file-export"></i> Exports</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-balance-scale"></i> Comparaison</a></li>
+        </ul>
+      </div>
+
+      <!-- Tarification -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-tags"></i>
+          <span>Tarification</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" href="#"><i class="fas fa-car"></i> Par véhicule</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-concierge-bell"></i> Par prestation</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-percentage"></i> Remises</a></li>
+        </ul>
+      </div>
+
+      <!-- Dépenses -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-file-invoice-dollar"></i>
+          <span>Dépenses</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" href="#"><i class="fas fa-tint"></i> Eau/Électricité</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-shopping-basket"></i> Produits</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-home"></i> Loyer</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-chart-line"></i> Rentabilité</a></li>
+        </ul>
+      </div>
+
+      <!-- Journal d'Activité -->
+      <div class="dropdown dropdown-hover">
+        <a class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-clipboard-list"></i>
+          <span>Journal d'activité</span>
+        </a>
+      </div>
+
+      <!-- Paramètres -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-cogs"></i>
+          <span>Paramètres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" href="#"><i class="fas fa-clock"></i> Horaires</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-list-alt"></i> Types de prestations</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" id="main-content">
+    <div class="top-bar">
+      <div class="menu-toggle" id="menu-toggle">
+        <i class="fas fa-bars"></i>
+      </div>
+      <div class="top-right">
+        <div class="icon-button">
+          <i class="fas fa-envelope"></i>
         </div>
-        <div class="user-profile">
-            <img src="https://media.licdn.com/dms/image/v2/D4E03AQFl4HpioZZvhQ/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1722776592369?e=1752105600&v=beta&t=rO8ASWATTrkWn2YaWXch8SnDzwUcyCtDkcAJsdEQ2n4" alt="User Profile">
-            <div class="user-info">
-                <h4>Afffery Auxence Delors CHABEHOU<span class="status-indicator"></span></h4>
-                <p>Administrateur</p>
-            </div>
+        <div class="icon-button">
+          <i class="fas fa-bell"></i>
+          <span class="badge">3</span>
         </div>
-        <div class="nav-menu">
-            <!-- Dashboard -->
-            <div class="dropdown dropdown-hover">
-                <a class="nav-item active" [routerLink]="['/admin/dashboard']" data-mdb-dropdown-init>
-                    <i class="fas fa-tachometer-alt"></i>
-                    <span>Tableau de bord</span>
-                </a>
-            </div>
-
-            <!-- Gestion des Utilisateurs -->
-            <div class="dropdown dropdown-hover">
-                <button class="nav-item" data-mdb-dropdown-init>
-                    <i class="fas fa-users-cog"></i>
-                    <span>Utilisateurs</span>
-                    <i class="fas fa-chevron-right dropdown-arrow"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-hover">
-                    <li><a class="dropdown-item" [routerLink]="['/admin/users-list']"><i class="fas fa-list"></i> Liste des utilisateurs</a></li>
-                    <li><a class="dropdown-item" [routerLink]="['/admin/users-create']"><i class="fas fa-user-plus"></i> Ajouter un utilisateur</a></li>
-                    <li><a class="dropdown-item" [routerLink]="['/admin/users-permissions']"><i class="fas fa-user-shield"></i> Permissions</a></li>
-                </ul>
-            </div>
-
-            <!-- Centres de Lavage -->
-            <div class="dropdown dropdown-hover">
-                <button class="nav-item" data-mdb-dropdown-init>
-                    <i class="fa-solid fa-car"></i>
-                    <span>Centres</span>
-                    <i class="fas fa-chevron-right dropdown-arrow"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-hover">
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-list"></i> Tous les centres</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-plus-circle"></i> Nouveau centre</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-user-tie"></i> Attribution gérants</a></li>
-                </ul>
-            </div>
-
-            <!-- Statistiques & Rapports -->
-            <div class="dropdown dropdown-hover">
-                <button class="nav-item" data-mdb-dropdown-init>
-                    <i class="fas fa-chart-pie"></i>
-                    <span>Statistiques</span>
-                    <i class="fas fa-chevron-right dropdown-arrow"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-hover">
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-day"></i> Journalier</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-week"></i> Hebdomadaire</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-alt"></i> Mensuel</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-file-export"></i> Exports</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-balance-scale"></i> Comparaison</a></li>
-                </ul>
-            </div>
-
-            <!-- Tarification -->
-            <div class="dropdown dropdown-hover">
-                <button class="nav-item" data-mdb-dropdown-init>
-                    <i class="fas fa-tags"></i>
-                    <span>Tarification</span>
-                    <i class="fas fa-chevron-right dropdown-arrow"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-hover">
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-car"></i> Par véhicule</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-concierge-bell"></i> Par prestation</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-percentage"></i> Remises</a></li>
-                </ul>
-            </div>
-
-            <!-- Dépenses -->
-            <div class="dropdown dropdown-hover">
-                <button class="nav-item" data-mdb-dropdown-init>
-                    <i class="fas fa-file-invoice-dollar"></i>
-                    <span>Dépenses</span>
-                    <i class="fas fa-chevron-right dropdown-arrow"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-hover">
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-tint"></i> Eau/Électricité</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-shopping-basket"></i> Produits</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-home"></i> Loyer</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-chart-line"></i> Rentabilité</a></li>
-                </ul>
-            </div>
-
-            <!-- Journal d'Activité -->
-            <div class="dropdown dropdown-hover">
-                <a class="nav-item" data-mdb-dropdown-init>
-                    <i class="fas fa-clipboard-list"></i>
-                    <span>Journal d'activité</span>
-                </a>
-            </div>
-
-            <!-- Paramètres -->
-            <div class="dropdown dropdown-hover">
-                <button class="nav-item" data-mdb-dropdown-init>
-                    <i class="fas fa-cogs"></i>
-                    <span>Paramètres</span>
-                    <i class="fas fa-chevron-right dropdown-arrow"></i>
-                </button>
-                <ul class="dropdown-menu dropdown-menu-hover">
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-clock"></i> Horaires</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-list-alt"></i> Types de prestations</a></li>
-                </ul>
-            </div>
+        <div class="dropdown dropdown-hover">
+          <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
+            <img src="https://via.placeholder.com/32" alt="User">
+            <span>Affery Auxence Delors CHABEHOU</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
+            <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Mon profil</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
+          </ul>
         </div>
+      </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="main-content" id="main-content">
-        <div class="top-bar">
-            <div class="menu-toggle" id="menu-toggle">
-                <i class="fas fa-bars"></i>
+    <div class="page-content">
+      <div class="blank-page">
+        <!-- Formulaire de création d'utilisateur -->
+        <form class="form-wrapper" [formGroup]="userForm" (ngSubmit)="onSubmit()">
+          <!-- Section Informations personnelles -->
+          <div class="form-section">
+            <div class="section-title">
+              <h2><i class="fas fa-user"></i> Informations personnelles</h2>
             </div>
-            <div class="search-box">
-                <input type="text" placeholder="Faire une recherche">
+
+            <div class="form-grid">
+              <!-- Photo de profil -->
+              <div class="form-group photo-upload">
+                <label class="form-label">Photo de profil</label>
+                <div class="photo-preview">
+                  <i class="fas fa-user" *ngIf="!selectedPhoto"></i>
+                  <img id="preview-image" [src]="selectedPhoto || ''" alt="Preview" *ngIf="selectedPhoto">
+                </div>
+                <label class="photo-upload-btn">
+                  <i class="fas fa-camera"></i> Choisir une photo
+                  <input type="file" id="photo-upload" accept="image/*" style="display: none;"
+                    (change)="onPhotoSelected($event)">
+                </label>
+              </div>
+
+              <!-- Nom -->
+              <div class="form-group">
+                <label class="form-label">Nom <span class="required">*</span></label>
+                <input type="text" class="form-control" placeholder="Entrez le nom" formControlName="lastName">
+                <i class="fas fa-user form-icon"></i>
+                <div class="form-error" *ngIf="userForm.get('lastName')?.invalid && userForm.get('lastName')?.touched">
+                  Le nom est obligatoire
+                </div>
+              </div>
+
+              <!-- Prénom -->
+              <div class="form-group">
+                <label class="form-label">Prénom <span class="required">*</span></label>
+                <input type="text" class="form-control" placeholder="Entrez le prénom" formControlName="firstName">
+                <i class="fas fa-user form-icon"></i>
+                <div class="form-error"
+                  *ngIf="userForm.get('firstName')?.invalid && userForm.get('firstName')?.touched">
+                  Le prénom est obligatoire
+                </div>
+              </div>
+
+              <!-- Email -->
+              <div class="form-group">
+                <label class="form-label">Email <span class="required">*</span></label>
+                <input type="email" class="form-control" placeholder="example@autowash.com" formControlName="email">
+                <i class="fas fa-envelope form-icon"></i>
+                <div class="form-help">Cet email sera utilisé pour la connexion et la récupération de mot de passe</div>
+                <div class="form-error" *ngIf="userForm.get('email')?.invalid && userForm.get('email')?.touched">
+                  Veuillez saisir une adresse email valide
+                </div>
+              </div>
+
+              <!-- Téléphone -->
+              <div class="form-group">
+                <label class="form-label">Téléphone <span class="required">*</span></label>
+                <input type="tel" class="form-control" placeholder="+225 00 00 00 00 00" formControlName="phoneNumber">
+                <i class="fas fa-phone form-icon"></i>
+                <div class="form-error"
+                  *ngIf="userForm.get('phoneNumber')?.invalid && userForm.get('phoneNumber')?.touched">
+                  Le numéro de téléphone est obligatoire
+                </div>
+              </div>
+
+              <!-- Genre -->
+              <div class="form-group custom-select">
+                <label class="form-label">Genre <span class="required">*</span></label>
+                <select class="form-control" formControlName="gender">
+                  <option value="" selected disabled>Sélectionnez un genre</option>
+                  <option value="homme">Homme</option>
+                  <option value="femme">Femme</option>
+                  <option value="autre">Autre</option>
+                </select>
+                <i class="fas fa-chevron-down select-icon"></i>
+                <div class="form-error" *ngIf="userForm.get('gender')?.invalid && userForm.get('gender')?.touched">
+                  Le genre est obligatoire
+                </div>
+              </div>
+
+              <!-- État civil -->
+              <div class="form-group custom-select">
+                <label class="form-label">État civil <span class="required">*</span></label>
+                <select class="form-control" formControlName="maritalStatus">
+                  <option value="" selected disabled>Sélectionnez un état civil</option>
+                  <option value="celibataire">Célibataire</option>
+                  <option value="marie">Marié(e)</option>
+                  <option value="divorce">Divorcé(e)</option>
+                  <option value="veuf">Veuf/Veuve</option>
+                </select>
+                <i class="fas fa-chevron-down select-icon"></i>
+                <div class="form-error"
+                  *ngIf="userForm.get('maritalStatus')?.invalid && userForm.get('maritalStatus')?.touched">
+                  L'état civil est obligatoire
+                </div>
+              </div>
+
+              <!-- Nombre d'enfants -->
+              <div class="form-group">
+                <label class="form-label">Nombre d'enfants</label>
+                <input type="number" class="form-control" placeholder="0" formControlName="numberOfChildren" min="0">
+                <i class="fas fa-child form-icon"></i>
+                <div class="form-error" *ngIf="userForm.get('numberOfChildren')?.invalid">
+                  Veuillez saisir un nombre valide (0 ou plus)
+                </div>
+              </div>
+
+              <!-- Résidence -->
+              <div class="form-group">
+                <label class="form-label">Résidence <span class="required">*</span></label>
+                <input type="text" class="form-control" placeholder="Lieu de résidence" formControlName="residence">
+                <i class="fas fa-home form-icon"></i>
+                <div class="form-error"
+                  *ngIf="userForm.get('residence')?.invalid && userForm.get('residence')?.touched">
+                  La résidence est obligatoire
+                </div>
+              </div>
+
+              <!-- Adresse postale -->
+              <div class="form-group">
+                <label class="form-label">Adresse postale <span class="required">*</span></label>
+                <input type="text" class="form-control" placeholder="Adresse postale" formControlName="postalAddress">
+                <i class="fas fa-map-marker-alt form-icon"></i>
+                <div class="form-error"
+                  *ngIf="userForm.get('postalAddress')?.invalid && userForm.get('postalAddress')?.touched">
+                  L'adresse postale est obligatoire
+                </div>
+              </div>
             </div>
-            <div class="top-right">
-                <div class="icon-button">
-                    <i class="fas fa-envelope"></i>
-                </div>
-                <div class="icon-button">
-                    <i class="fas fa-bell"></i>
-                    <span class="badge">3</span>
-                </div>
-                <div class="dropdown dropdown-hover">
-                    <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
-                        <img src="https://via.placeholder.com/32" alt="User">
-                        <span>Affery Auxence Delors CHABEHOU</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Mon profil</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
-                    </ul>
-                </div>
+          </div>
+
+          <!-- Section Informations professionnelles -->
+          <div class="form-section">
+            <div class="section-title">
+              <h2><i class="fas fa-briefcase"></i> Informations professionnelles</h2>
             </div>
-        </div>
 
-        <div class="page-content">
-            <div class="blank-page">
-            <!-- Formulaire de création d'utilisateur -->
-            <form class="form-wrapper">
-                <!-- Section Informations personnelles -->
-                <div class="form-section">
-                    <div class="section-title">
-                        <h2><i class="fas fa-user"></i> Informations personnelles</h2>
-                    </div>
-
-                    <div class="form-grid">
-                        <!-- Photo de profil -->
-                        <div class="form-group photo-upload">
-                            <label class="form-label">Photo de profil</label>
-                            <div class="photo-preview">
-                                <i class="fas fa-user"></i>
-                                <img id="preview-image" src="" alt="Preview">
-                            </div>
-                            <label class="photo-upload-btn">
-                                <i class="fas fa-camera"></i> Choisir une photo
-                                <input type="file" id="photo-upload" accept="image/*" style="display: none;">
-                            </label>
-                        </div>
-
-                        <!-- Nom -->
-                        <div class="form-group">
-                            <label class="form-label">Nom <span class="required">*</span></label>
-                            <input type="text" class="form-control" placeholder="Entrez le nom">
-                            <i class="fas fa-user form-icon"></i>
-                        </div>
-
-                        <!-- Prénom -->
-                        <div class="form-group">
-                            <label class="form-label">Prénom <span class="required">*</span></label>
-                            <input type="text" class="form-control" placeholder="Entrez le prénom">
-                            <i class="fas fa-user form-icon"></i>
-                        </div>
-
-                        <!-- Email -->
-                        <div class="form-group">
-                            <label class="form-label">Email <span class="required">*</span></label>
-                            <input type="email" class="form-control" placeholder="example@autowash.com">
-                            <i class="fas fa-envelope form-icon"></i>
-                            <div class="form-help">Cet email sera utilisé pour la connexion et la récupération de mot de passe</div>
-                        </div>
-
-                        <!-- Téléphone -->
-                        <div class="form-group">
-                            <label class="form-label">Téléphone <span class="required">*</span></label>
-                            <input type="tel" class="form-control" placeholder="+225 00 00 00 00 00">
-                            <i class="fas fa-phone form-icon"></i>
-                        </div>
-
-                        <!-- Adresse -->
-                        <div class="form-group">
-                            <label class="form-label">Adresse</label>
-                            <input type="text" class="form-control" placeholder="Adresse de l'utilisateur">
-                            <i class="fas fa-map-marker-alt form-icon"></i>
-                        </div>
-                    </div>
+            <div class="form-grid">
+              <!-- Date d'embauche -->
+              <div class="form-group">
+                <label class="form-label">Date d'embauche <span class="required">*</span></label>
+                <input type="date" class="form-control" formControlName="hireDate">
+                <i class="fas fa-calendar-alt form-icon"></i>
+                <div class="form-error" *ngIf="userForm.get('hireDate')?.invalid && userForm.get('hireDate')?.touched">
+                  La date d'embauche est obligatoire
                 </div>
+              </div>
 
-                <!-- Section Informations de compte -->
-                <div class="form-section">
-                    <div class="section-title">
-                        <h2><i class="fas fa-lock"></i> Informations de compte</h2>
-                    </div>
-
-                    <div class="form-grid">
-                        <!-- Nom d'utilisateur -->
-                        <div class="form-group">
-                            <label class="form-label">Nom d'utilisateur <span class="required">*</span></label>
-                            <input type="text" class="form-control" placeholder="Nom d'utilisateur">
-                            <i class="fas fa-user-tag form-icon"></i>
-                            <div class="form-help">Entre 6 et 20 caractères, sans espaces</div>
-                        </div>
-
-                        <!-- Mot de passe -->
-                        <div class="form-group">
-                            <label class="form-label">Mot de passe <span class="required">*</span></label>
-                            <input type="password" class="form-control" placeholder="Mot de passe">
-                            <i class="fas fa-key form-icon"></i>
-                            <div class="form-help">8 caractères minimum avec au moins 1 majuscule, 1 minuscule et 1 chiffre</div>
-                        </div>
-
-                        <!-- Confirmation de mot de passe -->
-                        <div class="form-group">
-                            <label class="form-label">Confirmer le mot de passe <span class="required">*</span></label>
-                            <input type="password" class="form-control" placeholder="Confirmez le mot de passe">
-                            <i class="fas fa-key form-icon"></i>
-                        </div>
-
-                        <!-- Rôle de l'utilisateur -->
-                        <div class="form-group custom-select">
-                            <label class="form-label">Rôle <span class="required">*</span></label>
-                            <select class="form-control">
-                                <option value="" selected disabled>Sélectionnez un rôle</option>
-                                <option value="admin">Administrateur</option>
-                                <option value="manager">Gérant</option>
-                                <option value="employee">Employé</option>
-                                <option value="accountant">Comptable</option>
-                            </select>
-                            <i class="fas fa-chevron-down select-icon"></i>
-                        </div>
-
-                        <!-- Centre assigné -->
-                        <div class="form-group custom-select">
-                            <label class="form-label">Centre assigné</label>
-                            <select class="form-control">
-                                <option value="" selected disabled>Sélectionnez un centre</option>
-                                <option value="centre1">Centre Cocody</option>
-                                <option value="centre2">Centre Marcory</option>
-                                <option value="centre3">Centre Yopougon</option>
-                                <option value="centre4">Centre Koumassi</option>
-                            </select>
-                            <i class="fas fa-chevron-down select-icon"></i>
-                        </div>
-
-                        <!-- Statut du compte -->
-                        <div class="form-group">
-                            <label class="form-label">Statut du compte</label>
-                            <div class="form-check-wrapper">
-                                <label class="toggle-switch">
-                                    <input type="checkbox" checked>
-                                    <span class="toggle-slider"></span>
-                                </label>
-                                <span class="permission-text">Compte actif</span>
-                            </div>
-                            <div class="form-help">Les utilisateurs inactifs ne pourront pas se connecter</div>
-                        </div>
-                    </div>
+              <!-- Type de contrat -->
+              <div class="form-group custom-select">
+                <label class="form-label">Type de contrat <span class="required">*</span></label>
+                <select class="form-control" formControlName="contractType">
+                  <option value="" selected disabled>Sélectionnez un type de contrat</option>
+                  <option value="cdi">CDI</option>
+                  <option value="cdd">CDD</option>
+                  <option value="stage">Stage</option>
+                  <option value="interim">Intérim</option>
+                </select>
+                <i class="fas fa-chevron-down select-icon"></i>
+                <div class="form-error"
+                  *ngIf="userForm.get('contractType')?.invalid && userForm.get('contractType')?.touched">
+                  Le type de contrat est obligatoire
                 </div>
-                </form>
+              </div>
+
+              <!-- Heures de travail -->
+              <div class="form-group">
+                <label class="form-label">Heures de travail hebdomadaire <span class="required">*</span></label>
+                <input type="number" class="form-control" placeholder="40" formControlName="workingHours" min="0">
+                <i class="fas fa-clock form-icon"></i>
+              </div>
+
+              <!-- Temps partiel -->
+              <div class="form-group">
+                <label class="form-label">Temps partiel</label>
+                <div class="form-check-wrapper">
+                  <label class="toggle-switch">
+                    <input type="checkbox" formControlName="isPartTime">
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <span class="permission-text">Employé à temps partiel</span>
+                </div>
+              </div>
+
+              <!-- Centre assigné -->
+              <div class="form-group custom-select">
+                <label class="form-label">Centre assigné</label>
+                <select class="form-control" formControlName="centreId">
+                  <option value="" selected disabled>Sélectionnez un centre</option>
+                  <option value="centre1">Centre Cocody</option>
+                  <option value="centre2">Centre Marcory</option>
+                  <option value="centre3">Centre Yopougon</option>
+                  <option value="centre4">Centre Koumassi</option>
+                </select>
+                <i class="fas fa-chevron-down select-icon"></i>
+              </div>
             </div>
-        </div>
+          </div>
 
-        <div class="footer">
-            <div>©2025 AutoWash, Tous droit reservé.</div>
-            <div>Crée par <a href="https://www.linkedin.com/in/afferyauxencedelorschabehou/">Affery Auxence Delors CHABEHOU</a></div>
-        </div>
+          <!-- Section Informations de compte -->
+          <div class="form-section">
+            <div class="section-title">
+              <h2><i class="fas fa-lock"></i> Informations de compte</h2>
+            </div>
+
+            <div class="form-grid">
+              <!-- Mot de passe -->
+              <div class="form-group">
+                <label class="form-label">Mot de passe <span class="required">*</span></label>
+                <input type="password" class="form-control" placeholder="Mot de passe" formControlName="password">
+                <i class="fas fa-key form-icon"></i>
+                <div class="form-help">8 caractères minimum avec au moins 1 majuscule, 1 minuscule et 1 chiffre</div>
+                <div class="form-error" *ngIf="userForm.get('password')?.invalid && userForm.get('password')?.touched">
+                  Le mot de passe doit contenir au moins 6 caractères
+                </div>
+              </div>
+
+              <!-- Confirmation de mot de passe -->
+              <div class="form-group">
+                <label class="form-label">Confirmer le mot de passe <span class="required">*</span></label>
+                <input type="password" class="form-control" placeholder="Confirmez le mot de passe"
+                  formControlName="confirmPassword">
+                <i class="fas fa-key form-icon"></i>
+                <div class="form-error"
+                  *ngIf="userForm.get('confirmPassword')?.value !== userForm.get('password')?.value && userForm.get('confirmPassword')?.touched">
+                  Les mots de passe ne correspondent pas
+                </div>
+              </div>
+
+              <!-- Rôle de l'utilisateur -->
+              <div class="form-group custom-select">
+                <label class="form-label">Rôle <span class="required">*</span></label>
+                <select class="form-control" (change)="onRoleChange($event)" multiple>
+                  <option *ngFor="let role of availableRoles" [value]="role">{{ role | titlecase }}</option>
+                </select>
+                <i class="fas fa-chevron-down select-icon"></i>
+                <div class="form-error" *ngIf="userForm.get('roles')?.invalid && userForm.get('roles')?.touched">
+                  Veuillez sélectionner au moins un rôle
+                </div>
+              </div>
+
+              <!-- Statut du compte -->
+              <div class="form-group">
+                <label class="form-label">Statut du compte</label>
+                <div class="form-check-wrapper">
+                  <label class="toggle-switch">
+                    <input type="checkbox" formControlName="isEnabled" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <span class="permission-text">Compte actif</span>
+                </div>
+                <div class="form-help">Les utilisateurs inactifs ne pourront pas se connecter</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Boutons d'action -->
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" (click)="onReset()">
+              <i class="fas fa-undo"></i> Réinitialiser
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid">
+              <i class="fas fa-save"></i> Enregistrer
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
+
+    <div class="footer">
+      <div>©2025 AutoWash, Tous droit reservé.</div>
+      <div>Crée par <a href="https://www.linkedin.com/in/afferyauxencedelorschabehou/">Affery Auxence Delors
+          CHABEHOU</a></div>
+    </div>
+  </div>
 </body>
+
 </html>

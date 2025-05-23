@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, catchError, throwError, tap } from 'rxjs';
 import { Users } from '../../models/Users/Users';
 
+
 @Injectable({
   providedIn: 'root'
 })
@@ -11,6 +12,17 @@ export class UsersService {
   private baseUrl = 'https://localhost:7139/api/User';
 
   constructor(private http: HttpClient) { }
+
+  /**
+   * 1.1 Enregistrement d'un nouvel utilisateur avec photo.
+   * @param formData - Les données du formulaire contenant les informations de l'utilisateur et la photo.
+   * @returns Un Observable contenant l'utilisateur enregistré.
+   */
+  registerUserWithPhoto(formData: FormData): Observable<Users> {
+    return this.http.post<Users>(`${this.baseUrl}/with-photo`, formData).pipe(
+      catchError(this.handleError)
+    );
+  }
 
   /**
    * 1. Enregistrement d'un nouvel utilisateur.

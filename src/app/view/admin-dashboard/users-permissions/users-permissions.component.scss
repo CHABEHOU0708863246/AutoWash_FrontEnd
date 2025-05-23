@@ -21,7 +21,7 @@ body {
   position: fixed; /* Position fixe pour rester ancrée à gauche */
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.05); /* Ombre subtile pour la profondeur */
   z-index: 1000; /* Assure que la barre reste au-dessus du contenu */
-  transition: all 0.3s ease; /* Animation fluide pour les transformations */
+  transition: all 2s ease;
 }
 
 /* État de la barre latérale lorsqu'elle est repliée */
@@ -83,7 +83,7 @@ body {
   align-items: center; /* Alignement vertical */
   color: #555; /* Couleur de texte par défaut */
   text-decoration: none; /* Suppression du soulignement des liens */
-  transition: all 0.3s; /* Animation fluide pour les interactions */
+  transition: all 9s; /* Animation fluide pour les interactions */
 }
 
 .nav-item:hover,
@@ -814,3 +814,418 @@ body {
             color: #b2bac3;
             pointer-events: none;
         }
+
+
+
+        /* En-tête des permissions */
+.permissions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(0, 184, 255, 0.15);
+}
+
+.permissions-title h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2a3f5f;
+  margin-bottom: 6px;
+  background: linear-gradient(135deg, #00b8ff 0%, #0070e0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-fill-color: transparent;
+}
+
+.permissions-title p {
+  font-size: 15px;
+  color: #637381;
+}
+
+.permissions-actions {
+  display: flex;
+  gap: 12px;
+}
+
+/* Boutons d'action */
+.btn-save, .btn-reset {
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.btn-save {
+  background: linear-gradient(135deg, #00b8ff 0%, #0070e0 100%);
+  color: white;
+}
+
+.btn-save:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 184, 255, 0.3);
+}
+
+.btn-reset {
+  background: white;
+  color: #505a64;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.btn-reset:hover {
+  background-color: #f8f9fa;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Sélecteur de rôles */
+.roles-selector {
+  display: flex;
+  gap: 15px;
+  overflow-x: auto;
+  padding: 5px 0 20px 0;
+  margin-bottom: 25px;
+  -ms-overflow-style: none;  /* IE et Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.roles-selector::-webkit-scrollbar {
+  display: none; /* Chrome, Safari et Opera */
+}
+
+.role-card {
+  min-width: 180px;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid transparent;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.role-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 6px;
+  height: 100%;
+  background: transparent;
+  transition: all 0.3s ease;
+}
+
+.role-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px rgba(0, 0, 0, 0.08);
+}
+
+.role-card.active {
+  border-color: rgba(0, 184, 255, 0.3);
+  background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%);
+}
+
+.role-card.active::before {
+  background: linear-gradient(to bottom, #00b8ff, #0070e0);
+}
+
+.role-icon {
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 184, 255, 0.1);
+  border-radius: 10px;
+  margin-right: 12px;
+  color: #00b8ff;
+  font-size: 18px;
+  transition: all 0.3s ease;
+}
+
+.role-card:hover .role-icon {
+  transform: scale(1.05);
+}
+
+.role-card.active .role-icon {
+  background: linear-gradient(135deg, #00b8ff 0%, #0070e0 100%);
+  color: white;
+  box-shadow: 0 5px 10px rgba(0, 184, 255, 0.25);
+}
+
+.role-info h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2a3f5f;
+  margin-bottom: 3px;
+}
+
+.role-count {
+  font-size: 12px;
+  color: #637381;
+}
+
+.add-role {
+  background: rgba(0, 184, 255, 0.05);
+  border-style: dashed;
+  border-width: 2px;
+  border-color: rgba(0, 184, 255, 0.2);
+}
+
+.add-role .role-icon {
+  background: rgba(0, 184, 255, 0.08);
+}
+
+.add-role:hover {
+  background: rgba(0, 184, 255, 0.08);
+}
+
+/* Container des permissions */
+.permissions-container {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 20px;
+}
+
+/* Groupes de permissions */
+.permission-group {
+  background: white;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  animation: scaleIn 0.4s ease-out;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+}
+
+.permission-group:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 184, 255, 0.1);
+}
+
+.permission-group-header {
+  padding: 18px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f0f4f7;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fcff 100%);
+}
+
+.permission-group-title {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2a3f5f;
+}
+
+.permission-group-title i {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 184, 255, 0.1);
+  color: #00b8ff;
+  border-radius: 8px;
+  margin-right: 12px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.permission-group:hover .permission-group-title i {
+  background: rgba(0, 184, 255, 0.15);
+  transform: scale(1.05);
+}
+
+/* Liste des permissions */
+.permission-list {
+  padding: 10px 0;
+}
+
+.permission-item {
+  padding: 15px 20px;
+  display: flex;
+  align-items: flex-start;
+  transition: background-color 0.2s;
+  position: relative;
+  border-left: 3px solid transparent;
+}
+
+.permission-item:hover {
+  background-color: rgba(0, 184, 255, 0.03);
+  border-left-color: rgba(0, 184, 255, 0.3);
+}
+
+/* Toggle switches */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 50px;
+  height: 26px;
+  margin-right: 15px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #e7ebf0;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 20px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+input:checked + .toggle-slider {
+  background: linear-gradient(135deg, #00b8ff 0%, #0070e0 100%);
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+.toggle-slider:hover:before {
+  box-shadow: 0 0 8px rgba(0, 184, 255, 0.5);
+}
+
+/* Toggle master */
+.master-toggle {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: #637381;
+}
+
+.master-toggle .toggle-slider {
+  width: 42px;
+  height: 22px;
+}
+
+.master-toggle .toggle-slider:before {
+  height: 16px;
+  width: 16px;
+}
+
+input:checked + .toggle-slider + .toggle-label {
+  color: #00b8ff;
+}
+
+.toggle-label {
+  margin-left: 8px;
+  transition: color 0.3s;
+}
+
+/* Texte des permissions */
+.permission-text {
+  display: flex;
+  flex-direction: column;
+  padding-top: 2px;
+}
+
+.permission-text span {
+  font-size: 15px;
+  font-weight: 500;
+  color: #2a3f5f;
+  margin-bottom: 4px;
+}
+
+.permission-text p {
+  font-size: 13px;
+  color: #637381;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Animation pour les toggles */
+.toggle-slider:before {
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+input:checked + .toggle-slider:before {
+  transform: translateX(24px);
+}
+
+/* État de survol des toggle switches */
+.toggle-switch:hover .toggle-slider {
+  box-shadow: 0 0 0 2px rgba(0, 184, 255, 0.15);
+}
+
+/* Support des écrans mobiles */
+@media (max-width: 768px) {
+  .permissions-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .permissions-container {
+    grid-template-columns: 1fr;
+  }
+
+  .roles-selector {
+    padding-bottom: 10px;
+  }
+
+  .permission-item {
+    padding: 12px 15px;
+  }
+}

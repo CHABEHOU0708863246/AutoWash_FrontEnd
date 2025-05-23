@@ -4,6 +4,8 @@ import { AdminDashboardComponent } from '../../view/admin-dashboard/admin-dashbo
 import { UsersListComponent } from '../../view/admin-dashboard/users-list/users-list.component';
 import { UsersCreateComponent } from '../../view/admin-dashboard/users-create/users-create.component';
 import { UsersPermissionsComponent } from '../../view/admin-dashboard/users-permissions/users-permissions.component';
+import { CentresListComponent } from '../../view/admin-dashboard/centres-list/centres-list.component';
+import { CentresCreateComponent } from '../../view/admin-dashboard/centres-create/centres-create.component';
 
 const routes: Routes = [
   {
@@ -26,6 +28,14 @@ const routes: Routes = [
   {
     path: 'users-permissions',
     component: UsersPermissionsComponent
+  },
+  {
+    path: 'centres-list',
+    component: CentresListComponent
+  },
+  {
+    path: 'centres-create',
+    component: CentresCreateComponent
   },
 ];
 

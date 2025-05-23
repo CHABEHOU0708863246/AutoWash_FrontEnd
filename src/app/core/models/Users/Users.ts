@@ -16,6 +16,9 @@ export class Users {
   residence?: string;
   postalAddress?: string;
   centreId?: string;
+  photoUrl?: string | File;
+  password?: string
+  confirmPassword?: string;
 
   constructor(
     id: string = '',
@@ -34,7 +37,10 @@ export class Users {
     maritalStatus?: string,
     residence?: string,
     postalAddress?: string,
-    centreId?: string
+    centreId?: string,
+    photoUrl?: string,
+    password?: string,
+    confirmPassword?: string
   ) {
     this.id = id;
     this.firstName = firstName;
@@ -53,5 +59,8 @@ export class Users {
     this.residence = residence;
     this.postalAddress = postalAddress;
     this.centreId = centreId;
+    this.photoUrl = photoUrl;
+    this.password = password;
+    this.confirmPassword = confirmPassword;
   }
 }

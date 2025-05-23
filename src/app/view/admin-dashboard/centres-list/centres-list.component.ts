@@ -3,69 +3,81 @@ import { Component } from '@angular/core';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/Auth/auth.service';
-import { UsersService } from '../../../core/services/Users/users.service';
+import { Centres } from '../../../core/models/Centres/Centres';
 import { Users } from '../../../core/models/Users/Users';
+import { CentresService } from '../../../core/services/Centres/centres.service';
+import { ConfirmDialogComponent } from "../../../core/components/confirm-dialog/confirm-dialog.component";
 
 @Component({
-  selector: 'app-users-list',
-  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink],
-  templateUrl: './users-list.component.html',
-  styleUrl: './users-list.component.scss',
+  selector: 'app-centres-list',
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, RouterLink, ConfirmDialogComponent],
+  templateUrl: './centres-list.component.html',
+  styleUrl: './centres-list.component.scss',
 })
-export class UsersListComponent {
-  users: Users[] = []; // Liste complète des utilisateurs.
-  filteredUsers: Users[] = []; // Liste des utilisateurs après filtrage.
-  displayedUsers: Users[] = []; // Liste des utilisateurs affichés sur la page actuelle.
+export class CentresListComponent {
+  centres: Centres[] = []; // Liste complète des centres.
+  filteredCentre: Centres[] = []; // Liste des centres après filtrage.
+  displayedCentre: Centres[] = []; // Liste des centres affichés sur la page actuelle.
 
   currentPage = 1; // Page actuelle.
   itemsPerPage = 5; // Nombre d'éléments par page.
   totalItems = 0; // Nombre total d'éléments après filtrage.
   totalPages = 0; // Nombre total de pages calculées.
 
-  user: Users | null = null; // Informations sur l'utilisateur connecté.
-  searchTerm: string = ''; // Terme de recherche utilisé pour filtrer les utilisateurs.
+  centre: Centres | null = null; // Informations sur le centre connecté.
+  searchTerm: string = ''; // Terme de recherche utilisé pour filtrer les centres.
+
+  isProcessing = false;
+  notification = {
+    show: false,
+    type: 'success' as 'success' | 'error',
+    message: '',
+  };
+
+  currentCentreId: string | undefined;
+showConfirmDialog = false;
 
   constructor(
     private router: Router, // Service pour la navigation entre les routes.
-    private usersService: UsersService, // Service pour interagir avec les utilisateurs.
-    private authService: AuthService // Service pour gérer l'authentification.
+    private authService: AuthService, // Service pour gérer l'authentification.
+    private centreService: CentresService // Service pour interagir avec les centres.
   ) {}
 
   /**
    * Méthode appelée au moment de l'initialisation du composant.
    */
   ngOnInit(): void {
-    this.getUsers(); // Récupère les utilisateurs.
+    this.getCentres(); // Récupère les centres.
   }
 
   /**
    * Filtre les utilisateurs en fonction du terme de recherche.
    */
-  filterUsers(): void {
+  filterCentre(): void {
     if (this.searchTerm) {
-      this.filteredUsers = this.users.filter(
-        (user) =>
-          (user.firstName?.toLowerCase() ?? '').includes(
+      this.filteredCentre = this.centres.filter(
+        (centre) =>
+          (centre.name?.toLowerCase() ?? '').includes(
             this.searchTerm.toLowerCase()
           ) ||
-          user.lastName
+          centre.location
             ?.toLowerCase()
             .includes(this.searchTerm.toLowerCase()) ||
-          user.email?.toLowerCase().includes(this.searchTerm.toLowerCase())
+          centre.name?.toLowerCase().includes(this.searchTerm.toLowerCase())
       );
     } else {
-      this.filteredUsers = this.users;
+      this.filteredCentre = this.centres;
     }
-    this.totalItems = this.filteredUsers.length; // Met à jour le nombre total d'éléments filtrés.
+    this.totalItems = this.filteredCentre.length; // Met à jour le nombre total d'éléments filtrés.
     this.calculateTotalPages(); // Calcule le nombre total de pages.
-    this.updateDisplayedUsers(); // Met à jour les utilisateurs affichés.
+    this.updateDisplayedCentres(); // Met à jour les centres affichés.
   }
 
   /**
    * Exporte les utilisateurs au format Excel.
    */
-  exportUsers(): void {
-    this.usersService.exportUsers('xlsx').subscribe(
+  exportCentre(): void {
+    this.centreService.exportCentres('xlsx').subscribe(
       (response) => {
         const blob = new Blob([response], {
           type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -73,14 +85,14 @@ export class UsersListComponent {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'utilisateurs.xlsx'; // Nom du fichier téléchargé.
+        a.download = 'centres.xlsx'; // Nom du fichier téléchargé.
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
       },
       (error) => {
-        console.error("Erreur lors de l'exportation des utilisateurs", error);
+        console.error("Erreur lors de l'exportation des centres", error);
       }
     );
   }
@@ -89,22 +101,22 @@ export class UsersListComponent {
    * Calcule le nombre total de pages en fonction du nombre d'éléments filtrés.
    */
   calculateTotalPages(): void {
-    this.totalPages = Math.ceil(this.filteredUsers.length / this.itemsPerPage);
+    this.totalPages = Math.ceil(this.filteredCentre.length / this.itemsPerPage);
     if (this.currentPage > this.totalPages) {
       this.currentPage = this.totalPages || 1; // Ajuste la page actuelle si elle dépasse la limite.
     }
   }
 
   /**
-   * Met à jour les utilisateurs affichés sur la page actuelle.
+   * Met à jour les centres affichés sur la page actuelle.
    */
-  updateDisplayedUsers(): void {
+  updateDisplayedCentres(): void {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
     const endIndex = Math.min(
       startIndex + this.itemsPerPage,
-      this.filteredUsers.length
+      this.filteredCentre.length
     );
-    this.displayedUsers = this.filteredUsers.slice(startIndex, endIndex);
+    this.displayedCentre = this.filteredCentre.slice(startIndex, endIndex);
   }
 
   /**
@@ -113,7 +125,7 @@ export class UsersListComponent {
   previousPage(): void {
     if (this.currentPage > 1) {
       this.currentPage--;
-      this.updateDisplayedUsers();
+      this.updateDisplayedCentres();
     }
   }
 
@@ -123,7 +135,7 @@ export class UsersListComponent {
   nextPage(): void {
     if (this.currentPage < this.totalPages) {
       this.currentPage++;
-      this.updateDisplayedUsers();
+      this.updateDisplayedCentres();
     }
   }
 
@@ -141,17 +153,17 @@ export class UsersListComponent {
   applyFilter(): void {
     const start = (this.currentPage - 1) * this.itemsPerPage;
     const end = start + this.itemsPerPage;
-    this.filteredUsers = this.users.slice(start, end);
+    this.filteredCentre = this.centres.slice(start, end);
   }
 
-  getUsers(): void {
-    this.usersService.getAllUsers().subscribe({
+  getCentres(): void {
+    this.centreService.getAllCentres().subscribe({
       next: (data) => {
-        this.users = data;
-        this.filteredUsers = data;
+        this.centres = data;
+        this.filteredCentre = data;
         this.totalItems = data.length;
         this.calculateTotalPages();
-        this.updateDisplayedUsers();
+        this.updateDisplayedCentres();
       },
       error: (error) => {
         console.error('Erreur lors du chargement des utilisateurs', error);
@@ -159,16 +171,62 @@ export class UsersListComponent {
     });
   }
 
-  toggleAccount(user: Users): void {
-    this.usersService.toggleUserAccount(user.id).subscribe(
-      (response) => {
-        user.isEnabled = !user.isEnabled;
-        console.log(`L'état de l'utilisateur ${user.firstName} a été basculé`);
-      },
-      (error) => {
-        console.error("Erreur lors de la bascule de l'utilisateur", error);
-      }
-    );
+  /**
+   * Méthode pour activer un centre
+   * @param centreId - L'identifiant du centre à activer
+   * @param centreData - Les nouvelles données du centre
+   * @returns void
+   * */
+deleteCentre(centreId: string | undefined): void {
+  if (!centreId) {
+    console.error('Tentative de suppression sans ID valide');
+    this.showNotification('error', 'ID du centre manquant');
+    return;
+  }
+
+  this.currentCentreId = centreId;
+  this.showConfirmDialog = true;
+}
+
+onConfirmDelete(): void {
+  if (!this.currentCentreId) return;
+
+  this.isProcessing = true;
+  this.showConfirmDialog = false;
+
+  this.centreService.deleteCentre(this.currentCentreId).subscribe({
+    next: () => {
+      this.isProcessing = false;
+      this.showNotification('success', 'Centre désactivé avec succès');
+      setTimeout(() => {
+        this.getCentres();
+      }, 1500);
+    },
+    error: (error) => {
+      this.isProcessing = false;
+      console.error('Erreur lors de la désactivation', error);
+      this.showNotification('error', error.error?.message || 'Échec de la désactivation');
+    }
+  });
+}
+
+  // Méthode pour afficher les notifications
+  showNotification(type: 'success' | 'error', message: string): void {
+    this.notification = {
+      show: true,
+      type,
+      message,
+    };
+
+    // Masquer automatiquement après 5 secondes
+    setTimeout(() => {
+      this.notification.show = false;
+    }, 5000);
+  }
+
+  // Méthode pour masquer manuellement la notification
+  hideNotification(): void {
+    this.notification.show = false;
   }
 
   /**
@@ -182,7 +240,7 @@ export class UsersListComponent {
         console.log('État du localStorage avant déconnexion:', {
           token: !!this.authService.getToken(),
           userRole: localStorage.getItem('userRole'),
-          profile: localStorage.getItem('currentUserProfile')
+          profile: localStorage.getItem('currentUserProfile'),
         });
 
         // Appel au service de déconnexion
@@ -192,7 +250,7 @@ export class UsersListComponent {
         console.log('État du localStorage après déconnexion:', {
           token: !!this.authService.getToken(),
           userRole: localStorage.getItem('userRole'),
-          profile: localStorage.getItem('currentUserProfile')
+          profile: localStorage.getItem('currentUserProfile'),
         });
 
         // Redirige vers la page de login seulement après confirmation que tout est bien déconnecté
@@ -207,5 +265,6 @@ export class UsersListComponent {
       this.router.navigate(['/auth/login']);
     }
   }
+
 
 }

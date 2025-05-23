@@ -47,9 +47,8 @@
                     <i class="fas fa-chevron-right dropdown-arrow"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-hover">
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-list"></i> Tous les centres</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-plus-circle"></i> Nouveau centre</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-user-tie"></i> Attribution gérants</a></li>
+                    <li><a class="dropdown-item" [routerLink]="['/admin/centres-list']"><i class="fas fa-list"></i> Tous les centres</a></li>
+                    <li><a class="dropdown-item" [routerLink]="['/admin/centres-create']"><i class="fas fa-plus-circle"></i> Nouveau centre</a></li>
                 </ul>
             </div>
 
@@ -154,7 +153,12 @@
                         <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Mon profil</a></li>
                         <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
                         <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
+                        <li>
+                        <a class="dropdown-item" (click)="logout()">
+                          <i class="fas fa-sign-out-alt"></i> Déconnexion
+                        </a>
+                      </li>
+
                     </ul>
                 </div>
             </div>
@@ -170,10 +174,10 @@
                         <button class="btn-action btn-outline">
                             <i class="fas fa-filter btn-icon"></i>Filtrer
                         </button>
-                        <button class="btn-action btn-outline">
+                        <button (click)="exportUsers()" class="btn-action btn-outline">
                             <i class="fas fa-download btn-icon"></i>Exporter
                         </button>
-                        <button class="btn-action btn-primary">
+                        <button [routerLink]="['/admin/users-create']" class="btn-action btn-primary">
                             <i class="fas fa-plus btn-icon"></i>Ajouter un utilisateur
                         </button>
                     </div>
@@ -187,42 +191,34 @@
                             <th>Rôles</th>
                             <th>Email</th>
                             <th>Statut</th>
-
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- Utilisateur 1 -->
                         <tr *ngFor="let user of displayedUsers">
                             <td>
                                 <div class="user-info-cell">
                                     <div>
                                         <div class="user-name">{{ user?.firstName }}</div>
-                                        <div class="user-email"></div>
+                                        <div class="user-img">{{ user?.photoUrl }}</div>
                                     </div>
                                 </div>
                             </td>
                             <td>{{ user?.lastName }}</td>
                             <td>{{ user?.roles }}</td>
                             <td>{{ user?.email }}</td>
-                            <td><span class="status status-active">{{ user?.isEnabled }}</span></td>
-
+                           <td>
+                            <span class="status" [class.status-active]="user?.isEnabled" [class.status-inactive]="!user?.isEnabled">
+                              {{ user?.isEnabled ? 'Actif' : 'Inactif' }}
+                            </span>
+                           </td>
                             <td>
                                 <div class="actions-cell">
-                                    <button class="btn-icon-action btn-view" title="Voir">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
                                     <button (click)="toggleAccount(user)"
-                                        class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200"
-                                        [class.bg-green-500]="user.isEnabled"
-                                        [class.bg-gray-300]="!user.isEnabled"
-                                        class="btn-icon-action btn-edit" title="Status">
-                                        <span
-                                        class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200"
-                                        [class.translate-x-6]="user.isEnabled"
-                                        [class.translate-x-1]="!user.isEnabled"
-                                      ></span>
-                                      <span class="sr-only">{{ user.isEnabled ? 'Désactiver' : 'Activer' }}</span>
-                                      <i class="fa fa-toggle-on"></i>
+                                            class="btn-toggle"
+                                            [class.active]="user.isEnabled"
+                                            title="{{ user.isEnabled ? 'Désactiver' : 'Activer' }}">
+                                        <span class="toggle-thumb"></span>
                                     </button>
                                 </div>
                             </td>
@@ -232,23 +228,17 @@
 
                 <div class="table-pagination">
                     <div class="pagination-info">
-                        Affichage de 1 à 6 sur 24 utilisateurs
+                        Page {{ currentPage }} sur {{ totalPages }} • Nombre d'utilisateurs = {{ totalItems }} utilisateurs
                     </div>
                     <div class="pagination-controls">
-                        <button class="pagination-btn disabled">
+                        <button (click)="previousPage()"
+                                [disabled]="currentPage === 1"
+                                class="pagination-btn">
                             <i class="fas fa-angle-double-left"></i>
                         </button>
-                        <button class="pagination-btn disabled">
-                            <i class="fas fa-angle-left"></i>
-                        </button>
-                        <button class="pagination-btn active">1</button>
-                        <button class="pagination-btn">2</button>
-                        <button class="pagination-btn">3</button>
-                        <button class="pagination-btn">4</button>
-                        <button class="pagination-btn">
-                            <i class="fas fa-angle-right"></i>
-                        </button>
-                        <button class="pagination-btn">
+                        <button (click)="nextPage()"
+                                [disabled]="currentPage === totalPages"
+                                class="pagination-btn">
                             <i class="fas fa-angle-double-right"></i>
                         </button>
                     </div>

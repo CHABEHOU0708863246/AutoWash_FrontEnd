@@ -15,13 +15,17 @@ body {
 
 /* Styles de la barre latérale (sidebar) */
 .sidebar {
-  width: 250px; /* Largeur fixe de la barre latérale */
-  background-color: white; /* Fond blanc pour un aspect propre */
+  width: 250px;
+  background-color: white;
   height: 100vh; /* Hauteur complète de la fenêtre */
-  position: fixed; /* Position fixe pour rester ancrée à gauche */
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.05); /* Ombre subtile pour la profondeur */
-  z-index: 1000; /* Assure que la barre reste au-dessus du contenu */
-  transition: all 0.3s ease; /* Animation fluide pour les transformations */
+  position: fixed;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+  transition: all 2s ease;
+  /* Ajoutez ces propriétés */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* Cache tout ce qui dépasse */
 }
 
 /* État de la barre latérale lorsqu'elle est repliée */
@@ -74,8 +78,29 @@ body {
 
 /* Styles du menu de navigation */
 .nav-menu {
-  padding: 10px 0; /* Espacement vertical */
+  padding: 10px 0;
+  /* Ajoutez ces propriétés */
+  flex-grow: 1; /* Prend tout l'espace disponible */
+  overflow-y: auto; /* Ajoute une scrollbar verticale si nécessaire */
+  overflow-x: hidden; /* Empêche le défilement horizontal */
+  scrollbar-width: thin; /* Pour Firefox */
+  scrollbar-color: #00b8ff #f8f9fa; /* Pour Firefox */
 }
+
+/* Style personnalisé de la scrollbar pour Chrome/Edge/Safari */
+.nav-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.nav-menu::-webkit-scrollbar-track {
+  background: #f8f9fa;
+}
+
+.nav-menu::-webkit-scrollbar-thumb {
+  background-color: #00b8ff;
+  border-radius: 3px;
+}
+
 
 .nav-item {
   padding: 12px 15px; /* Espacement interne */
@@ -83,7 +108,7 @@ body {
   align-items: center; /* Alignement vertical */
   color: #555; /* Couleur de texte par défaut */
   text-decoration: none; /* Suppression du soulignement des liens */
-  transition: all 0.3s; /* Animation fluide pour les interactions */
+  transition: all 9s; /* Animation fluide pour les interactions */
 }
 
 .nav-item:hover,
@@ -336,6 +361,21 @@ body {
     width: 100%; /* Largeur complète */
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // PARTIE AJOUTER

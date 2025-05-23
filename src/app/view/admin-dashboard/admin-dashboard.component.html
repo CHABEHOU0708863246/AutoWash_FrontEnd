@@ -47,9 +47,8 @@
                     <i class="fas fa-chevron-right dropdown-arrow"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-hover">
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-list"></i> Tous les centres</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-plus-circle"></i> Nouveau centre</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fas fa-user-tie"></i> Attribution gérants</a></li>
+                    <li><a class="dropdown-item" [routerLink]="['/admin/centres-list']"><i class="fas fa-list"></i> Tous les centres</a></li>
+                    <li><a class="dropdown-item" [routerLink]="['/admin/centres-create']"><i class="fas fa-plus-circle"></i> Nouveau centre</a></li>
                 </ul>
             </div>
 
@@ -116,6 +115,7 @@
                 <ul class="dropdown-menu dropdown-menu-hover">
                     <li><a class="dropdown-item" href="#"><i class="fas fa-clock"></i> Horaires</a></li>
                     <li><a class="dropdown-item" href="#"><i class="fas fa-list-alt"></i> Types de prestations</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-list-alt"></i> Préférences</a></li>
                 </ul>
             </div>
         </div>
@@ -126,9 +126,6 @@
         <div class="top-bar">
             <div class="menu-toggle" id="menu-toggle">
                 <i class="fas fa-bars"></i>
-            </div>
-            <div class="search-box">
-                <input type="text" placeholder="Faire une recherche">
             </div>
             <div class="top-right">
                 <div class="icon-button">

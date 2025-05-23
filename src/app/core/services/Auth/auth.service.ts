@@ -80,7 +80,7 @@ export class AuthService {
     if (typeof window !== 'undefined' && window.localStorage) {
       localStorage.removeItem(this.tokenKey);
       localStorage.removeItem('userRole');
-      localStorage.removeItem('currentUserProfile'); // Ajout de la suppression du profil
+      localStorage.removeItem('currentUserProfile');
     }
   }
 

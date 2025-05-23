@@ -1,0 +1,280 @@
+<html lang="fr">
+
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet">
+</head>
+
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fas fa-hashtag"></i> AUTOWASH
+    </div>
+    <div class="user-profile">
+      <img
+        src="https://media.licdn.com/dms/image/v2/D4E03AQFl4HpioZZvhQ/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1722776592369?e=1752105600&v=beta&t=rO8ASWATTrkWn2YaWXch8SnDzwUcyCtDkcAJsdEQ2n4"
+        alt="User Profile">
+      <div class="user-info">
+        <h4>Afffery Auxence Delors CHABEHOU<span class="status-indicator"></span></h4>
+        <p>Administrateur</p>
+      </div>
+    </div>
+    <div class="nav-menu">
+      <!-- Dashboard -->
+      <div class="dropdown dropdown-hover">
+        <a class="nav-item active" [routerLink]="['/admin/dashboard']" data-mdb-dropdown-init>
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
+
+      <!-- Gestion des Utilisateurs -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-users-cog"></i>
+          <span>Utilisateurs</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-list']"><i class="fas fa-list"></i> Liste des
+              utilisateurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-create']"><i class="fas fa-user-plus"></i> Ajouter
+              un utilisateur</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-permissions']"><i class="fas fa-user-shield"></i>
+              Permissions</a></li>
+        </ul>
+      </div>
+
+      <!-- Centres de Lavage -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fa-solid fa-car"></i>
+          <span>Centres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-list']"><i class="fas fa-list"></i> Tous les
+              centres</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-create']"><i class="fas fa-plus-circle"></i>
+              Nouveau centre</a></li>
+        </ul>
+      </div>
+
+      <!-- Statistiques & Rapports -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-chart-pie"></i>
+          <span>Statistiques</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-day"></i> Journalier</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-week"></i> Hebdomadaire</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-calendar-alt"></i> Mensuel</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-file-export"></i> Exports</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-balance-scale"></i> Comparaison</a></li>
+        </ul>
+      </div>
+
+      <!-- Tarification -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-tags"></i>
+          <span>Tarification</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" href="#"><i class="fas fa-car"></i> Par véhicule</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-concierge-bell"></i> Par prestation</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-percentage"></i> Remises</a></li>
+        </ul>
+      </div>
+
+      <!-- Dépenses -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-file-invoice-dollar"></i>
+          <span>Dépenses</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" href="#"><i class="fas fa-tint"></i> Eau/Électricité</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-shopping-basket"></i> Produits</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-home"></i> Loyer</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-chart-line"></i> Rentabilité</a></li>
+        </ul>
+      </div>
+
+      <!-- Journal d'Activité -->
+      <div class="dropdown dropdown-hover">
+        <a class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-clipboard-list"></i>
+          <span>Journal d'activité</span>
+        </a>
+      </div>
+
+      <!-- Paramètres -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-cogs"></i>
+          <span>Paramètres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" href="#"><i class="fas fa-clock"></i> Horaires</a></li>
+          <li><a class="dropdown-item" href="#"><i class="fas fa-list-alt"></i> Types de prestations</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" id="main-content">
+    <div class="top-bar">
+      <div class="menu-toggle" id="menu-toggle">
+        <i class="fas fa-bars"></i>
+      </div>
+      <div class="top-right">
+        <div class="icon-button">
+          <i class="fas fa-envelope"></i>
+        </div>
+        <div class="icon-button">
+          <i class="fas fa-bell"></i>
+          <span class="badge">3</span>
+        </div>
+        <div class="dropdown dropdown-hover">
+          <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
+            <img src="https://via.placeholder.com/32" alt="User">
+            <span>Affery Auxence Delors CHABEHOU</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
+            <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Mon profil</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
+            <li><a class="dropdown-item" (click)="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="blank-page">
+        <!-- Formulaire de création d'un centre -->
+        <form class="form-wrapper" [formGroup]="centreForm" (ngSubmit)="onSubmit()">
+          <!-- Section Informations personnelles -->
+          <div class="form-section">
+            <div class="section-title">
+              <h2><i class="fas fa-user"></i> Informations du centre</h2>
+            </div>
+
+            <div class="form-grid">
+
+              <!-- Nom -->
+              <div class="form-group">
+                <label class="form-label">Nom de centre <span class="required">*</span></label>
+                <input type="text" class="form-control" placeholder="Entrez le nom" formControlName="name">
+                <i class="fas fa-user form-icon"></i>
+                <div class="form-error" *ngIf="centreForm.get('name')?.invalid && centreForm.get('name')?.touched">
+                  Le nom est obligatoire
+                </div>
+              </div>
+
+              <!-- Localisation -->
+              <div class="form-group">
+                <label class="form-label">Precision sur la localisation <span class="required">*</span></label>
+                <input type="text" class="form-control" placeholder="Entrez la localisation exacte"
+                  formControlName="location">
+                <i class="fas fa-user form-icon"></i>
+                <div class="form-error"
+                  *ngIf="centreForm.get('location')?.invalid && centreForm.get('location')?.touched">
+                  La localisation est obligatoire
+                </div>
+              </div>
+
+              <!-- Gérant du centre  -->
+              <div class="form-group custom-select">
+                <label class="form-label">Gérant <span class="required">*</span></label>
+                <select class="form-control" formControlName="ownerId" (change)="onManagerChange($event)"
+                  [compareWith]="compareManagers">
+                  <option value="">Sélectionnez un gérant</option>
+                  <option *ngFor="let manager of managers" [value]="manager.id">
+                    {{ manager.firstName || '' }} {{ manager.lastName || manager.email }}
+                  </option>
+                </select>
+                <i class="fas fa-chevron-down select-icon"></i>
+                <div class="form-error"
+                  *ngIf="centreForm.get('ownerId')?.invalid && centreForm.get('ownerId')?.touched">
+                  Le gérant est obligatoire
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Informations du centre -->
+          <div class="form-section">
+            <div class="section-title">
+              <h2><i class="fas fa-lock"></i> Informations de centre</h2>
+            </div>
+
+            <div class="form-grid">
+
+              <!-- Statut du centre -->
+              <div class="form-group">
+                <label class="form-label">Statut du centre</label>
+                <div class="form-check-wrapper">
+                  <label class="toggle-switch">
+                    <input type="checkbox" formControlName="isActive" [checked]="centreForm.get('isActive')?.value">
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <span class="permission-text">Centre actif</span>
+                </div>
+              </div>
+
+              <!-- Champ ownerName caché pour debug -->
+              <div class="form-group" style="display: none;">
+                <input type="text" formControlName="ownerName" readonly>
+              </div>
+            </div>
+          </div>
+
+          <!-- Boutons d'action -->
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" (click)="onReset()">
+              <i class="fas fa-undo"></i> Réinitialiser
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="centreForm.invalid || isSubmitting">
+              <i class="fas fa-save"></i>
+              <span *ngIf="!isSubmitting">Enregistrer</span>
+              <span *ngIf="isSubmitting">Enregistrement...</span>
+            </button>
+          </div>
+
+          <!-- Overlay de chargement -->
+          <div class="loading-overlay" *ngIf="isSubmitting">
+            <div class="spinner"></div>
+            <p>Création du centre en cours...</p>
+          </div>
+
+          <!-- Notification élégante -->
+          <div class="notification" *ngIf="notification.show" [class.success]="notification.type === 'success'"
+               [class.error]="notification.type === 'error'">
+            {{ notification.message }}
+            <button (click)="hideNotification()" class="close-btn">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>©2025 AutoWash, Tous droit reservé.</div>
+      <div>Crée par <a href="https://www.linkedin.com/in/afferyauxencedelorschabehou/">Affery Auxence Delors
+          CHABEHOU</a></div>
+    </div>
+  </div>
+</body>
+
+</html>
