@@ -97,7 +97,7 @@ export class LoginComponent implements OnInit {
     const roleRoutes: Record<string, string> = {
       'admin': '/admin/dashboard',
       'manager': '/manager/dashboard',
-      'employee': '/employee/dashboard',
+      'washer': '/washer/dashboard',
       'client': '/client/dashboard',
       'default': '/'
     };

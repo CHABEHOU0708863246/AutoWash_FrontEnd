@@ -20,5 +20,21 @@ export const routes: Routes = [
       requiredRoles: ['admin'],
     },
   },
+  {
+    path: 'manager',
+    loadChildren: () => import('./features/manager/manager.module').then((m) => m.ManagerModule),
+    canActivate: [authGuard],
+    data: {
+      requiredRoles: ['manager'],
+    },
+  },
+  {
+    path: 'washer',
+    loadChildren: () => import('./features/washer/washer.module').then((m) => m.WasherModule),
+    canActivate: [authGuard],
+    data: {
+      requiredRoles: ['washer'],
+    },
+  },
   { path: '**', component: NotFoundComponent },
 ];

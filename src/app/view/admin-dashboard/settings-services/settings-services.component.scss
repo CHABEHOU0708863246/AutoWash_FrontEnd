@@ -1,0 +1,1500 @@
+/* Réinitialisation des styles par défaut pour une cohérence entre navigateurs */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Styles de base du corps de la page */
+body {
+  display: flex;
+  /* Utilisation de Flexbox pour organiser la disposition */
+  background-color: #f3f6f9;
+  /* Couleur de fond claire pour le corps */
+  overflow-x: hidden;
+  /* Empêche le défilement horizontal */
+}
+
+/* Styles de la barre latérale (sidebar) */
+.sidebar {
+  width: 250px;
+  background-color: white;
+  height: 100vh;
+  /* Hauteur complète de la fenêtre */
+  position: fixed;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+  z-index: 1000;
+  transition: all 1s ease;
+  /* Ajoutez ces propriétés */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* Cache tout ce qui dépasse */
+}
+
+/* État de la barre latérale lorsqu'elle est repliée */
+.sidebar.collapsed {
+  transform: translateX(-250px);
+  /* Déplace la barre hors de l'écran */
+}
+
+/* Styles du logo dans la barre latérale */
+.logo {
+  padding: 20px;
+  /* Espacement interne */
+  font-size: 24px;
+  /* Taille de police pour le logo */
+  font-weight: bold;
+  /* Texte en gras */
+  color: #00b8ff;
+  /* Couleur bleu vif pour le logo */
+  border-bottom: 1px solid #eee;
+  /* Ligne de séparation en bas */
+}
+
+/* Styles du profil utilisateur dans la barre latérale */
+.user-profile {
+  padding: 15px 20px;
+  /* Espacement interne */
+  display: flex;
+  /* Disposition flexible pour aligner les éléments */
+  align-items: center;
+  /* Alignement vertical des éléments */
+  border-bottom: 1px solid #eee;
+  /* Ligne de séparation en bas */
+}
+
+.user-profile img {
+  width: 40px;
+  /* Taille de l'image de profil */
+  height: 40px;
+  border-radius: 50%;
+  /* Image circulaire */
+  margin-right: 10px;
+  /* Marge à droite pour l'espacement */
+}
+
+.user-info h4 {
+  font-size: 16px;
+  /* Taille du nom de l'utilisateur */
+  margin-bottom: 2px;
+  /* Marge en bas pour séparation */
+}
+
+.user-info p {
+  font-size: 14px;
+  /* Taille du texte secondaire */
+  color: #888;
+  /* Couleur grise pour le texte moins important */
+}
+
+.status-indicator {
+  width: 8px;
+  /* Taille de l'indicateur de statut */
+  height: 8px;
+  background-color: #10c469;
+  /* Couleur verte pour indiquer un statut actif */
+  border-radius: 50%;
+  /* Forme circulaire */
+  display: inline-block;
+  margin-left: 5px;
+  /* Espacement à gauche */
+}
+
+/* Styles du menu de navigation */
+.nav-menu {
+  padding: 10px 0;
+  /* Ajoutez ces propriétés */
+  flex-grow: 1;
+  /* Prend tout l'espace disponible */
+  overflow-y: auto;
+  /* Ajoute une scrollbar verticale si nécessaire */
+  overflow-x: hidden;
+  /* Empêche le défilement horizontal */
+  scrollbar-width: thin;
+  /* Pour Firefox */
+  scrollbar-color: #00b8ff #f8f9fa;
+  /* Pour Firefox */
+}
+
+/* Style personnalisé de la scrollbar pour Chrome/Edge/Safari */
+.nav-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.nav-menu::-webkit-scrollbar-track {
+  background: #f8f9fa;
+}
+
+.nav-menu::-webkit-scrollbar-thumb {
+  background-color: #00b8ff;
+  border-radius: 3px;
+}
+
+
+.nav-item {
+  padding: 12px 15px;
+  /* Espacement interne */
+  display: flex;
+  /* Disposition flexible pour aligner icône et texte */
+  align-items: center;
+  /* Alignement vertical */
+  color: #555;
+  /* Couleur de texte par défaut */
+  text-decoration: none;
+  /* Suppression du soulignement des liens */
+  transition: all 1s;
+  /* Animation fluide pour les interactions */
+}
+
+.nav-item:hover,
+.nav-item.active {
+  background-color: #f8f9fa;
+  /* Fond clair au survol ou si actif */
+  color: #00b8ff;
+  /* Couleur bleu vif pour indiquer l'interaction */
+}
+
+.nav-item i {
+  margin-right: 10px;
+  /* Espacement entre icône et texte */
+  font-size: 18px;
+  /* Taille de l'icône */
+  width: 20px;
+  /* Largeur fixe pour l'alignement */
+  text-align: center;
+  /* Centrage de l'icône */
+}
+
+/* Styles du bouton de menu déroulant */
+.dropdown-toggle {
+  display: flex;
+  /* Disposition flexible */
+  justify-content: space-between;
+  /* Espacement entre éléments */
+  align-items: center;
+  /* Alignement vertical */
+  width: 100%;
+  /* Prend toute la largeur */
+  cursor: pointer;
+  /* Curseur indiquant un élément cliquable */
+}
+
+
+
+.dropdown-menu a {
+  padding: 10px 20px 10px 0;
+  /* Espacement interne */
+  display: block;
+  /* Chaque lien prend toute la largeur */
+  color: #555;
+  /* Couleur de texte par défaut */
+  text-decoration: none;
+  /* Pas de soulignement */
+  font-size: 14px;
+  /* Taille de police */
+  transition: color 1s;
+  /* Animation fluide pour le survol */
+}
+
+.dropdown-menu a:hover {
+  color: #00b8ff;
+  /* Couleur bleu vif au survol */
+}
+
+/* Styles du contenu principal */
+.main-content {
+  margin-left: 250px;
+  /* Espace pour la barre latérale */
+  width: calc(100% - 250px);
+  /* Largeur ajustée */
+  min-height: 100vh;
+  /* Hauteur minimale de la fenêtre */
+  transition: all 1s ease;
+  /* Animation fluide pour les changements */
+}
+
+.main-content.expanded {
+  margin-left: 0;
+  /* Aucun décalage si la barre est repliée */
+  width: 100%;
+  /* Prend toute la largeur */
+}
+
+/* Styles de la barre supérieure */
+.top-bar {
+  background-color: white;
+  /* Fond blanc */
+  padding: 15px 25px;
+  /* Espacement interne */
+  display: flex;
+  /* Disposition flexible */
+  justify-content: space-between;
+  /* Espacement entre éléments */
+  align-items: center;
+  /* Alignement vertical */
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
+  /* Ombre subtile */
+}
+
+/* Styles du bouton de bascule du menu */
+.menu-toggle {
+  font-size: 22px;
+  /* Taille de l'icône */
+  color: #555;
+  /* Couleur par défaut */
+  cursor: pointer;
+  /* Curseur cliquable */
+  transition: color 9s;
+  /* Animation fluide */
+}
+
+.menu-toggle:hover {
+  color: #00b8ff;
+  /* Couleur bleu vif au survol */
+}
+
+/* Styles de la boîte de recherche */
+.search-box {
+  flex-grow: 1;
+  /* Prend l'espace disponible */
+  margin: 0 25px;
+  /* Marges latérales */
+}
+
+.search-box input {
+  width: 100%;
+  /* Prend toute la largeur */
+  max-width: 400px;
+  /* Largeur maximale */
+  padding: 8px 15px;
+  /* Espacement interne */
+  border: 1px solid #eee;
+  /* Bordure légère */
+  border-radius: 5px;
+  /* Coins arrondis */
+  outline: none;
+  /* Pas de contour par défaut */
+  transition: border-color 0.3s;
+  /* Animation pour la bordure */
+}
+
+.search-box input:focus {
+  border-color: #00b8ff;
+  /* Bordure bleue lorsqu'actif */
+}
+
+/* Styles des éléments à droite de la barre supérieure */
+.top-right {
+  display: flex;
+  /* Disposition flexible */
+  align-items: center;
+  /* Alignement vertical */
+  margin-left: auto;
+  /* Espace à gauche pour pousser à droite */
+  margin-right: 20px;
+  /* Espacement à droite */
+  font-size: 15px;
+  /* Taille de police */
+}
+
+/* Styles des boutons d'icônes */
+.icon-button {
+  position: relative;
+  /* Positionnement relatif pour le badge */
+  font-size: 18px;
+  /* Taille de l'icône */
+  color: #555;
+  /* Couleur par défaut */
+  margin-left: 20px;
+  /* Espacement à gauche */
+  cursor: pointer;
+  /* Curseur cliquable */
+  transition: color 0.3s;
+  /* Animation fluide */
+  padding: 10px;
+  /* Espacement interne */
+  border-radius: 50%;
+  /* Coins arrondis pour un effet circulaire */
+  background-color: #f8f9fa;
+  /* Fond clair */
+}
+
+.icon-button:hover {
+  color: #00b8ff;
+  /* Couleur bleu vif au survol */
+}
+
+.icon-button .badge {
+  position: absolute;
+  /* Positionnement absolu pour le badge */
+  top: -5px;
+  /* Décalage vers le haut */
+  right: -5px;
+  /* Décalage vers la droite */
+  background-color: #f53;
+  /* Couleur rouge pour le badge */
+  color: white;
+  /* Texte blanc */
+  border-radius: 50%;
+  /* Forme circulaire */
+  width: 16px;
+  /* Taille du badge */
+  height: 16px;
+  font-size: 10px;
+  /* Taille du texte */
+  display: flex;
+  /* Centrage du contenu */
+  align-items: center;
+  justify-content: center;
+}
+
+/* Styles du menu déroulant de l'utilisateur */
+.user-dropdown {
+  display: flex;
+  /* Disposition flexible */
+  align-items: center;
+  /* Alignement vertical */
+  margin-left: 20px;
+  /* Espacement à gauche */
+  cursor: pointer;
+  /* Curseur cliquable */
+  position: relative;
+  /* Positionnement relatif pour le menu */
+  padding: 10px;
+  /* Espacement interne */
+  border-radius: 5px;
+  /* Coins arrondis */
+  background-color: #f8f9fa;
+  /* Fond clair */
+  transition: background-color 0.3s;
+  /* Animation pour le survol */
+}
+
+.user-dropdown img {
+  width: 32px;
+  /* Taille de l'image */
+  height: 32px;
+  border-radius: 50%;
+  /* Image circulaire */
+  margin-right: 8px;
+  /* Espacement à droite */
+}
+
+.user-dropdown span {
+  font-weight: 500;
+  /* Texte semi-gras */
+}
+
+.user-dropdown i {
+  margin-left: 5px;
+  /* Espacement à gauche */
+  font-size: 12px;
+  /* Taille de l'icône */
+  transition: transform 0.3s;
+  /* Animation pour la rotation */
+}
+
+.user-dropdown.active i {
+  transform: rotate(180deg);
+  /* Rotation de l'icône lorsqu'activée */
+}
+
+.user-dropdown-menu {
+  position: absolute;
+  /* Positionnement absolu */
+  top: 40px;
+  /* Décalage sous l'élément */
+  right: 0;
+  /* Aligné à droite */
+  background-color: white;
+  /* Fond blanc */
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+  /* Ombre subtile */
+  border-radius: 5px;
+  /* Coins arrondis */
+  width: 180px;
+  /* Largeur fixe */
+  display: none;
+  /* Caché par défaut */
+  z-index: 1000;
+  /* Au-dessus des autres éléments */
+}
+
+.user-dropdown-menu.show {
+  display: block;
+  /* Affiché lorsqu'activé */
+}
+
+.user-dropdown-menu a {
+  display: block;
+  /* Chaque lien prend toute la largeur */
+  padding: 10px 15px;
+  /* Espacement interne */
+  color: #555;
+  /* Couleur de texte */
+  text-decoration: none;
+  /* Pas de soulignement */
+  transition: background-color 0.3s;
+  /* Animation pour le survol */
+}
+
+.user-dropdown-menu a:hover {
+  background-color: #f8f9fa;
+  /* Fond clair au survol */
+  color: #00b8ff;
+  /* Couleur bleu vif */
+}
+
+.user-dropdown-menu a i {
+  margin-right: 10px;
+  /* Espacement entre icône et texte */
+  width: 15px;
+  /* Largeur fixe pour alignement */
+}
+
+/* Styles du contenu de la page */
+.page-content {
+  padding: 25px;
+  /* Espacement interne */
+  display: flex;
+  /* Disposition flexible */
+  flex-direction: column;
+  /* Organisation en colonne */
+  align-items: center;
+  /* Centrage horizontal */
+  justify-content: center;
+  /* Centrage vertical */
+  min-height: calc(100vh - 130px);
+  /* Hauteur minimale ajustée */
+}
+
+.blank-page {
+  text-align: center;
+  /* Texte centré */
+  font-size: 32px;
+  /* Grande taille de police */
+  font-weight: bold;
+  /* Texte en gras */
+  color: #333;
+  /* Couleur sombre */
+}
+
+/* Styles du pied de page */
+.footer {
+  background-color: white;
+  /* Fond blanc */
+  padding: 15px 25px;
+  /* Espacement interne */
+  display: flex;
+  /* Disposition flexible */
+  justify-content: space-between;
+  /* Espacement entre éléments */
+  color: #666;
+  /* Couleur de texte */
+  font-size: 14px;
+  /* Taille de police */
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  /* Ombre en haut */
+  width: 100%;
+  /* Largeur complète */
+}
+
+.footer a {
+  color: #00b8ff;
+  /* Couleur bleu vif pour les liens */
+  text-decoration: none;
+  /* Pas de soulignement */
+}
+
+/* Ajustements pour la responsivité */
+@media (max-width: 992px) {
+  .sidebar {
+    transform: translateX(-250px);
+    /* Barre latérale cachée par défaut */
+  }
+
+  .sidebar.mobile-shown {
+    transform: translateX(0);
+    /* Affichée sur mobile si activée */
+  }
+
+  .main-content {
+    margin-left: 0;
+    /* Pas de décalage */
+    width: 100%;
+    /* Largeur complète */
+  }
+}
+
+
+
+.service-category {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background-color: #f0f0f0;
+  color: #333;
+
+  // Styles spécifiques par catégorie
+  &.basic { background-color: #e3f2fd; color: #0d47a1; }
+  &.premium { background-color: #e8f5e9; color: #2e7d32; }
+  &.interior { background-color: #fff3e0; color: #e65100; }
+  &.exterior { background-color: #f3e5f5; color: #6a1b9a; }
+  &.special { background-color: #ffebee; color: #c62828; }
+  &.maintenance { background-color: #e0f7fa; color: #00838f; }
+}
+
+
+
+
+
+
+
+
+// PARTIE AJOUTER
+
+/* Ajouts/modifications pour les dropdowns avec design premium */
+.dropdown-hover {
+  width: 100%;
+  position: relative;
+
+  .nav-item {
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    color: #3a3a3a;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    border-radius: 8px;
+    margin-bottom: 2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+    &:hover,
+    &.active {
+      background: linear-gradient(135deg, #f2f9fd 0%, #e6f7ff 100%);
+      color: #0099e5;
+      box-shadow: 0 4px 12px rgba(0, 184, 255, 0.15);
+      transform: translateY(-1px);
+    }
+
+    &.active {
+      border-left: 3px solid #0099e5;
+    }
+
+    i:first-child {
+      margin-right: 12px;
+      font-size: 18px;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      background: rgba(0, 184, 255, 0.08);
+      border-radius: 6px;
+      padding: 4px;
+      color: #0099e5;
+      transition: all 0.3s ease;
+    }
+
+    .dropdown-arrow {
+      margin-left: auto;
+      font-size: 14px;
+      transition: transform 0.4s;
+      opacity: 0.7;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(248, 249, 250, 0.8);
+      border-radius: 50%;
+    }
+  }
+
+  .dropdown-menu {
+    width: 100%;
+    border: none;
+    background-color: #ffffff;
+    margin-top: 2px;
+    border-radius: 8px;
+    padding: 6px;
+    overflow: hidden;
+    opacity: 1;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08), 0 3px 6px rgba(0, 0, 0, 0.04);
+    animation: fadeIn 0.3s ease-in-out;
+
+    .dropdown-item {
+      padding: 12px 15px 12px 54px;
+      display: flex;
+      align-items: center;
+      border-radius: 6px;
+      margin-bottom: 2px;
+      position: relative;
+      font-weight: 400;
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: 42px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background-color: #dce5f0;
+        transition: all 0.3s ease;
+      }
+
+      i {
+        margin-right: 12px;
+        width: 18px;
+        text-align: center;
+        color: #5c7080;
+        transition: all 0.3s ease;
+      }
+
+      &:hover {
+        background-color: rgba(0, 184, 255, 0.08);
+        color: #0099e5;
+        transform: translateX(3px);
+
+        i {
+          color: #0099e5;
+        }
+
+        &::before {
+          background-color: #0099e5;
+          width: 7px;
+          height: 7px;
+        }
+      }
+
+      &.active {
+        background-color: rgba(0, 184, 255, 0.12);
+        color: #0099e5;
+        font-weight: 500;
+
+        &::before {
+          background-color: #0099e5;
+        }
+      }
+    }
+  }
+
+  &:hover {
+    .dropdown-menu {
+      display: block;
+    }
+
+    .nav-item .dropdown-arrow {
+      transform: rotate(90deg);
+      background: rgba(0, 184, 255, 0.12);
+    }
+  }
+}
+
+/* Adaptation du menu utilisateur en haut à droite avec design premium */
+.top-right .dropdown-hover {
+  width: auto;
+
+  .user-dropdown {
+    display: flex;
+    align-items: center;
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: none;
+    padding: 8px 14px;
+    color: #3a3a3a;
+    border-radius: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+      transform: translateY(-1px);
+    }
+
+    img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      margin-right: 10px;
+      border: 2px solid #ffffff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      object-fit: cover;
+    }
+
+    .user-info {
+      display: flex;
+      flex-direction: column;
+      margin-right: 8px;
+
+      .user-name {
+        font-weight: 600;
+        font-size: 14px;
+      }
+
+      .user-role {
+        font-size: 11px;
+        color: #0099e5;
+        font-weight: 500;
+      }
+    }
+
+    i {
+      margin-left: 5px;
+      font-size: 12px;
+      background: rgba(0, 184, 255, 0.08);
+      padding: 4px;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+  }
+
+  .dropdown-menu {
+    width: 260px;
+    right: 0;
+    left: auto;
+    background-color: white;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.06);
+    border-radius: 12px;
+    padding: 12px 8px;
+    margin-top: 12px;
+    opacity: 1;
+    animation: scaleIn 0.25s ease-out;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      right: 20px;
+      width: 16px;
+      height: 16px;
+      background-color: white;
+      transform: rotate(45deg);
+      box-shadow: -2px -2px 5px rgba(0, 0, 0, 0.04);
+    }
+
+    .dropdown-header {
+      padding: 10px 16px;
+      border-bottom: 1px solid #f0f4f7;
+      margin-bottom: 8px;
+
+      .header-title {
+        font-weight: 600;
+        color: #3a3a3a;
+        font-size: 15px;
+      }
+    }
+
+    .dropdown-item {
+      padding: 10px 16px;
+      margin: 4px 6px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      transition: all 0.25s ease;
+
+      i {
+        margin-right: 12px;
+        font-size: 16px;
+        width: 30px;
+        height: 30px;
+        background: rgba(240, 244, 247, 0.8);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #5c7080;
+        transition: all 0.3s ease;
+      }
+
+      &:hover {
+        background-color: rgba(0, 184, 255, 0.08);
+        color: #0099e5;
+        transform: translateX(2px);
+
+        i {
+          background: rgba(0, 184, 255, 0.15);
+          color: #0099e5;
+        }
+      }
+
+      &.danger {
+        color: #e74c3c;
+
+        i {
+          color: #e74c3c;
+          background: rgba(231, 76, 60, 0.08);
+        }
+
+        &:hover {
+          background-color: rgba(231, 76, 60, 0.08);
+        }
+      }
+    }
+  }
+
+  &:hover .user-dropdown i {
+    transform: rotate(180deg);
+    background: rgba(0, 184, 255, 0.15);
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+
+
+/* Compatibilité navigateurs */
+@supports (-webkit-backdrop-filter: none) or (backdrop-filter: none) {
+  .top-right .dropdown-hover .dropdown-menu {
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.95);
+  }
+}
+
+
+
+/* Styles pour le formulaire de paramètres des prestations */
+.page-content {
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.header-section {
+  width: 100%;
+  max-width: 1000px;
+  margin-bottom: 30px;
+  text-align: center;
+
+  h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: #2a3f5f;
+    margin-bottom: 8px;
+    position: relative;
+
+    &::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      bottom: -10px;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 4px;
+      background: linear-gradient(90deg, #00b8ff, #0070e0);
+      border-radius: 2px;
+    }
+  }
+
+  .subtitle {
+    color: #778ca3;
+    font-size: 16px;
+    margin-top: 15px;
+  }
+}
+
+/* Messages d'alerte */
+.messages {
+  width: 100%;
+  max-width: 1000px;
+  margin-bottom: 20px;
+}
+
+.alert {
+  padding: 15px 20px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 15px;
+  font-weight: 500;
+  animation: slideInDown 0.3s ease-out;
+
+  i {
+    margin-right: 10px;
+    font-size: 18px;
+  }
+
+  .btn-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+
+  &.alert-danger {
+    background-color: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+
+    i {
+      color: #dc2626;
+    }
+  }
+
+  &.alert-success {
+    background-color: #f0fdf4;
+    color: #16a34a;
+    border: 1px solid #bbf7d0;
+
+    i {
+      color: #16a34a;
+    }
+  }
+}
+
+/* Sections principales */
+.form-section,
+.services-section {
+  width: 100%;
+  max-width: 1000px;
+  margin-bottom: 30px;
+}
+
+/* Cartes */
+.card {
+  background-color: white;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  position: relative;
+  animation: fadeIn 0.5s ease-out;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 6px;
+    background: linear-gradient(90deg, #00b8ff, #0070e0);
+  }
+}
+
+.card-header {
+  padding: 25px 30px 20px;
+  border-bottom: 1px solid #eef2f7;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h3 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #2a3f5f;
+    margin: 0;
+    display: flex;
+    align-items: center;
+
+    &::before {
+      content: '\f013'; // FontAwesome cog icon
+      font-family: 'Font Awesome 5 Free';
+      font-weight: 900;
+      margin-right: 12px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(0, 184, 255, 0.1);
+      color: #00b8ff;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+  }
+
+  .badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+
+    &.badge-info {
+      background-color: #e1f5fe;
+      color: #0277bd;
+    }
+  }
+}
+
+.card-body {
+  padding: 30px;
+}
+
+/* Formulaire */
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 20px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.form-group {
+  margin-bottom: 20px;
+
+  label {
+    display: block;
+    margin-bottom: 8px;
+    color: #2a3f5f;
+    font-weight: 500;
+    font-size: 14px;
+
+    &::after {
+      content: ' *';
+      color: #f86a6a;
+    }
+
+    &[for="description"]::after {
+      content: '';
+    }
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #e7ebf0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    background-color: #f9fafc;
+
+    &:focus {
+      border-color: #00b8ff;
+      box-shadow: 0 0 0 3px rgba(0, 184, 255, 0.15);
+      background-color: #fff;
+      outline: none;
+    }
+
+    &::placeholder {
+      color: #b2bac3;
+    }
+
+    &.is-invalid {
+      border-color: #f86a6a;
+      background-color: #fff9f9;
+    }
+  }
+
+  textarea.form-control {
+    resize: vertical;
+    min-height: 80px;
+  }
+
+  select.form-control {
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23b2bac3' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 12px center;
+    background-repeat: no-repeat;
+    background-size: 16px;
+    padding-right: 40px;
+    appearance: none;
+  }
+}
+
+.form-check {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+
+  .form-check-input {
+    width: 18px;
+    height: 18px;
+    margin-right: 10px;
+    cursor: pointer;
+    accent-color: #00b8ff;
+  }
+
+  .form-check-label {
+    font-size: 14px;
+    color: #2a3f5f;
+    cursor: pointer;
+    user-select: none;
+  }
+}
+
+.invalid-feedback {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #f86a6a;
+  display: block;
+}
+
+/* Actions du formulaire */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #eef2f7;
+}
+
+/* Boutons */
+.btn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  border: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+
+  i {
+    margin-right: 8px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &.btn-sm {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+
+  &.btn-primary {
+    background: linear-gradient(135deg, #00b8ff 0%, #0070e0 100%);
+    color: white;
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, #00a2e0 0%, #0062c8 100%);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0, 184, 255, 0.2);
+    }
+  }
+
+  &.btn-secondary {
+    background-color: #f4f6f9;
+    color: #505a64;
+
+    &:hover {
+      background-color: #e9ecf1;
+      transform: translateY(-2px);
+    }
+  }
+
+  &.btn-outline-primary {
+    background-color: transparent;
+    color: #00b8ff;
+    border: 1px solid #00b8ff;
+
+    &:hover {
+      background-color: #00b8ff;
+      color: white;
+    }
+  }
+
+  &.btn-outline-success {
+    background-color: transparent;
+    color: #16a34a;
+    border: 1px solid #16a34a;
+
+    &:hover {
+      background-color: #16a34a;
+      color: white;
+    }
+  }
+
+  &.btn-outline-warning {
+    background-color: transparent;
+    color: #f59e0b;
+    border: 1px solid #f59e0b;
+
+    &:hover {
+      background-color: #f59e0b;
+      color: white;
+    }
+  }
+}
+
+/* États de chargement et vide */
+.loading-state,
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #778ca3;
+
+  i {
+    font-size: 48px;
+    margin-bottom: 20px;
+    opacity: 0.5;
+  }
+
+  h4 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #2a3f5f;
+    margin-bottom: 10px;
+  }
+
+  p {
+    font-size: 14px;
+  }
+}
+
+.loading-state i {
+  color: #00b8ff;
+  opacity: 1;
+}
+
+/* Grille des services */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Cartes de service */
+.service-card {
+  background-color: #f9fafc;
+  border: 1px solid #e7ebf0;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    border-color: #00b8ff;
+    box-shadow: 0 8px 25px rgba(0, 184, 255, 0.1);
+    transform: translateY(-2px);
+  }
+}
+
+.service-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
+
+  .service-info {
+    flex: 1;
+
+    h4 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #2a3f5f;
+      margin: 0 0 5px 0;
+    }
+
+    .service-category {
+      display: inline-block;
+      padding: 4px 12px;
+      background-color: rgba(0, 184, 255, 0.1);
+      color: #00b8ff;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      text-transform: uppercase;
+    }
+  }
+
+  .service-status {
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+
+      &.active {
+        background-color: #dcfce7;
+        color: #16a34a;
+      }
+
+      &.inactive {
+        background-color: #fef2f2;
+        color: #dc2626;
+      }
+    }
+  }
+}
+
+.service-body {
+  margin-bottom: 20px;
+
+  .service-description {
+    color: #778ca3;
+    font-size: 14px;
+    margin-bottom: 15px;
+    line-height: 1.5;
+  }
+
+  .service-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 10px;
+
+    .detail-item {
+      display: flex;
+      align-items: center;
+      font-size: 13px;
+      color: #505a64;
+
+      i {
+        margin-right: 6px;
+        color: #00b8ff;
+        width: 14px;
+      }
+    }
+  }
+
+  .approval-required {
+    display: flex;
+    align-items: center;
+    color: #f59e0b;
+    font-size: 13px;
+    font-weight: 500;
+
+    i {
+      margin-right: 6px;
+    }
+  }
+}
+
+.service-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding-top: 15px;
+  border-top: 1px solid #e7ebf0;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 992px) {
+  .page-content {
+    padding: 20px;
+  }
+
+  .card-header,
+  .card-body {
+    padding: 20px;
+  }
+
+  .header-section h1 {
+    font-size: 28px;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-content {
+    padding: 15px;
+  }
+
+  .header-section h1 {
+    font-size: 24px;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .form-actions {
+    justify-content: stretch;
+
+    .btn {
+      flex: 1;
+    }
+  }
+
+  .service-actions {
+    flex-direction: column;
+
+    .btn {
+      width: 100%;
+    }
+  }
+}
+
+
+
+
+
+

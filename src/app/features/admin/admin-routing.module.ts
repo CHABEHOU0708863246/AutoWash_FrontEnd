@@ -6,6 +6,8 @@ import { UsersCreateComponent } from '../../view/admin-dashboard/users-create/us
 import { UsersPermissionsComponent } from '../../view/admin-dashboard/users-permissions/users-permissions.component';
 import { CentresListComponent } from '../../view/admin-dashboard/centres-list/centres-list.component';
 import { CentresCreateComponent } from '../../view/admin-dashboard/centres-create/centres-create.component';
+import { SettingsScheduleComponent } from '../../view/admin-dashboard/settings-schedule/settings-schedule.component';
+import { SettingsServicesComponent } from '../../view/admin-dashboard/settings-services/settings-services.component';
 
 const routes: Routes = [
   {
@@ -36,6 +38,14 @@ const routes: Routes = [
   {
     path: 'centres-create',
     component: CentresCreateComponent
+  },
+  {
+    path: 'settings-schedule',
+    component: SettingsScheduleComponent
+  },
+  {
+    path: 'settings-services',
+    component: SettingsServicesComponent
   },
 ];
 

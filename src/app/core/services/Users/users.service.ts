@@ -3,7 +3,6 @@ import { Injectable } from '@angular/core';
 import { Observable, catchError, throwError, tap } from 'rxjs';
 import { Users } from '../../models/Users/Users';
 
-
 @Injectable({
   providedIn: 'root'
 })
@@ -30,7 +29,9 @@ export class UsersService {
    * @returns Un Observable contenant l'utilisateur enregistré.
    */
   registerUser(userRequest: Users): Observable<Users> {
-    return this.http.post<Users>(`${this.baseUrl}`, userRequest); // Envoie une requête POST pour enregistrer l'utilisateur.
+    return this.http.post<Users>(`${this.baseUrl}`, userRequest).pipe(
+      catchError(this.handleError)
+    );
   }
 
   /**
@@ -49,7 +50,19 @@ export class UsersService {
    * @returns Un Observable contenant l'utilisateur ou null si non trouvé.
    */
   getUserById(id: string): Observable<Users | null> {
-    return this.http.get<Users | null>(`${this.baseUrl}/${id}`); // Envoie une requête GET pour récupérer l'utilisateur par ID.
+    return this.http.get<Users | null>(`${this.baseUrl}/${id}`).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * 3.1 Obtention de l'utilisateur actuellement connecté.
+   * @returns Un Observable contenant l'utilisateur connecté.
+   */
+  getCurrentUser(): Observable<Users> {
+    return this.http.get<Users>(`${this.baseUrl}/current`).pipe(
+      catchError(this.handleError)
+    );
   }
 
   /**
@@ -58,7 +71,9 @@ export class UsersService {
    * @returns Un Observable pour la mise à jour du compte.
    */
   toggleUserAccount(id: string): Observable<any> {
-    return this.http.put<any>(`${this.baseUrl}/${id}`, {}); // Envoie une requête PUT pour activer ou désactiver un compte utilisateur.
+    return this.http.put<any>(`${this.baseUrl}/${id}`, {}).pipe(
+      catchError(this.handleError)
+    );
   }
 
   /**
@@ -67,7 +82,11 @@ export class UsersService {
    * @returns Un Observable contenant le fichier exporté en format Blob.
    */
   exportUsers(fileType: string): Observable<Blob> {
-    return this.http.get<Blob>(`${this.baseUrl}/export-users?fileType=${fileType}`, { responseType: 'blob' as 'json' }); // Récupère le fichier exporté dans le type demandé.
+    return this.http.get(`${this.baseUrl}/export-users?fileType=${fileType}`, {
+      responseType: 'blob'
+    }).pipe(
+      catchError(this.handleError)
+    );
   }
 
   /**
@@ -77,7 +96,9 @@ export class UsersService {
    * @returns Un Observable contenant les utilisateurs paginés.
    */
   getPaginatedUsers(pageNumber: number = 1, pageSize: number = 10): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/paginated?pageNumber=${pageNumber}&pageSize=${pageSize}`); // Récupère les utilisateurs paginés selon les paramètres de la page.
+    return this.http.get<any>(`${this.baseUrl}/paginated?pageNumber=${pageNumber}&pageSize=${pageSize}`).pipe(
+      catchError(this.handleError)
+    );
   }
 
   /**
@@ -103,19 +124,23 @@ export class UsersService {
     );
   }
 
-
-
-
-
-
-  private handleError(error: HttpErrorResponse) {
+  /**
+   * Gestion centralisée des erreurs HTTP.
+   * @param error - L'erreur HTTP reçue.
+   * @returns Un Observable d'erreur avec un message formaté.
+   */
+  private handleError = (error: HttpErrorResponse): Observable<never> => {
     let errorMessage = 'Une erreur est survenue';
+
     if (error.error instanceof ErrorEvent) {
+      // Erreur côté client
       errorMessage = `Erreur: ${error.error.message}`;
     } else {
+      // Erreur côté serveur
       errorMessage = `Code d'erreur: ${error.status}\nMessage: ${error.message}`;
     }
+
     console.error(errorMessage);
-    return throwError(() => errorMessage);
+    return throwError(() => new Error(errorMessage));
   }
 }

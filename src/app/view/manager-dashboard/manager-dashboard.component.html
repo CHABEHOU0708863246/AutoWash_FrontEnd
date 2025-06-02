@@ -1,1 +1,255 @@
-<p>manager-dashboard works!</p>
+<html lang="fr">
+
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet">
+</head>
+
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fas fa-hashtag"></i> AUTOWASH
+    </div>
+    <div class="user-profile">
+      <img
+        src="https://media.licdn.com/dms/image/v2/D4E03AQFl4HpioZZvhQ/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1722776592369?e=1752105600&v=beta&t=rO8ASWATTrkWn2YaWXch8SnDzwUcyCtDkcAJsdEQ2n4"
+        alt="User Profile">
+      <div class="user-info">
+        <h4>Afffery Auxence Delors CHABEHOU<span class="status-indicator"></span></h4>
+        <p>Administrateur</p>
+      </div>
+    </div>
+    <div class="nav-menu">
+      <!-- Dashboard -->
+      <div class="dropdown dropdown-hover">
+        <a class="nav-item active" data-mdb-dropdown-init>
+          <i class="fas fa-tachometer-alt" [routerLink]="['/manager/dashboard']"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
+
+      <!-- Laveurs -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-user-tie"></i>
+          <span>Laveurs</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/manager/washers-list']"><i class="fas fa-list"></i> Liste</a>
+          </li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/washers-schedule']"><i class="fas fa-calendar-alt"></i>
+              Planning</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/washers-attendance']"><i class="fas fa-user-clock"></i>
+              Présences</a></li>
+        </ul>
+      </div>
+
+      <!-- Lavages -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-car-side"></i>
+          <span>Lavages</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/manager/wash-today']"><i class="fas fa-list"></i>
+              Aujourd'hui</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/wash-new']"><i class="fas fa-plus-circle"></i>
+              Nouveau</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/wash-queue']"><i class="fas fa-clock"></i> File
+              d'attente</a></li>
+        </ul>
+      </div>
+
+      <!-- Paiements -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-money-bill-wave"></i>
+          <span>Paiements</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/manager/payments-washers']"><i
+                class="fas fa-hand-holding-usd"></i> Paiements laveurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/payments-customers']"><i
+                class="fas fa-cash-register"></i> Caisse</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/payments-daily']"><i class="fas fa-file-invoice"></i>
+              Journalier</a></li>
+        </ul>
+      </div>
+
+      <!-- Stocks -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-money-bill-wave"></i>
+          <span>Stock</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/manager/stocks-products']"><i
+                class="fas fa-box"></i> Produits</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/stocks-supplies']"><i
+                class="fas fa-tools"></i> Fournitures</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/stocks-equipment']"><i
+                class="fas fa-cogs"></i> Équipements</a></li>
+        </ul>
+      </div>
+
+      <!-- Rapports -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-chart-line"></i>
+          <span>Rapports</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/manager/reports-sales']"><i
+                class="fas fa-chart-bar"></i> Ventes</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/reports-revenue']"><i
+                class="fas fa-chart-pie"></i> Revenus</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/reports-customers']"><i
+                class="fas fa-users"></i> Clients</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" id="main-content">
+    <div class="top-bar">
+      <div class="menu-toggle" id="menu-toggle">
+        <i class="fas fa-bars"></i>
+      </div>
+      <div class="top-right">
+        <div class="icon-button">
+          <i class="fas fa-envelope"></i>
+        </div>
+        <div class="icon-button">
+          <i class="fas fa-bell"></i>
+          <span class="badge">3</span>
+        </div>
+        <div class="dropdown dropdown-hover">
+          <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
+            <img src="https://via.placeholder.com/32" alt="User">
+            <span>Affery Auxence Delors CHABEHOU</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
+            <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Mon profil</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
+            <li><a class="dropdown-item" (click)="logout()" ><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <!-- Cartes de statistiques (comme dans l'image) -->
+      <div class="stats-cards">
+        <div class="stat-card">
+          <div class="stat-icon blue">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Today Sale</div>
+            <div class="stat-value">1234 €</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon green">
+            <i class="fas fa-chart-bar"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Total Sale</div>
+            <div class="stat-value">1234 €</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon orange">
+            <i class="fas fa-chart-area"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Today Revenue</div>
+            <div class="stat-value">1234 €</div>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-icon purple">
+            <i class="fas fa-chart-pie"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Total Revenue</div>
+            <div class="stat-value">1234 €</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Graphiques (comme dans l'image) -->
+      <div class="charts-container">
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Worldwide Sales</div>
+            <a href="#" class="chart-action">Show All</a>
+          </div>
+          <div class="chart-content">
+            <!-- Code pour simuler le graphique à barres -->
+            <div
+              style="width:100%; height:100%; background-image: url('/api/placeholder/600/300'); background-size: contain; background-repeat: no-repeat; background-position: center;">
+            </div>
+            <div class="chart-legend">
+              <div class="legend-item">
+                <div class="legend-color" style="background-color: #36a2eb;"></div>
+                <span>USA</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background-color: #67e8f9;"></div>
+                <span>UK</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background-color: #a5f3fc;"></div>
+                <span>AU</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-header">
+            <div class="chart-title">Salse & Revenue</div>
+            <a href="#" class="chart-action">Show All</a>
+          </div>
+          <div class="chart-content">
+            <!-- Code pour simuler le graphique en ligne -->
+            <div
+              style="width:100%; height:100%; background-image: url('/api/placeholder/600/300'); background-size: contain; background-repeat: no-repeat; background-position: center;">
+            </div>
+            <div class="chart-legend">
+              <div class="legend-item">
+                <div class="legend-color" style="background-color: #36a2eb;"></div>
+                <span>Salse</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color" style="background-color: #a5f3fc;"></div>
+                <span>Revenue</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>©2025 AutoWash, Tous droit reservé.</div>
+      <div>Crée par <a href="https://www.linkedin.com/in/afferyauxencedelorschabehou/">Affery Auxence Delors
+          CHABEHOU</a></div>
+    </div>
+  </div>
+</body>
+
+</html>
