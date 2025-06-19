@@ -235,264 +235,223 @@
     </div>
 
     <div class="page-content">
-      <div class="header-section">
-        <h1>Paramètres des Prestations</h1>
-        <p class="subtitle">Gérez les services proposés par votre centre</p>
-      </div>
-
-      <!-- Messages d'erreur et de succès -->
-      <div class="messages" *ngIf="errorMessage || successMessage">
-        <div class="alert alert-danger" *ngIf="errorMessage" role="alert">
-          <i class="fas fa-exclamation-triangle"></i>
-          {{ errorMessage }}
-          <button type="button" class="btn-close" (click)="clearMessages()">×</button>
-        </div>
-        <div class="alert alert-success" *ngIf="successMessage" role="alert">
-          <i class="fas fa-check-circle"></i>
-          {{ successMessage }}
-          <button type="button" class="btn-close" (click)="clearMessages()">×</button>
-        </div>
-      </div>
-
-      <!-- Formulaire de création/modification -->
-      <div class="form-section" id="service-form">
-        <div class="card">
-          <div class="card-header">
-            <h3>{{ isEditing ? 'Modifier la prestation' : 'Nouvelle prestation' }}</h3>
-            <button *ngIf="isEditing" type="button" class="btn btn-secondary btn-sm" (click)="cancelEdit()">
-              <i class="fas fa-times"></i> Annuler
-            </button>
+      <div class="container-fluid">
+        <!-- Header avec titre et bouton d'ajout -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h1 class="h3 mb-0 text-gray-800">Types de véhicules</h1>
+            <p class="mb-0">Configurez les différents types de véhicules acceptés dans vos centres</p>
           </div>
+          <button class="btn btn-primary" (click)="openAddModal()">
+            <i class="fas fa-plus me-2"></i> Ajouter un type
+          </button>
+        </div>
 
-          <div class="card-body">
-            <form [formGroup]="serviceForm" (ngSubmit)="onSubmit()">
-              <!-- Nouveau selectbox pour le centre -->
-              <div class="form-group">
-                <label for="centreId">Centre *</label>
-                <select id="centreId" class="form-control" [class.is-invalid]="hasFieldError('centreId')"
-                  formControlName="centreId" (change)="onCentreChange()">
-                  <option value="" disabled>Sélectionner un centre</option>
-                  <option *ngFor="let centre of centres" [value]="centre.id">
-                    {{ centre.name }}
-                  </option>
-                </select>
-                <div class="invalid-feedback" *ngIf="hasFieldError('centreId')">
-                  {{ getFieldError('centreId') }}
-                </div>
-              </div>
-
-              <div class="form-row">
-                <!-- Nom de la prestation -->
-                <div class="form-group col-md-6">
-                  <label for="name">Nom de la prestation *</label>
-                  <input id="name" type="text" class="form-control" [class.is-invalid]="hasFieldError('name')"
-                    formControlName="name" placeholder="Ex: Lavage extérieur complet">
-                  <div class="invalid-feedback" *ngIf="hasFieldError('name')">
-                    {{ getFieldError('name') }}
-                  </div>
-                </div>
-
-                <!-- Catégorie -->
-                <div class="form-group col-md-6">
-                  <label for="category">Catégorie *</label>
-                  <select id="category" class="form-control" [class.is-invalid]="hasFieldError('category')"
-                    formControlName="category">
-                    <option value="" disabled>Sélectionner une catégorie</option>
-                    <option *ngFor="let category of serviceCategories" [value]="category.value">
-                      {{ category.label }}
-                    </option>
-                  </select>
-                  <div class="invalid-feedback" *ngIf="hasFieldError('category')">
-                    {{ getFieldError('category') }}
-                  </div>
-                </div>
-              </div>
-
-              <!-- Description -->
-              <div class="form-group">
-                <label for="description">Description</label>
-                <textarea id="description" class="form-control" formControlName="description" rows="3"
-                  placeholder="Description détaillée de la prestation..."></textarea>
-              </div>
-
-              <div class="form-row">
-                <!-- Durée estimée -->
-                <div class="form-group">
-                  <label for="duration">Durée estimée</label>
-                  <div class="input-group stylish-input">
-                    <input id="duration" type="number" class="form-control"
-                      [class.is-invalid]="hasFieldError('duration')" formControlName="duration" min="1"
-                      placeholder="30">
-                    <span class="input-group-text">min</span>
-                  </div>
-                  <div class="invalid-feedback" *ngIf="hasFieldError('duration')">
-                    {{ getFieldError('duration') }}
-                  </div>
-                </div>
-
-                <!-- Ordre d'affichage -->
-                <div class="form-group">
-                  <label for="sortOrder">Ordre d'affichage</label>
-                  <input id="sortOrder" type="number" class="form-control stylish-input"
-                    [class.is-invalid]="hasFieldError('sortOrder')" formControlName="sortOrder" min="0" placeholder="0">
-                  <div class="invalid-feedback" *ngIf="hasFieldError('sortOrder')">
-                    {{ getFieldError('sortOrder') }}
-                  </div>
-                </div>
-              </div>
-
-              <!-- Services inclus -->
-              <div class="form-group">
-                <label>Services inclus</label>
-                <div class="included-services-container">
-                  <div *ngFor="let service of availableServices" class="form-check form-check-inline">
-                    <!-- Ajoutez *ngIf pour vérifier service.id -->
-                    <ng-container *ngIf="service.id">
-                      <input class="form-check-input" type="checkbox" [id]="'service-'+service.id" [value]="service.id"
-                        [checked]="isServiceIncluded(service.id)" (change)="toggleIncludedService(service.id)">
-                      <label class="form-check-label" [for]="'service-'+service.id">
-                        {{ service.name }}
-                      </label>
-                    </ng-container>
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-row">
-                <!-- Statut actif -->
-                <div class="form-group">
-                  <div class="form-check form-switch stylish-switch">
-                    <input class="form-check-input" type="checkbox" id="isActive" formControlName="isActive">
-                    <label class="form-check-label" for="isActive">
-                      <i class="fas fa-power-off"></i> Service actif
-                    </label>
-                  </div>
-                </div>
-
-                <!-- Approbation requise -->
-                <div class="form-group">
-                  <div class="form-check form-switch stylish-switch">
-                    <input class="form-check-input" type="checkbox" id="requiresApproval"
-                      formControlName="requiresApproval">
-                    <label class="form-check-label" for="requiresApproval">
-                      <i class="fas fa-user-check"></i> Approbation requise
-                    </label>
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-actions">
-                <button type="submit" class="btn btn-primary" [disabled]="isLoading || serviceForm.invalid">
-                  <i class="fas fa-spinner fa-spin" *ngIf="isLoading"></i>
-                  <i class="fas fa-save" *ngIf="!isLoading"></i>
-                  {{ isEditing ? 'Mettre à jour' : 'Créer la prestation' }}
+        <!-- Carte principale -->
+        <div class="card shadow mb-4">
+          <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">Liste des types de véhicules</h6>
+            <div class="d-flex">
+              <div class="input-group input-group-sm" style="width: 250px;">
+                <input type="text" class="form-control" placeholder="Rechercher..." aria-label="Search"
+                  [(ngModel)]="searchQuery" (input)="onSearch()">
+                <button class="btn btn-outline-primary" type="button" (click)="onSearch()">
+                  <i class="fas fa-search"></i>
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <!-- Liste des prestations -->
-      <div class="services-section">
-        <div class="card">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h3>Prestations existantes</h3>
-            <div>
-              <span class="badge badge-info mr-2">{{ services.length }} prestation(s)</span>
-              <button class="btn btn-sm btn-outline-secondary" (click)="refreshServices()">
-                <i class="fas fa-sync-alt"></i> Actualiser
+              <button class="btn btn-sm btn-outline-secondary ms-2">
+                <i class="fas fa-filter"></i> Filtrer
               </button>
             </div>
           </div>
-
           <div class="card-body">
-            <!-- État de chargement -->
-            <div *ngIf="isLoading && services.length === 0" class="loading-state">
-              <i class="fas fa-spinner fa-spin"></i>
-              Chargement des prestations...
+            <!-- Error Message -->
+            <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+            <!-- Loading Indicator -->
+            <div class="text-center" *ngIf="isLoading">
+              <i class="fas fa-spinner fa-spin"></i> Chargement...
+            </div>
+            <div class="table-responsive" *ngIf="!isLoading">
+              <table class="table table-hover">
+                <thead class="table-light">
+                  <tr>
+                    <th width="50px"></th>
+                    <th>Nom</th>
+                    <th>Catégorie</th>
+                    <th>Multiplicateur</th>
+                    <th>Statut</th>
+                    <th>Ordre</th>
+                    <th width="120px">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let vehicleType of filteredVehicleTypes">
+                    <td>
+                      <div class="vehicle-icon-{{ vehicleType.size.toLowerCase() }}">
+                        <i class="{{ vehicleType.iconUrl || 'fas fa-car' }}"></i>
+                      </div>
+                    </td>
+                    <td>
+                      <strong>{{ vehicleType.name }}</strong>
+                      <p class="text-muted small mb-0">{{ vehicleType.description }}</p>
+                    </td>
+                    <td><span class="badge bg-light text-dark">{{ vehicleType.size }}</span></td>
+                    <td>{{ vehicleType.sizeMultiplier }}x</td>
+                    <td>
+                      <span class="badge" [ngClass]="vehicleType.isActive ? 'bg-success' : 'bg-secondary'">
+                        {{ vehicleType.isActive ? 'Actif' : 'Inactif' }}
+                      </span>
+                    </td>
+                    <td>{{ vehicleType.sortOrder }}</td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-primary" title="Modifier"
+                        (click)="openEditModal(vehicleType)">
+                        <i class="fas fa-pencil-alt"></i>
+                      </button>
+                      <button class="btn btn-sm"
+                        [ngClass]="vehicleType.isActive ? 'btn-outline-danger' : 'btn-outline-success'"
+                        [title]="vehicleType.isActive ? 'Désactiver' : 'Activer'"
+                        (click)="toggleVehicleTypeStatus(vehicleType)">
+                        <i class="{{ vehicleType.isActive ? 'fas fa-ban' : 'fas fa-check' }}"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="filteredVehicleTypes.length === 0">
+                    <td colspan="7" class="text-center">Aucun type de véhicule trouvé</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            <!-- État vide -->
-            <div *ngIf="!isLoading && services.length === 0" class="empty-state">
-              <i class="fas fa-concierge-bell"></i>
-              <h4>Aucune prestation configurée</h4>
-              <p>Commencez par créer votre première prestation de service.</p>
-            </div>
-
-            <!-- Tableau des prestations -->
-            <div *ngIf="services.length > 0">
-              <div class="table-responsive">
-                <table class="table table-hover">
-                  <thead>
-                    <tr>
-                      <th>Nom</th>
-                      <th>Catégorie</th>
-                      <th>Durée</th>
-                      <th>Statut</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let service of services">
-                      <td>
-                        <strong>{{ service.name }}</strong>
-                        <small *ngIf="service.description" class="d-block text-muted">{{ service.description }}</small>
-                      </td>
-                      <td>
-                        <span class="badge" [ngClass]="'badge-' + getCategoryClass(service.category)">
-                          {{ getCategoryLabel(service.category) }}
-                        </span>
-                      </td>
-                      <td>{{ service.estimatedDurationMinutes }} min</td>
-                      <td>
-                        <span class="badge" [ngClass]="service.isActive ? 'badge-success' : 'badge-secondary'">
-                          {{ service.isActive ? 'Actif' : 'Inactif' }}
-                        </span>
-                      </td>
-                      <td>
-                        <div class="btn-group btn-group-sm">
-                          <button class="btn btn-outline-primary" (click)="editService(service)">
-                            <i class="fas fa-edit"></i>
-                          </button>
-                          <button class="btn" [class.btn-outline-success]="!service.isActive"
-                            [class.btn-outline-warning]="service.isActive" (click)="toggleServiceStatus(service)">
-                            <i class="fas" [class.fa-play]="!service.isActive" [class.fa-pause]="service.isActive"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            <!-- Pagination (Placeholder, can be enhanced later) -->
+            <nav aria-label="Page navigation">
+              <ul class="pagination justify-content-end">
+                <li class="page-item disabled">
+                  <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Précédent</a>
+                </li>
+                <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                <li class="page-item"><a class="page-link" href="#">2</a></li>
+                <li class="page-item"><a class="page-link" href="#">3</a></li>
+                <li class="page-item">
+                  <a class="page-link" href="#">Suivant</a>
+                </li>
+              </ul>
+            </nav>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Modal de confirmation de suppression -->
-    <div class="modal fade" id="confirmDeleteModal" tabindex="-1" role="dialog"
-      aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
-      <div class="modal-dialog" role="document">
+    <!-- Modal d'ajout/modification de type de véhicule -->
+    <div class="modal fade" id="addVehicleTypeModal" tabindex="-1" aria-labelledby="addVehicleTypeModalLabel"
+      aria-hidden="true">
+      <div class="modal-dialog modal-lg">
         <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="confirmDeleteModalLabel">Confirmer la suppression</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="addVehicleTypeModalLabel">{{ isEditMode ? 'Modifier le type de véhicule' :
+              'Ajouter un type de véhicule' }}</h5>
+            <button type="button" class="btn-close btn-close-white" data-mdb-dismiss="modal"
+              aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            Êtes-vous sûr de vouloir supprimer la prestation "{{ selectedService?.name }}" ? Cette action est
-            irréversible.
+            <form>
+              <div class="row mb-4">
+                <div class="col-md-6">
+                  <div class="form-outline">
+                    <input type="text" id="vehicleTypeName" class="form-control" [(ngModel)]="vehicleTypeForm.name" />
+                    <label class="form-label" for="vehicleTypeName">Nom du type de véhicule</label>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-outline">
+                    <textarea class="form-control" id="vehicleTypeDescription" rows="1"
+                      [(ngModel)]="vehicleTypeForm.description"></textarea>
+                    <label class="form-label" for="vehicleTypeDescription">Description</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row mb-4">
+                <div class="col-md-4">
+                  <div class="form-outline">
+                    <select class="form-select" id="vehicleSize" [(ngModel)]="vehicleTypeForm.size">
+                      <option *ngFor="let size of vehicleSizes" [value]="size.value">{{ size.label }}</option>
+                    </select>
+                    <label class="form-label" for="vehicleSize">Catégorie de taille</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-outline">
+                    <input type="number" step="0.1" id="sizeMultiplier" class="form-control"
+                      [(ngModel)]="vehicleTypeForm.sizeMultiplier" />
+                    <label class="form-label" for="sizeMultiplier">Multiplicateur de prix</label>
+                  </div>
+                </div>
+                <div class="col-md-4">
+                  <div class="form-outline">
+                    <input type="number" id="sortOrder" class="form-control" [(ngModel)]="vehicleTypeForm.sortOrder" />
+                    <label class="form-label" for="sortOrder">Ordre d'affichage</label>
+                  </div>
+                </div>
+              </div>
+
+              <div class="row mb-4">
+                <div class="col-md-6">
+                  <div class="form-outline">
+                    <input type="text" id="iconUrl" class="form-control" [(ngModel)]="vehicleTypeForm.iconUrl"
+                      readonly />
+                    <label class="form-label" for="iconUrl">URL de l'icône (optionnel)</label>
+                  </div>
+                  <div class="mt-2">
+                    <p class="small text-muted mb-2">Icônes disponibles:</p>
+                    <div class="d-flex flex-wrap gap-2">
+                      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="selectIcon('fas fa-car')">
+                        <i class="fas fa-car me-1"></i> Voiture
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary"
+                        (click)="selectIcon('fas fa-truck')">
+                        <i class="fas fa-truck me-1"></i> Camion
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary"
+                        (click)="selectIcon('fas fa-motorcycle')">
+                        <i class="fas fa-motorcycle me-1"></i> Moto
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="selectIcon('fas fa-bus')">
+                        <i class="fas fa-bus me-1"></i> Bus
+                      </button>
+                      <button type="button" class="btn btn-sm btn-outline-secondary"
+                        (click)="selectIcon('fas fa-truck-pickup')">
+                        <i class="fas fa-truck-pickup me-1"></i> Pickup
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="border p-3 rounded text-center">
+                    <div class="vehicle-icon-preview mb-3">
+                      <i class="{{ vehicleTypeForm.iconUrl || 'fas fa-car' }}"></i>
+                    </div>
+                    <p class="small text-muted mb-0">Aperçu de l'icône</p>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-check form-switch mb-4">
+                <input class="form-check-input" type="checkbox" id="isActive" [(ngModel)]="vehicleTypeForm.isActive" />
+                <label class="form-check-label" for="isActive">Type de véhicule actif</label>
+              </div>
+            </form>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-            <button type="button" class="btn btn-danger" (click)="deleteService()">Supprimer</button>
+            <button type="button" class="btn btn-secondary" data-mdb-dismiss="modal">Annuler</button>
+            <button type="button" class="btn btn-primary" (click)="saveVehicleType()" [disabled]="isLoading">
+              {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
+            </button>
           </div>
         </div>
       </div>
     </div>
+
 
     <div class="footer">
       <div>©2025 AutoWash, Tous droit reservé.</div>

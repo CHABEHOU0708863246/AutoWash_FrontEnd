@@ -8,6 +8,7 @@ import { CentresListComponent } from '../../view/admin-dashboard/centres-list/ce
 import { CentresCreateComponent } from '../../view/admin-dashboard/centres-create/centres-create.component';
 import { SettingsScheduleComponent } from '../../view/admin-dashboard/settings-schedule/settings-schedule.component';
 import { SettingsServicesComponent } from '../../view/admin-dashboard/settings-services/settings-services.component';
+import { SettingsVehiclesComponent } from '../../view/admin-dashboard/settings-vehicles/settings-vehicles.component';
 
 const routes: Routes = [
   {
@@ -47,6 +48,12 @@ const routes: Routes = [
     path: 'settings-services',
     component: SettingsServicesComponent
   },
+  {
+    path: 'settings-vehicles',
+    component: SettingsVehiclesComponent
+  },
+
+
 ];
 
 @NgModule({

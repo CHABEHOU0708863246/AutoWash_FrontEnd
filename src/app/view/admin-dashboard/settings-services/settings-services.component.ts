@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/Auth/auth.service';
 import { CommonModule } from '@angular/common';
 import {
@@ -8,9 +8,15 @@ import {
   FormBuilder,
   Validators,
 } from '@angular/forms';
-import { ServiceSetting } from '../../../core/models/Settings/ServiceSetting';
+import {
+  ServiceCategory,
+  ServiceSetting,
+} from '../../../core/models/Settings/ServiceSetting';
 import { SettingsService } from '../../../core/services/Settings/settings.service';
-import { UsersService } from '../../../core/services/Users/users.service';
+import { CentresService } from '../../../core/services/Centres/centres.service';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { Centres } from '../../../core/models/Centres/Centres';
+import { ConfirmDialogComponent } from '../../../core/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-settings-services',
@@ -19,372 +25,170 @@ import { UsersService } from '../../../core/services/Users/users.service';
   styleUrl: './settings-services.component.scss',
 })
 export class SettingsServicesComponent implements OnInit {
+  serviceForm: FormGroup;
   services: ServiceSetting[] = [];
-  serviceForm!: FormGroup;
-  isLoading = false;
+  centres: Centres[] = [];
+  availableServices: ServiceSetting[] = [];
+  selectedService: ServiceSetting | null = null;
   isEditing = false;
-  editingServiceId: string | null = null;
-  errorMessage = '';
-  successMessage = '';
-  // Par cette logique:
-  _centreId = '';
+  isLoading = false;
+  errorMessage: string | null = null;
+  successMessage: string | null = null;
 
-get centreId(): string {
-  return this._centreId;
-}
-
-set centreId(value: string) {
-  this._centreId = value;
-  if (value) {
-    localStorage.setItem('selectedCentreId', value);
-  }
-}
-
-/**
- * méthode pour initialiser automatiquement l'ID du centre
- */
- async initializeCentreId(): Promise<string> {
-  try {
-    // Stratégie 1: Paramètre d'URL (priorité haute)
-    const urlCentreId = this.route.snapshot.paramMap.get('centreId');
-    if (urlCentreId) {
-      console.log("Centre ID récupéré depuis l'URL:", urlCentreId);
-      return urlCentreId;
-    }
-
-    // Stratégie 2: Query parameter
-    const queryCentreId = this.route.snapshot.queryParamMap.get('centreId');
-    if (queryCentreId) {
-      console.log('Centre ID récupéré depuis les query params:', queryCentreId);
-      return queryCentreId;
-    }
-
-    // Stratégie 3: Token JWT (priorité moyenne)
-    const tokenCentreId = this.getCentreIdFromToken();
-    if (tokenCentreId) {
-      console.log('Centre ID récupéré depuis le token:', tokenCentreId);
-      return tokenCentreId;
-    }
-
-    // Stratégie 4: Utilisateur connecté
-    const userCentreId = await this.getCentreIdFromCurrentUser();
-    if (userCentreId) {
-      console.log("Centre ID récupéré depuis l'utilisateur connecté:", userCentreId);
-      return userCentreId;
-    }
-
-    // Stratégie 5: Local Storage (priorité basse)
-    const storageCentreId = this.getCentreIdFromStorage();
-    if (storageCentreId) {
-      console.log('Centre ID récupéré depuis le storage:', storageCentreId);
-      return storageCentreId;
-    }
-
-    throw new Error("Aucun ID de centre trouvé");
-
-  } catch (error) {
-    console.error('Erreur lors de la récupération du centre ID:', error);
-    throw error;
-  }
-}
+serviceCategories = [
+  { value: ServiceCategory.Basic, label: 'Basique' },
+  { value: ServiceCategory.Premium, label: 'Premium' },
+  { value: ServiceCategory.Interior, label: 'Intérieur' },
+  { value: ServiceCategory.Exterior, label: 'Extérieur' },
+  { value: ServiceCategory.Special, label: 'Spécial' },
+  { value: ServiceCategory.Maintenance, label: 'Maintenance' }
+];
 
   constructor(
-    private router: Router,
-    private route: ActivatedRoute, // Ajout pour récupérer les paramètres d'URL
-    private authService: AuthService,
+    private fb: FormBuilder,
     private settingsService: SettingsService,
-    private usersService: UsersService, // Ajout pour récupérer l'utilisateur actuel
-    private formBuilder: FormBuilder
+    private centreService: CentresService,
+    private modalService: NgbModal,
+    private router: Router,
+    private authService: AuthService
   ) {
-   this.initializeForm();
-  // Initialisation automatique de l'ID du centre
-  this.initializeCentreId()
-    .then(id => {
-      this.centreId = id;
-      console.log('Centre ID initialisé:', id);
-    })
-    .catch(error => {
-      this.errorMessage = "Impossible de récupérer l'identifiant du centre";
-      console.error('Échec de l\'initialisation du centre ID:', error);
-    });
-}
-
-  getCategoryLabel(categoryValue: number | string): string {
-    // Si c'est déjà une string, retournez-la directement
-    if (typeof categoryValue === 'string') return categoryValue;
-
-    // Sinon, faites le mapping avec les valeurs numériques
-    switch (categoryValue) {
-      case 0:
-        return 'Lavage simple';
-      case 1:
-        return 'Lavage complet';
-      case 2:
-        return 'Intérieur uniquement';
-      case 3:
-        return 'Extérieur uniquement';
-      case 4:
-        return 'Services spéciaux';
-      case 5:
-        return 'Entretien';
-      default:
-        return 'Autre';
-    }
-  }
-
-  categories = [
-    { value: 0, label: 'Lavage simple' },
-    { value: 1, label: 'Lavage complet' },
-    { value: 2, label: 'Intérieur uniquement' },
-    { value: 3, label: 'Extérieur uniquement' },
-    { value: 4, label: 'Services spéciaux' },
-    { value: 5, label: 'Entretien' },
-  ];
-
-  getCategoryClass(categoryValue: number | string): string {
-    if (typeof categoryValue === 'string') return categoryValue.toLowerCase();
-
-    switch (categoryValue) {
-      case 0:
-        return 'basic';
-      case 1:
-        return 'premium';
-      case 2:
-        return 'interior';
-      case 3:
-        return 'exterior';
-      case 4:
-        return 'special';
-      case 5:
-        return 'maintenance';
-      default:
-        return 'other';
-    }
-  }
-
-  async ngOnInit(): Promise<void> {
-  // Si l'ID n'est pas encore défini, attendez qu'il soit initialisé
-  if (!this.centreId) {
-    try {
-      const id = await this.initializeCentreId();
-      this.centreId = id;
-    } catch (error) {
-      this.errorMessage = "Impossible de récupérer l'identifiant du centre";
-      return;
-    }
-  }
-
-  if (this.centreId) {
-    this.loadServices();
-  }
-}
-
-  /**
-   * Initialise le formulaire pour créer/modifier une prestation
-   */
-  initializeForm(): void {
-    this.serviceForm = this.formBuilder.group({
-      name: ['', [Validators.required, Validators.minLength(2)]],
-      description: [''],
+    this.serviceForm = this.fb.group({
+      centreId: ['', Validators.required],
+      name: ['', [Validators.required, Validators.maxLength(100)]],
+      category: [0, Validators.required],
+      description: ['', Validators.maxLength(500)],
+      duration: [30, [Validators.required, Validators.min(1)]],
+      sortOrder: [0, [Validators.required, Validators.min(0)]],
       isActive: [true],
-      estimatedDurationMinutes: [30, [Validators.required, Validators.min(1)]],
-      includedServices: [['NON']], // Valeur par défaut comme dans votre exemple
-      category: [0, Validators.required], // Valeur numérique
-      sortOrder: [1000, [Validators.required, Validators.min(0)]],
-      iconUrl: [''],
       requiresApproval: [false],
+      includedServices: [[]],
     });
   }
 
-  /**
-   * Récupère dynamiquement l'ID du centre selon plusieurs stratégies
-   */
-  async getCentreId(): Promise<void> {
-    try {
-      // Stratégie 1: Paramètre d'URL
-      this.centreId = this.route.snapshot.paramMap.get('centreId') || '';
+  ngOnInit(): void {
+    this.loadCentres();
+  }
 
-      if (this.centreId) {
-        console.log("Centre ID récupéré depuis l'URL:", this.centreId);
-        return;
-      }
+  loadCentres(): void {
+    this.isLoading = true;
+    this.centreService.getAllCentres().subscribe({
+      next: (centres) => {
+        this.centres = centres;
+        this.isLoading = false;
+        if (centres.length > 0 && centres[0].id) {
+          this.serviceForm.patchValue({ centreId: centres[0].id });
+          this.loadServices(centres[0].id);
+        }
+      },
+      error: () => {
+        this.showError('Erreur lors du chargement des centres');
+        this.isLoading = false;
+      },
+    });
+  }
 
-      // Stratégie 2: Query parameter
-      this.centreId = this.route.snapshot.queryParamMap.get('centreId') || '';
+  onCentreChange(): void {
+    const centreId = this.serviceForm.get('centreId')?.value;
+    if (centreId) {
+      this.loadServices(centreId);
+    }
+  }
 
-      if (this.centreId) {
-        console.log(
-          'Centre ID récupéré depuis les query params:',
-          this.centreId
+  loadServices(centreId: string): void {
+    this.isLoading = true;
+    this.settingsService.getServices(centreId).subscribe({
+      next: (services) => {
+        this.services = services;
+        this.availableServices = services.filter(
+          (s) => s.id !== this.selectedService?.id
         );
-        return;
-      }
-
-      // Stratégie 3: Utilisateur connecté
-      this.centreId = await this.getCentreIdFromCurrentUser();
-
-      if (this.centreId) {
-        console.log(
-          "Centre ID récupéré depuis l'utilisateur connecté:",
-          this.centreId
-        );
-        return;
-      }
-
-      // Stratégie 4: Token JWT
-      this.centreId = this.getCentreIdFromToken();
-
-      if (this.centreId) {
-        console.log('Centre ID récupéré depuis le token:', this.centreId);
-        return;
-      }
-
-      // Stratégie 5: Local Storage
-      this.centreId = this.getCentreIdFromStorage();
-
-      if (this.centreId) {
-        console.log('Centre ID récupéré depuis le storage:', this.centreId);
-        return;
-      }
-
-      // Aucune stratégie n'a fonctionné
-      this.errorMessage = "Impossible de récupérer l'identifiant du centre";
-      console.error('Aucun centre ID trouvé');
-    } catch (error) {
-      console.error('Erreur lors de la récupération du centre ID:', error);
-      this.errorMessage =
-        "Erreur lors de la récupération de l'identifiant du centre";
-    }
+        this.isLoading = false;
+      },
+      error: () => {
+        this.showError('Erreur lors du chargement des prestations');
+        this.isLoading = false;
+      },
+    });
   }
 
-  /**
-   * Récupère l'ID du centre depuis l'utilisateur connecté
-   */
-  async getCentreIdFromCurrentUser(): Promise<string> {
-  try {
-    // Remplacement de toPromise() par firstValueFrom()
-    const { firstValueFrom } = await import('rxjs');
-    const currentUser = await firstValueFrom(this.usersService.getCurrentUser());
-
-    // Interface typée pour éviter any
-    interface UserWithCentre {
-      centreId?: string;
-      centre?: { id: string };
-    }
-
-    const user = currentUser as UserWithCentre;
-    return user?.centreId || user?.centre?.id || '';
-
-  } catch (error) {
-    console.log("Impossible de récupérer l'utilisateur connecté:", error);
-    return '';
-  }
-}
-
-  /**
-   * Récupère l'ID du centre depuis le token JWT
-   */
-  getCentreIdFromToken(): string {
-  try {
-    const token = this.authService.getToken() ||
-                  localStorage.getItem('token') ||
-                  sessionStorage.getItem('token');
-
-    if (!token) return '';
-
-    // Vérification de la structure du token
-    const tokenParts = token.split('.');
-    if (tokenParts.length !== 3) {
-      console.warn('Format de token JWT invalide');
-      return '';
-    }
-
-    const payload = JSON.parse(atob(tokenParts[1]));
-    return payload.centreId || payload.centre_id || payload.center_id || '';
-
-  } catch (error) {
-    console.warn('Erreur lors du décodage du token:', error);
-    return '';
-  }
-}
-
-  /**
-   * Récupère l'ID du centre depuis le stockage local
-   */
-  getCentreIdFromStorage(): string {
-  const possibleKeys = [
-    'selectedCentreId',
-    'centreId',
-    'center_id',
-    'currentCentreId'
-  ];
-
-  for (const key of possibleKeys) {
-    const value = localStorage.getItem(key) || sessionStorage.getItem(key);
-    if (value) {
-      console.log(`Centre ID trouvé dans le storage avec la clé: ${key}`);
-      return value;
-    }
-  }
-
-  return '';
-}
-
-  /**
-   * Charge les services du centre
-   */
-  loadServices(): void {
-    if (!this.centreId) {
-      this.errorMessage = 'ID du centre manquant';
+  onSubmit(): void {
+    if (this.serviceForm.invalid) {
+      this.markAllAsTouched();
       return;
     }
 
     this.isLoading = true;
-    this.settingsService.getServices(this.centreId).subscribe({
-      next: (services) => {
-        this.services = services;
-        this.isLoading = false;
-        this.errorMessage = '';
+    const formValue = this.serviceForm.value;
+    const centreId = formValue.centreId;
+
+    // Vérification plus stricte de centreId
+    if (!centreId) {
+      this.showError('Aucun centre sélectionné');
+      this.isLoading = false;
+      return;
+    }
+
+    const serviceData: ServiceSetting = {
+      id: this.selectedService?.id || '',
+      name: formValue.name || '',
+      category: Number(formValue.category) as ServiceCategory || ServiceCategory.Basic,
+      description: formValue.description || '',
+      estimatedDurationMinutes: formValue.duration || 30,
+      sortOrder: formValue.sortOrder || 0,
+      isActive: formValue.isActive !== false,
+      requiresApproval: formValue.requiresApproval === true,
+      includedServices: this.getIncludedServices() || [],
+      iconUrl: ''
+    };
+
+    // Gestion plus sécurisée de l'édition
+    let observable;
+    if (this.isEditing && this.selectedService?.id) {
+      observable = this.settingsService.updateService(
+        centreId,
+        this.selectedService.id,
+        serviceData
+      );
+    } else {
+      observable = this.settingsService.createService(centreId, serviceData);
+    }
+
+    observable.subscribe({
+      next: () => {
+        this.showSuccess(
+          `Prestation ${this.isEditing ? 'mise à jour' : 'créée'} avec succès`
+        );
+        this.resetForm();
+        this.loadServices(centreId);
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement des services:', error);
-        this.errorMessage = 'Erreur lors du chargement des services';
+      error: (err) => {
+        this.showError(
+          `Erreur lors de ${
+            this.isEditing ? 'la mise à jour' : 'la création'
+          } de la prestation`
+        );
+        console.error("Détails de l'erreur:", err);
         this.isLoading = false;
       },
     });
   }
 
-  /**
-   * Méthode pour changer de centre (utile pour le multi-centres)
-   */
-  switchCentre(newCentreId: string): void {
-  if (!newCentreId) {
-    console.warn('ID de centre invalide');
-    return;
-  }
-
-  this.centreId = newCentreId; // Utilise le setter pour sauvegarder automatiquement
-  this.loadServices();
-  console.log('Centre changé vers:', newCentreId);
-}
-
-  /**
-   * Prépare le formulaire pour l'édition d'une prestation
-   */
   editService(service: ServiceSetting): void {
+    this.selectedService = service;
     this.isEditing = true;
-    this.editingServiceId = service.id || null; // Correction du type
 
     this.serviceForm.patchValue({
       name: service.name,
-      description: service.description,
-      //basePrice: service.basePrice || 0,
-      //duration: service.duration || service.estimatedDurationMinutes,
-      isActive: service.isActive,
       category: service.category,
-      //maxConcurrent: service.maxConcurrent || 1,
+      description: service.description,
+      duration: service.estimatedDurationMinutes,
+      sortOrder: service.sortOrder,
+      isActive: service.isActive,
       requiresApproval: service.requiresApproval,
     });
+
+    // Recharger les services disponibles (exclure le service en cours d'édition)
+    this.availableServices = this.services.filter((s) => s.id !== service.id);
 
     // Scroll vers le formulaire
     document
@@ -392,178 +196,226 @@ set centreId(value: string) {
       ?.scrollIntoView({ behavior: 'smooth' });
   }
 
-  /**
-   * Annule l'édition et remet le formulaire en mode création
-   */
   cancelEdit(): void {
-    this.isEditing = false;
-    this.editingServiceId = null;
-    this.serviceForm.reset();
-    this.initializeForm();
-    this.errorMessage = '';
-    this.successMessage = '';
+    this.resetForm();
   }
 
-  /**
-   * Met à jour un service existant
-   */
-  updateService(service: ServiceSetting): void {
-    if (!this.editingServiceId) {
-      this.errorMessage = 'ID du service manquant pour la mise à jour';
+  toggleServiceStatus(service: ServiceSetting): void {
+    const centreId = this.serviceForm.get('centreId')?.value;
+
+    // Vérification complète des IDs requis
+    if (!centreId || !service.id) {
+      if (!centreId) {
+        this.showError('Aucun centre sélectionné');
+      }
+      if (!service.id) {
+        this.showError("La prestation n'a pas d'identifiant");
+      }
       return;
     }
 
     this.isLoading = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-
-    // Ici vous devrez implémenter la méthode updateService dans votre SettingsService
-    // this.settingsService.updateService(this.centreId, this.editingServiceId, service).subscribe({
-    //   next: (updatedService) => {
-    //     const index = this.services.findIndex(s => s.id === this.editingServiceId);
-    //     if (index !== -1) {
-    //       this.services[index] = updatedService;
-    //     }
-    //     this.successMessage = 'Service mis à jour avec succès';
-    //     this.cancelEdit();
-    //     this.isLoading = false;
-    //   },
-    //   error: (error) => {
-    //     this.errorMessage = `Erreur lors de la mise à jour: ${error.message}`;
-    //     this.isLoading = false;
-    //   }
-    // });
+    this.settingsService.toggleServiceStatus(centreId, service.id).subscribe({
+      next: (isActive) => {
+        service.isActive = isActive;
+        this.showSuccess(`Statut de la prestation mis à jour`);
+        this.isLoading = false;
+      },
+      error: (err) => {
+        this.showError('Erreur lors de la modification du statut');
+        console.error('Erreur détaillée:', err);
+        this.isLoading = false;
+      },
+    });
   }
 
-  /**
-   * Soumet le formulaire (création ou modification)
-   */
-  onSubmit(): void {
-    if (this.serviceForm.invalid) {
-      this.markFormGroupTouched();
-      return;
-    }
+  confirmDelete(service: ServiceSetting): void {
+    this.selectedService = service;
 
-    if (!this.centreId) {
-      this.errorMessage = 'Centre ID manquant';
-      return;
-    }
-
-    this.isLoading = true;
-    this.errorMessage = '';
-    this.successMessage = '';
-
-    const formValue = this.serviceForm.value;
-
-    // Créer l'objet service avec les bonnes propriétés
-    const serviceData = new ServiceSetting({
-      name: formValue.name?.trim(),
-      description: formValue.description?.trim() || '',
-      isActive: formValue.isActive ?? true,
-      estimatedDurationMinutes:
-        formValue.duration || formValue.estimatedDurationMinutes || 30,
-      includedServices: formValue.includedServices || ['NON'],
-      category: Number(formValue.category),
-      sortOrder: formValue.sortOrder || 1000,
-      iconUrl: formValue.iconUrl?.trim() || '',
-      requiresApproval: formValue.requiresApproval ?? false,
-      //basePrice: formValue.basePrice,
-      //duration: formValue.duration,
-      //maxConcurrent: formValue.maxConcurrent
+    const modalRef = this.modalService.open(ConfirmDialogComponent, {
+      centered: true,
     });
 
-    if (this.isEditing && this.editingServiceId) {
-      // Mise à jour
-      serviceData.id = this.editingServiceId;
-      this.updateService(serviceData);
-    } else {
-      // Création
-      console.log('Service à créer:', serviceData);
-      console.log('Centre ID:', this.centreId);
+    // Configuration des inputs
+    modalRef.componentInstance.title = 'Supprimer la prestation';
+    modalRef.componentInstance.message = `Êtes-vous sûr de vouloir supprimer la prestation "${service.name}" ?`;
+    modalRef.componentInstance.details = 'Cette action est irréversible.';
+    modalRef.componentInstance.confirmText = 'Supprimer';
+    modalRef.componentInstance.cancelText = 'Annuler';
 
-      this.settingsService.addService(this.centreId, serviceData).subscribe({
-        next: (newService) => {
-          console.log('Service créé avec succès:', newService);
-          this.services.push(newService);
-          this.successMessage = 'Service créé avec succès';
-          this.serviceForm.reset();
-          this.initializeForm();
-          this.isLoading = false;
+    // Gestion des événements
+    modalRef.componentInstance.confirm.subscribe(() => {
+      this.deleteService();
+      modalRef.close();
+    });
 
-          // Effacer le message de succès après 3 secondes
-          setTimeout(() => (this.successMessage = ''), 3000);
+    modalRef.componentInstance.cancel.subscribe(() => {
+      modalRef.dismiss();
+    });
+  }
+
+  deleteService(): void {
+    // Vérification complète des données requises
+    if (!this.selectedService?.id) {
+      this.showError('Aucune prestation sélectionnée ou ID manquant');
+      return;
+    }
+
+    const centreId = this.serviceForm.get('centreId')?.value;
+    if (!centreId) {
+      this.showError('Aucun centre sélectionné');
+      return;
+    }
+
+    this.isLoading = true;
+    this.settingsService
+      .deleteService(centreId, this.selectedService.id)
+      .subscribe({
+        next: () => {
+          this.showSuccess('Prestation supprimée avec succès');
+          this.loadServices(centreId);
+          this.selectedService = null;
         },
-        error: (error) => {
-          console.error('Erreur lors de la création:', error);
-          this.errorMessage = `Erreur lors de la création: ${error.message}`;
+        error: (err) => {
+          this.showError('Erreur lors de la suppression de la prestation');
+          console.error('Erreur détaillée:', err);
           this.isLoading = false;
         },
       });
+  }
+
+  refreshServices(): void {
+    const centreId = this.serviceForm.get('centreId')?.value;
+    if (centreId) {
+      this.loadServices(centreId);
     }
   }
 
-  /**
-   * Active/désactive une prestation
-   */
-  // toggleServiceStatus(service: ServiceSetting): void {
-  //   const updatedService = { ...service, isActive: !service.isActive };
+  isServiceIncluded(serviceId: string): boolean {
+    return this.selectedService?.includedServices?.includes(serviceId) || false;
+  }
 
-  //   this.settingsService.updateService(this.centreId, service.id, updatedService).subscribe({
-  //     next: (updated) => {
-  //       const index = this.services.findIndex(s => s.id === service.id);
-  //       if (index !== -1) {
-  //         this.services[index] = updated;
-  //       }
-  //     },
-  //     error: (error) => {
-  //       this.errorMessage = 'Erreur lors de la modification du statut: ' + error.message;
-  //     }
-  //   });
-  // }
+  toggleIncludedService(serviceId: string): void {
+    if (!this.selectedService) {
+      this.selectedService = {
+        id: '',
+        includedServices: [],
+      } as unknown as ServiceSetting;
+    }
 
-  /**
-   * Marque tous les champs du formulaire comme touchés pour afficher les erreurs
-   */
-  markFormGroupTouched(): void {
-    Object.keys(this.serviceForm.controls).forEach((key) => {
-      this.serviceForm.get(key)?.markAsTouched();
+    if (!this.selectedService.includedServices) {
+      this.selectedService.includedServices = [];
+    }
+
+    const index = this.selectedService.includedServices.indexOf(serviceId);
+    if (index === -1) {
+      this.selectedService.includedServices.push(serviceId);
+    } else {
+      this.selectedService.includedServices.splice(index, 1);
+    }
+  }
+
+  getIncludedServices(): string[] {
+    return this.selectedService?.includedServices || [];
+  }
+
+  getCategoryLabel(category: ServiceCategory): string {
+    switch (category) {
+      case ServiceCategory.Basic:
+        return 'Basique';
+      case ServiceCategory.Premium:
+        return 'Premium';
+      case ServiceCategory.Interior:
+        return 'Intérieur';
+      case ServiceCategory.Exterior:
+        return 'Extérieur';
+      case ServiceCategory.Special:
+        return 'Spécial';
+      case ServiceCategory.Maintenance:
+        return 'Maintenance';
+      default:
+        return 'Inconnu';
+    }
+  }
+  getCategoryClass(category: ServiceCategory): string {
+    switch (category) {
+      case ServiceCategory.Basic:
+        return 'primary';
+      case ServiceCategory.Premium:
+        return 'warning';
+      case ServiceCategory.Interior:
+        return 'info';
+      case ServiceCategory.Exterior:
+        return 'success';
+      case ServiceCategory.Special:
+        return 'danger';
+      case ServiceCategory.Maintenance:
+        return 'secondary';
+      default:
+        return 'light';
+    }
+  }
+
+  hasFieldError(field: string): boolean {
+    const control = this.serviceForm.get(field);
+    return !!control && control.invalid && (control.dirty || control.touched);
+  }
+
+  getFieldError(field: string): string {
+    const control = this.serviceForm.get(field);
+    if (!control || !control.errors) return '';
+
+    if (control.hasError('required')) {
+      return 'Ce champ est obligatoire';
+    } else if (control.hasError('maxlength')) {
+      return `Maximum ${
+        control.getError('maxlength').requiredLength
+      } caractères`;
+    } else if (control.hasError('min')) {
+      return `La valeur doit être supérieure ou égale à ${
+        control.getError('min').min
+      }`;
+    }
+
+    return 'Valeur invalide';
+  }
+
+  markAllAsTouched(): void {
+    Object.values(this.serviceForm.controls).forEach((control) => {
+      control.markAsTouched();
     });
   }
 
-  /**
-   * Vérifie si un champ du formulaire a une erreur
-   */
-  hasFieldError(fieldName: string): boolean {
-    const field = this.serviceForm.get(fieldName);
-    return !!(field && field.invalid && field.touched);
+  resetForm(): void {
+    this.serviceForm.reset({
+      centreId: this.serviceForm.get('centreId')?.value,
+      name: '',
+      category: '',
+      description: '',
+      basePrice: 0,
+      duration: 30,
+      sortOrder: 0,
+      isActive: true,
+      requiresApproval: false,
+    });
+    this.selectedService = null;
+    this.isEditing = false;
+    this.availableServices = [...this.services];
   }
 
-  /**
-   * Récupère le message d'erreur pour un champ
-   */
-  getFieldError(fieldName: string): string {
-    const field = this.serviceForm.get(fieldName);
-    if (!field || !field.errors) return '';
-
-    if (field.errors['required']) {
-      return 'Ce champ est obligatoire';
-    }
-    if (field.errors['minlength']) {
-      return `Minimum ${field.errors['minlength'].requiredLength} caractères`;
-    }
-    if (field.errors['min']) {
-      return `Valeur minimum: ${field.errors['min'].min}`;
-    }
-
-    return 'Champ invalide';
-  }
-
-  /**
-   * Efface les messages d'erreur et de succès
-   */
   clearMessages(): void {
-    this.errorMessage = '';
-    this.successMessage = '';
+    this.errorMessage = null;
+    this.successMessage = null;
+  }
+
+  showError(message: string): void {
+    this.errorMessage = message;
+    setTimeout(() => this.clearMessages(), 5000);
+  }
+
+  showSuccess(message: string): void {
+    this.successMessage = message;
+    setTimeout(() => this.clearMessages(), 5000);
   }
 
   /**
