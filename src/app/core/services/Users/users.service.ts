@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, catchError, throwError, tap } from 'rxjs';
+import { Observable, catchError, throwError, tap, of } from 'rxjs';
 import { Users } from '../../models/Users/Users';
 
 @Injectable({
@@ -17,11 +17,46 @@ export class UsersService {
    * @param formData - Les données du formulaire contenant les informations de l'utilisateur et la photo.
    * @returns Un Observable contenant l'utilisateur enregistré.
    */
-  registerUserWithPhoto(formData: FormData): Observable<Users> {
-    return this.http.post<Users>(`${this.baseUrl}/with-photo`, formData).pipe(
-      catchError(this.handleError)
-    );
+registerUserWithPhoto(userData: Users, photoFile?: File): Observable<any> {
+  const formData = new FormData();
+
+  // Ajouter toutes les propriétés de l'utilisateur dans FormData
+  Object.keys(userData).forEach(key => {
+    const value = userData[key as keyof Users];
+
+    // Gestion spéciale pour les tableaux et dates
+    if (Array.isArray(value)) {
+      // Pour les rôles, on ajoute chaque élément séparément
+      if (key === 'roles') {
+        value.forEach(role => formData.append('Roles', role));
+      }
+    } else if (value instanceof Date) {
+      formData.append(key, value.toISOString());
+    } else if (value !== undefined && value !== null) {
+      formData.append(key, value.toString());
+    }
+  });
+
+  // *** CORRECTION IMPORTANTE: Ajouter explicitement le password ***
+  if (userData.password) {
+    formData.append('Password', userData.password);
   }
+
+  // Ajouter le fichier photo s'il existe
+  if (photoFile) {
+    formData.append('PhotoFile', photoFile, photoFile.name);
+  }
+
+  // Debug: Afficher le contenu du FormData
+  console.log('FormData contents:');
+  formData.forEach((value, key) => {
+    console.log(`${key}: ${value}`);
+  });
+
+  return this.http.post(`${this.baseUrl}`, formData).pipe(
+    catchError(this.handleError)
+  );
+}
 
   /**
    * 1. Enregistrement d'un nouvel utilisateur.
@@ -43,6 +78,19 @@ export class UsersService {
       catchError(this.handleError)
     );
   }
+
+  /**
+   * 2.1 Obtention de la photo d'un utilisateur.
+   * @param photoId - L'ID de la photo ou un objet File.
+   * @returns Un Observable contenant la photo sous forme de Blob.
+   */
+  getUserPhoto(photoId: string): Observable<Blob> {
+  return this.http.get(`${this.baseUrl}/photo/${photoId}`, {
+    responseType: 'blob'
+  }).pipe(
+    catchError(this.handleError)
+  );
+}
 
   /**
    * 3. Obtention d'un utilisateur par son ID.
@@ -123,6 +171,8 @@ export class UsersService {
       catchError(this.handleError)
     );
   }
+
+
 
   /**
    * Gestion centralisée des erreurs HTTP.

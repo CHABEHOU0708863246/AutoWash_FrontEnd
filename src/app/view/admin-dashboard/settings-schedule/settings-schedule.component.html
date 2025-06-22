@@ -11,13 +11,17 @@
     <div class="logo">
       <i class="fas fa-hashtag"></i> AUTOWASH
     </div>
-    <div class="user-profile">
-      <img
-        src="https://media.licdn.com/dms/image/v2/D4E03AQFl4HpioZZvhQ/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1722776592369?e=1752105600&v=beta&t=rO8ASWATTrkWn2YaWXch8SnDzwUcyCtDkcAJsdEQ2n4"
-        alt="User Profile">
+    <div class="user-profile" *ngIf="currentUser">
+      <div class="user-photo-container">
+        <img *ngIf="currentUser.photoSafeUrl" [src]="currentUser.photoSafeUrl"
+          [alt]="'Photo de ' + (currentUser.firstName || 'Utilisateur')" class="user-avatar">
+        <div *ngIf="!currentUser.photoSafeUrl" class="user-initials">
+          {{ (currentUser.firstName?.charAt(0) || '') + (currentUser.lastName?.charAt(0) || '') }}
+        </div>
+      </div>
       <div class="user-info">
-        <h4>Afffery Auxence Delors CHABEHOU<span class="status-indicator"></span></h4>
-        <p>Administrateur</p>
+        <h4>{{ getFullName() }}</h4>
+        <p>{{ getUserRole() }}</p>
       </div>
     </div>
     <div class="nav-menu">
@@ -220,8 +224,10 @@
         </div>
         <div class="dropdown dropdown-hover">
           <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
-            <img src="https://via.placeholder.com/32" alt="User">
-            <span>Affery Auxence Delors CHABEHOU</span>
+            <!-- Photo sécurisée si elle existe -->
+            <img *ngIf="currentUser?.photoSafeUrl as safeUrl" [src]="safeUrl" alt="User" class="user-avatar">
+            <!-- Nom complet -->
+            <span>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
             <i class="fas fa-chevron-down"></i>
           </button>
           <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
@@ -235,334 +241,403 @@
     </div>
 
     <div class="page-content">
-      <div class="blank-page">
-        <!-- Formulaire de configuration des horaires -->
-        <form class="form-wrapper" [formGroup]="scheduleForm" (ngSubmit)="onSubmit()">
+  <div class="blank-page">
+    <!-- Notification Messages -->
+    <div class="alert alert-success" *ngIf="successMessage">
+      {{ successMessage }}
+      <button type="button" class="btn-close" (click)="successMessage = null"></button>
+    </div>
+    <div class="alert alert-danger" *ngIf="errorMessage">
+      {{ errorMessage }}
+      <button type="button" class="btn-close" (click)="errorMessage = null"></button>
+    </div>
 
-          <!-- Section Horaires de travail -->
-          <div class="form-section">
-            <div class="section-title">
-              <h2><i class="fas fa-clock"></i> Configuration des horaires de travail</h2>
-            </div>
+    <!-- Loading Spinner -->
+    <div class="loading-overlay" *ngIf="isLoading">
+      <div class="spinner"></div>
+      <p>Enregistrement des horaires...</p>
+    </div>
 
-            <div class="form-grid">
-              <!-- Lundi -->
-              <div class="form-group">
-                <label class="form-label">Lundi</label>
-                <div class="time-range-container">
-                  <div class="form-check-wrapper">
-                    <label class="toggle-switch">
-                      <input type="checkbox" formControlName="mondayEnabled">
-                      <span class="toggle-slider"></span>
-                    </label>
-                    <span class="permission-text">Jour de travail</span>
-                  </div>
-                  <div class="time-inputs" *ngIf="scheduleForm.get('mondayEnabled')?.value">
-                    <div class="time-input-group">
-                      <label class="time-label">Ouverture</label>
-                      <input type="time" class="form-control time-input" formControlName="mondayStart">
-                      <i class="fas fa-clock form-icon"></i>
-                    </div>
-                    <div class="time-input-group">
-                      <label class="time-label">Fermeture</label>
-                      <input type="time" class="form-control time-input" formControlName="mondayEnd">
-                      <i class="fas fa-clock form-icon"></i>
-                    </div>
+    <!-- Formulaire de configuration des horaires -->
+    <form class="form-wrapper" [formGroup]="scheduleForm" (ngSubmit)="onSubmit()">
+      <div class="form-section">
+        <div class="section-title">
+          <h2><i class="fas fa-clock"></i> Configuration des horaires de travail</h2>
+          <p class="form-help text-warning">
+            <i class="fas fa-exclamation-triangle"></i> Ces horaires seront appliqués à TOUS les centres.
+          </p>
+        </div>
+
+        <div class="form-grid">
+          <!-- Lundi -->
+          <div class="form-group">
+            <label class="form-label">Lundi</label>
+            <div class="time-range-container">
+              <div class="form-check-wrapper">
+                <label class="toggle-switch">
+                  <input type="checkbox" formControlName="mondayEnabled">
+                  <span class="toggle-slider"></span>
+                </label>
+                <span class="permission-text">Jour de travail</span>
+              </div>
+              <div class="time-inputs" *ngIf="scheduleForm.get('mondayEnabled')?.value">
+                <div class="time-input-group">
+                  <label class="time-label">Ouverture</label>
+                  <input type="time" class="form-control time-input" formControlName="mondayStart">
+                  <i class="fas fa-clock form-icon"></i>
+                  <div class="form-error" *ngIf="scheduleForm.get('mondayStart')?.invalid && scheduleForm.get('mondayStart')?.touched">
+                    Heure d'ouverture invalide
                   </div>
                 </div>
-              </div>
-
-              <!-- Mardi -->
-              <div class="form-group">
-                <label class="form-label">Mardi</label>
-                <div class="time-range-container">
-                  <div class="form-check-wrapper">
-                    <label class="toggle-switch">
-                      <input type="checkbox" formControlName="tuesdayEnabled">
-                      <span class="toggle-slider"></span>
-                    </label>
-                    <span class="permission-text">Jour de travail</span>
+                <div class="time-input-group">
+                  <label class="time-label">Fermeture</label>
+                  <input type="time" class="form-control time-input" formControlName="mondayEnd">
+                  <i class="fas fa-clock form-icon"></i>
+                  <div class="form-error" *ngIf="scheduleForm.get('mondayEnd')?.hasError('invalidTime') && scheduleForm.get('mondayEnd')?.touched">
+                    Heure de fermeture invalide
                   </div>
-                  <div class="time-inputs" *ngIf="scheduleForm.get('tuesdayEnabled')?.value">
-                    <div class="time-input-group">
-                      <label class="time-label">Ouverture</label>
-                      <input type="time" class="form-control time-input" formControlName="tuesdayStart">
-                      <i class="fas fa-clock form-icon"></i>
-                    </div>
-                    <div class="time-input-group">
-                      <label class="time-label">Fermeture</label>
-                      <input type="time" class="form-control time-input" formControlName="tuesdayEnd">
-                      <i class="fas fa-clock form-icon"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Mercredi -->
-              <div class="form-group">
-                <label class="form-label">Mercredi</label>
-                <div class="time-range-container">
-                  <div class="form-check-wrapper">
-                    <label class="toggle-switch">
-                      <input type="checkbox" formControlName="wednesdayEnabled">
-                      <span class="toggle-slider"></span>
-                    </label>
-                    <span class="permission-text">Jour de travail</span>
-                  </div>
-                  <div class="time-inputs" *ngIf="scheduleForm.get('wednesdayEnabled')?.value">
-                    <div class="time-input-group">
-                      <label class="time-label">Ouverture</label>
-                      <input type="time" class="form-control time-input" formControlName="wednesdayStart">
-                      <i class="fas fa-clock form-icon"></i>
-                    </div>
-                    <div class="time-input-group">
-                      <label class="time-label">Fermeture</label>
-                      <input type="time" class="form-control time-input" formControlName="wednesdayEnd">
-                      <i class="fas fa-clock form-icon"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Jeudi -->
-              <div class="form-group">
-                <label class="form-label">Jeudi</label>
-                <div class="time-range-container">
-                  <div class="form-check-wrapper">
-                    <label class="toggle-switch">
-                      <input type="checkbox" formControlName="thursdayEnabled">
-                      <span class="toggle-slider"></span>
-                    </label>
-                    <span class="permission-text">Jour de travail</span>
-                  </div>
-                  <div class="time-inputs" *ngIf="scheduleForm.get('thursdayEnabled')?.value">
-                    <div class="time-input-group">
-                      <label class="time-label">Ouverture</label>
-                      <input type="time" class="form-control time-input" formControlName="thursdayStart">
-                      <i class="fas fa-clock form-icon"></i>
-                    </div>
-                    <div class="time-input-group">
-                      <label class="time-label">Fermeture</label>
-                      <input type="time" class="form-control time-input" formControlName="thursdayEnd">
-                      <i class="fas fa-clock form-icon"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Vendredi -->
-              <div class="form-group">
-                <label class="form-label">Vendredi</label>
-                <div class="time-range-container">
-                  <div class="form-check-wrapper">
-                    <label class="toggle-switch">
-                      <input type="checkbox" formControlName="fridayEnabled">
-                      <span class="toggle-slider"></span>
-                    </label>
-                    <span class="permission-text">Jour de travail</span>
-                  </div>
-                  <div class="time-inputs" *ngIf="scheduleForm.get('fridayEnabled')?.value">
-                    <div class="time-input-group">
-                      <label class="time-label">Ouverture</label>
-                      <input type="time" class="form-control time-input" formControlName="fridayStart">
-                      <i class="fas fa-clock form-icon"></i>
-                    </div>
-                    <div class="time-input-group">
-                      <label class="time-label">Fermeture</label>
-                      <input type="time" class="form-control time-input" formControlName="fridayEnd">
-                      <i class="fas fa-clock form-icon"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Samedi -->
-              <div class="form-group">
-                <label class="form-label">Samedi</label>
-                <div class="time-range-container">
-                  <div class="form-check-wrapper">
-                    <label class="toggle-switch">
-                      <input type="checkbox" formControlName="saturdayEnabled">
-                      <span class="toggle-slider"></span>
-                    </label>
-                    <span class="permission-text">Jour de travail</span>
-                  </div>
-                  <div class="time-inputs" *ngIf="scheduleForm.get('saturdayEnabled')?.value">
-                    <div class="time-input-group">
-                      <label class="time-label">Ouverture</label>
-                      <input type="time" class="form-control time-input" formControlName="saturdayStart">
-                      <i class="fas fa-clock form-icon"></i>
-                    </div>
-                    <div class="time-input-group">
-                      <label class="time-label">Fermeture</label>
-                      <input type="time" class="form-control time-input" formControlName="saturdayEnd">
-                      <i class="fas fa-clock form-icon"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Dimanche -->
-              <div class="form-group">
-                <label class="form-label">Dimanche</label>
-                <div class="time-range-container">
-                  <div class="form-check-wrapper">
-                    <label class="toggle-switch">
-                      <input type="checkbox" formControlName="sundayEnabled">
-                      <span class="toggle-slider"></span>
-                    </label>
-                    <span class="permission-text">Jour de travail</span>
-                  </div>
-                  <div class="time-inputs" *ngIf="scheduleForm.get('sundayEnabled')?.value">
-                    <div class="time-input-group">
-                      <label class="time-label">Ouverture</label>
-                      <input type="time" class="form-control time-input" formControlName="sundayStart">
-                      <i class="fas fa-clock form-icon"></i>
-                    </div>
-                    <div class="time-input-group">
-                      <label class="time-label">Fermeture</label>
-                      <input type="time" class="form-control time-input" formControlName="sundayEnd">
-                      <i class="fas fa-clock form-icon"></i>
-                    </div>
+                  <div class="form-error" *ngIf="scheduleForm.get('mondayEnd')?.hasError('invalidTimeRange') && scheduleForm.get('mondayEnd')?.touched">
+                    L'heure de fermeture doit être après l'heure d'ouverture
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- Section Paramètres généraux -->
-          <div class="form-section">
-            <div class="section-title">
-              <h2><i class="fas fa-cog"></i> Paramètres généraux</h2>
-            </div>
-
-            <div class="form-grid">
-              <!-- Fuseau horaire -->
-              <div class="form-group custom-select">
-                <label class="form-label">Fuseau horaire <span class="required">*</span></label>
-                <select class="form-control" formControlName="timezone">
-                  <option value="" selected disabled>Sélectionnez un fuseau horaire</option>
-                  <option value="Africa/Abidjan">Africa/Abidjan (GMT+0)</option>
-                  <option value="Europe/Paris">Europe/Paris (GMT+1)</option>
-                  <option value="America/New_York">America/New_York (GMT-5)</option>
-                  <option value="Asia/Tokyo">Asia/Tokyo (GMT+9)</option>
-                </select>
-                <i class="fas fa-chevron-down select-icon"></i>
-                <div class="form-error"
-                  *ngIf="scheduleForm.get('timezone')?.invalid && scheduleForm.get('timezone')?.touched">
-                  Le fuseau horaire est obligatoire
+          <!-- Mardi -->
+          <div class="form-group">
+            <label class="form-label">Mardi</label>
+            <div class="time-range-container">
+              <div class="form-check-wrapper">
+                <label class="toggle-switch">
+                  <input type="checkbox" formControlName="tuesdayEnabled">
+                  <span class="toggle-slider"></span>
+                </label>
+                <span class="permission-text">Jour de travail</span>
+              </div>
+              <div class="time-inputs" *ngIf="scheduleForm.get('tuesdayEnabled')?.value">
+                <div class="time-input-group">
+                  <label class="time-label">Ouverture</label>
+                  <input type="time" class="form-control time-input" formControlName="tuesdayStart">
+                  <i class="fas fa-clock form-icon"></i>
+                  <div class="form-error" *ngIf="scheduleForm.get('tuesdayStart')?.invalid && scheduleForm.get('tuesdayStart')?.touched">
+                    Heure d'ouverture invalide
+                  </div>
+                </div>
+                <div class="time-input-group">
+                  <label class="time-label">Fermeture</label>
+                  <input type="time" class="form-control time-input" formControlName="tuesdayEnd">
+                  <i class="fas fa-clock form-icon"></i>
+                  <div class="form-error" *ngIf="scheduleForm.get('tuesdayEnd')?.hasError('invalidTime') && scheduleForm.get('tuesdayEnd')?.touched">
+                    Heure de fermeture invalide
+                  </div>
+                  <div class="form-error" *ngIf="scheduleForm.get('tuesdayEnd')?.hasError('invalidTimeRange') && scheduleForm.get('tuesdayEnd')?.touched">
+                    L'heure de fermeture doit être après l'heure d'ouverture
+                  </div>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <!-- Durée de pause par défaut -->
-              <div class="form-group">
-                <label class="form-label">Durée de pause par défaut (minutes)</label>
-                <input type="number" class="form-control" placeholder="30" formControlName="defaultBreakDuration"
-                  min="0" max="480">
-                <i class="fas fa-coffee form-icon"></i>
-                <div class="form-help">Durée de pause standard appliquée automatiquement</div>
+          <!-- Mercredi -->
+          <div class="form-group">
+            <label class="form-label">Mercredi</label>
+            <div class="time-range-container">
+              <div class="form-check-wrapper">
+                <label class="toggle-switch">
+                  <input type="checkbox" formControlName="wednesdayEnabled">
+                  <span class="toggle-slider"></span>
+                </label>
+                <span class="permission-text">Jour de travail</span>
               </div>
-
-              <!-- Heures supplémentaires -->
-              <div class="form-group">
-                <label class="form-label">Seuil heures supplémentaires (heures/semaine)</label>
-                <input type="number" class="form-control" placeholder="40" formControlName="overtimeThreshold" min="1"
-                  max="80">
-                <i class="fas fa-clock form-icon"></i>
-                <div class="form-help">Nombre d'heures au-delà duquel les heures supplémentaires sont comptabilisées
+              <div class="time-inputs" *ngIf="scheduleForm.get('wednesdayEnabled')?.value">
+                <div class="time-input-group">
+                  <label class="time-label">Ouverture</label>
+                  <input type="time" class="form-control time-input" formControlName="wednesdayStart">
+                  <i class="fas fa-clock form-icon"></i>
+                  <div class="form-error" *ngIf="scheduleForm.get('wednesdayStart')?.invalid && scheduleForm.get('wednesdayStart')?.touched">
+                    Heure d'ouverture invalide
+                  </div>
+                </div>
+                <div class="time-input-group">
+                  <label class="time-label">Fermeture</label>
+                  <input type="time" class="form-control time-input" formControlName="wednesdayEnd">
+                  <i class="fas fa-clock form-icon"></i>
+                  <div class="form-error" *ngIf="scheduleForm.get('wednesdayEnd')?.hasError('invalidTime') && scheduleForm.get('wednesdayEnd')?.touched">
+                    Heure de fermeture invalide
+                  </div>
+                  <div class="form-error" *ngIf="scheduleForm.get('wednesdayEnd')?.hasError('invalidTimeRange') && scheduleForm.get('wednesdayEnd')?.touched">
+                    L'heure de fermeture doit être après l'heure d'ouverture
+                  </div>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <!-- Notifications -->
-              <div class="form-group">
-                <label class="form-label">Notifications automatiques</label>
-                <div class="form-check-wrapper">
-                  <label class="toggle-switch">
-                    <input type="checkbox" formControlName="notificationsEnabled">
-                    <span class="toggle-slider"></span>
-                  </label>
-                  <span class="permission-text">Envoyer des rappels automatiques</span>
+          <!-- Jeudi -->
+          <div class="form-group">
+            <label class="form-label">Jeudi</label>
+            <div class="time-range-container">
+              <div class="form-check-wrapper">
+                <label class="toggle-switch">
+                  <input type="checkbox" formControlName="thursdayEnabled">
+                  <span class="toggle-slider"></span>
+                </label>
+                <span class="permission-text">Jour de travail</span>
+              </div>
+              <div class="time-inputs" *ngIf="scheduleForm.get('thursdayEnabled')?.value">
+                <div class="time-input-group">
+                  <label class="time-label">Ouverture</label>
+                  <input type="time" class="form-control time-input" formControlName="thursdayStart">
+                  <i class="fas fa-clock form-icon"></i>
+                  <div class="form-error" *ngIf="scheduleForm.get('thursdayStart')?.invalid && scheduleForm.get('thursdayStart')?.touched">
+                    Heure d'ouverture invalide
+                  </div>
                 </div>
-                <div class="form-help">Notifications pour les changements d'horaires et rappels</div>
-              </div>
-
-              <!-- Flexibilité horaire -->
-              <div class="form-group">
-                <label class="form-label">Tolérance d'arrivée (minutes)</label>
-                <input type="number" class="form-control" placeholder="15" formControlName="arrivalTolerance" min="0"
-                  max="60">
-                <i class="fas fa-clock form-icon"></i>
-                <div class="form-help">Marge de tolérance pour les heures d'arrivée</div>
-              </div>
-
-              <!-- Jour de début de semaine -->
-              <div class="form-group custom-select">
-                <label class="form-label">Début de semaine</label>
-                <select class="form-control" formControlName="weekStartDay">
-                  <option value="monday">Lundi</option>
-                  <option value="sunday">Dimanche</option>
-                  <option value="saturday">Samedi</option>
-                </select>
-                <i class="fas fa-chevron-down select-icon"></i>
+                <div class="time-input-group">
+                  <label class="time-label">Fermeture</label>
+                  <input type="time" class="form-control time-input" formControlName="thursdayEnd">
+                  <i class="fas fa-clock form-icon"></i>
+                  <div class="form-error" *ngIf="scheduleForm.get('thursdayEnd')?.hasError('invalidTime') && scheduleForm.get('thursdayEnd')?.touched">
+                    Heure de fermeture invalide
+                  </div>
+                  <div class="form-error" *ngIf="scheduleForm.get('thursdayEnd')?.hasError('invalidTimeRange') && scheduleForm.get('thursdayEnd')?.touched">
+                    L'heure de fermeture doit être après l'heure d'ouverture
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Section Actions rapides -->
-          <div class="form-section">
-            <div class="section-title">
-              <h2><i class="fas fa-magic"></i> Actions rapides</h2>
+          <!-- Vendredi -->
+          <div class="form-group">
+            <label class="form-label">Vendredi</label>
+            <div class="time-range-container">
+              <div class="form-check-wrapper">
+                <label class="toggle-switch">
+                  <input type="checkbox" formControlName="fridayEnabled">
+                  <span class="toggle-slider"></span>
+                </label>
+                <span class="permission-text">Jour de travail</span>
+              </div>
+              <div class="time-inputs" *ngIf="scheduleForm.get('fridayEnabled')?.value">
+                <div class="time-input-group">
+                  <label class="time-label">Ouverture</label>
+                  <input type="time" class="form-control time-input" formControlName="fridayStart">
+                  <i class="fas fa-clock form-icon"></i>
+                  <div class="form-error" *ngIf="scheduleForm.get('fridayStart')?.invalid && scheduleForm.get('fridayStart')?.touched">
+                    Heure d'ouverture invalide
+                  </div>
+                </div>
+                <div class="time-input-group">
+                  <label class="time-label">Fermeture</label>
+                  <input type="time" class="form-control time-input" formControlName="fridayEnd">
+                  <i class="fas fa-clock form-icon"></i>
+                  <div class="form-error" *ngIf="scheduleForm.get('fridayEnd')?.hasError('invalidTime') && scheduleForm.get('fridayEnd')?.touched">
+                    Heure de fermeture invalide
+                  </div>
+                  <div class="form-error" *ngIf="scheduleForm.get('fridayEnd')?.hasError('invalidTimeRange') && scheduleForm.get('fridayEnd')?.touched">
+                    L'heure de fermeture doit être après l'heure d'ouverture
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
 
-            <div class="quick-actions">
-              <button type="button" class="btn btn-outline-primary" (click)="copyScheduleToAll()">
-                <i class="fas fa-copy"></i> Copier lundi sur tous les jours
-              </button>
-              <button type="button" class="btn btn-outline-secondary" (click)="setWeekdaysOnly()">
-                <i class="fas fa-business-time"></i> Jours ouvrables uniquement
-              </button>
-              <button type="button" class="btn btn-outline-info" (click)="setDefaultSchedule()">
-                <i class="fas fa-clock"></i> Horaires par défaut (9h-17h)
-              </button>
+          <!-- Samedi -->
+          <div class="form-group">
+            <label class="form-label">Samedi</label>
+            <div class="time-range-container">
+              <div class="form-check-wrapper">
+                <label class="toggle-switch">
+                  <input type="checkbox" formControlName="saturdayEnabled">
+                  <span class="toggle-slider"></span>
+                </label>
+                <span class="permission-text">Jour de travail</span>
+              </div>
+              <div class="time-inputs" *ngIf="scheduleForm.get('saturdayEnabled')?.value">
+                <div class="time-input-group">
+                  <label class="time-label">Ouverture</label>
+                  <input type="time" class="form-control time-input" formControlName="saturdayStart">
+                  <i class="fas fa-clock form-icon"></i>
+                  <div class="form-error" *ngIf="scheduleForm.get('saturdayStart')?.invalid && scheduleForm.get('saturdayStart')?.touched">
+                    Heure d'ouverture invalide
+                  </div>
+                </div>
+                <div class="time-input-group">
+                  <label class="time-label">Fermeture</label>
+                  <input type="time" class="form-control time-input" formControlName="saturdayEnd">
+                  <i class="fas fa-clock form-icon"></i>
+                  <div class="form-error" *ngIf="scheduleForm.get('saturdayEnd')?.hasError('invalidTime') && scheduleForm.get('saturdayEnd')?.touched">
+                    Heure de fermeture invalide
+                  </div>
+                  <div class="form-error" *ngIf="scheduleForm.get('saturdayEnd')?.hasError('invalidTimeRange') && scheduleForm.get('saturdayEnd')?.touched">
+                    L'heure de fermeture doit être après l'heure d'ouverture
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Boutons d'action -->
-          <div class="form-actions">
-            <button type="button" class="btn btn-secondary" (click)="onReset()">
-              <i class="fas fa-undo"></i> Réinitialiser
-            </button>
-            <button type="button" class="btn btn-info" (click)="previewSchedule()">
-              <i class="fas fa-eye"></i> Aperçu
-            </button>
-            <button type="submit" class="btn btn-primary" [disabled]="scheduleForm.invalid">
-              <i class="fas fa-save"></i> Enregistrer les horaires
-            </button>
-          </div>
-        </form>
-
-        <!-- Aperçu des horaires -->
-        <div class="schedule-preview" *ngIf="showPreview">
-          <div class="preview-header">
-            <h3><i class="fas fa-calendar-week"></i> Aperçu des horaires</h3>
-            <button type="button" class="btn-close" (click)="closePreview()">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
-          <div class="preview-content">
-            <div class="schedule-summary">
-              <div class="day-schedule" *ngFor="let day of weekDays">
-                <div class="day-name">{{ getDayName(day) }}</div>
-                <div class="day-hours" [class]="day.isOpen ? 'active' : 'inactive'">
-                  <span *ngIf="day.isOpen">{{ day.openTime }} - {{ day.closeTime }}</span>
-                  <span *ngIf="!day.isOpen" class="closed">Fermé</span>
+          <!-- Dimanche -->
+          <div class="form-group">
+            <label class="form-label">Dimanche</label>
+            <div class="time-range-container">
+              <div class="form-check-wrapper">
+                <label class="toggle-switch">
+                  <input type="checkbox" formControlName="sundayEnabled">
+                  <span class="toggle-slider"></span>
+                </label>
+                <span class="permission-text">Jour de travail</span>
+              </div>
+              <div class="time-inputs" *ngIf="scheduleForm.get('sundayEnabled')?.value">
+                <div class="time-input-group">
+                  <label class="time-label">Ouverture</label>
+                  <input type="time" class="form-control time-input" formControlName="sundayStart">
+                  <i class="fas fa-clock form-icon"></i>
+                  <div class="form-error" *ngIf="scheduleForm.get('sundayStart')?.invalid && scheduleForm.get('sundayStart')?.touched">
+                    Heure d'ouverture invalide
+                  </div>
+                </div>
+                <div class="time-input-group">
+                  <label class="time-label">Fermeture</label>
+                  <input type="time" class="form-control time-input" formControlName="sundayEnd">
+                  <i class="fas fa-clock form-icon"></i>
+                  <div class="form-error" *ngIf="scheduleForm.get('sundayEnd')?.hasError('invalidTime') && scheduleForm.get('sundayEnd')?.touched">
+                    Heure de fermeture invalide
+                  </div>
+                  <div class="form-error" *ngIf="scheduleForm.get('sundayEnd')?.hasError('invalidTimeRange') && scheduleForm.get('sundayEnd')?.touched">
+                    L'heure de fermeture doit être après l'heure d'ouverture
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      <!-- Section Paramètres généraux -->
+      <div class="form-section">
+        <div class="section-title">
+          <h2><i class="fas fa-cog"></i> Paramètres généraux</h2>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group custom-select">
+            <label class="form-label">Fuseau horaire <span class="required">*</span></label>
+            <select class="form-control" formControlName="timezone">
+              <option value="" selected disabled>Sélectionnez un fuseau horaire</option>
+              <option value="Africa/Abidjan">Africa/Abidjan (GMT+0)</option>
+              <option value="Europe/Paris">Europe/Paris (GMT+1)</option>
+              <option value="America/New_York">America/New_York (GMT-5)</option>
+              <option value="Asia/Tokyo">Asia/Tokyo (GMT+9)</option>
+            </select>
+            <i class="fas fa-chevron-down select-icon"></i>
+            <div class="form-error" *ngIf="scheduleForm.get('timezone')?.invalid && scheduleForm.get('timezone')?.touched">
+              Le fuseau horaire est obligatoire
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Durée de pause par défaut (minutes)</label>
+            <input type="number" class="form-control" placeholder="30" formControlName="defaultBreakDuration" min="0" max="480">
+            <i class="fas fa-coffee form-icon"></i>
+            <div class="form-help">Durée de pause standard appliquée automatiquement</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Seuil heures supplémentaires (heures/semaine)</label>
+            <input type="number" class="form-control" placeholder="40" formControlName="overtimeThreshold" min="1" max="80">
+            <i class="fas fa-clock form-icon"></i>
+            <div class="form-help">Nombre d'heures au-delà duquel les heures supplémentaires sont comptabilisées</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Notifications automatiques</label>
+            <div class="form-check-wrapper">
+              <label class="toggle-switch">
+                <input type="checkbox" formControlName="notificationsEnabled">
+                <span class="toggle-slider"></span>
+              </label>
+              <span class="permission-text">Envoyer des rappels automatiques</span>
+            </div>
+            <div class="form-help">Notifications pour les changements d'horaires et rappels</div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Tolérance d'arrivée (minutes)</label>
+            <input type="number" class="form-control" placeholder="15" formControlName="arrivalTolerance" min="0" max="60">
+            <i class="fas fa-clock form-icon"></i>
+            <div class="form-help">Marge de tolérance pour les heures d'arrivée</div>
+          </div>
+
+          <div class="form-group custom-select">
+            <label class="form-label">Début de semaine</label>
+            <select class="form-control" formControlName="weekStartDay">
+              <option value="monday">Lundi</option>
+              <option value="sunday">Dimanche</option>
+              <option value="saturday">Samedi</option>
+            </select>
+            <i class="fas fa-chevron-down select-icon"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section Actions rapides -->
+      <div class="form-section">
+        <div class="section-title">
+          <h2><i class="fas fa-magic"></i> Actions rapides</h2>
+        </div>
+
+        <div class="quick-actions">
+          <button type="button" class="btn btn-outline-primary" (click)="copyScheduleToAll()">
+            <i class="fas fa-copy"></i> Copier lundi sur tous les jours
+          </button>
+          <button type="button" class="btn btn-outline-secondary" (click)="setWeekdaysOnly()">
+            <i class="fas fa-business-time"></i> Jours ouvrables uniquement
+          </button>
+          <button type="button" class="btn btn-outline-info" (click)="setDefaultSchedule()">
+            <i class="fas fa-clock"></i> Horaires par défaut (9h-17h)
+          </button>
+        </div>
+      </div>
+
+      <!-- Boutons d'action -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" (click)="onReset()">
+          <i class="fas fa-undo"></i> Réinitialiser
+        </button>
+        <button type="button" class="btn btn-info" (click)="previewSchedule()">
+          <i class="fas fa-eye"></i> Aperçu
+        </button>
+        <button type="submit" class="btn btn-primary" [disabled]="scheduleForm.invalid || isLoading">
+          <i class="fas fa-save"></i> Enregistrer pour tous les centres
+        </button>
+      </div>
+    </form>
+
+    <!-- Aperçu des horaires -->
+    <div class="schedule-preview" *ngIf="showPreview">
+      <div class="preview-header">
+        <h3><i class="fas fa-calendar-week"></i> Aperçu des horaires</h3>
+        <button type="button" class="btn-close" (click)="closePreview()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="preview-content">
+        <div class="schedule-summary">
+          <div class="day-schedule" *ngFor="let day of weekDays">
+            <div class="day-name">{{ getDayName(day) }}</div>
+            <div class="day-hours" [class]="day.isOpen ? 'active' : 'inactive'">
+              <span *ngIf="day.isOpen">{{ day.openTime }} - {{ day.closeTime }}</span>
+              <span *ngIf="!day.isOpen" class="closed">Fermé</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
+</div>
 
     <div class="footer">
       <div>©2025 AutoWash, Tous droit reservé.</div>

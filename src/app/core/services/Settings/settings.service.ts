@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError } from 'rxjs';
+import { forkJoin, Observable, of, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { ApplicationSettings } from '../../models/Settings/ApplicationSettings';
 import { DiscountRule } from '../../models/Settings/DiscountRule';
@@ -248,6 +248,22 @@ export class SettingsService {
       catchError(this.handleError)
     );
   }
+
+/**
+ * Met à jour les horaires pour plusieurs centres
+ * @param centreIds Les IDs des centres à mettre à jour
+ * @param settings Les nouveaux paramètres d'horaire
+ * @returns Observable<boolean[]> Tableau des résultats pour chaque centre
+ */
+updateMultipleCentresSchedules(centreIds: string[], settings: ScheduleSettings): Observable<boolean[]> {
+  const updateObservables = centreIds.map(centreId =>
+    this.updateScheduleSettings(centreId, settings).pipe(
+      map(() => true),
+      catchError(() => of(false))
+    )
+  );
+  return forkJoin(updateObservables);
+}
 
   /**
    * Met à jour l'horaire d'un jour spécifique

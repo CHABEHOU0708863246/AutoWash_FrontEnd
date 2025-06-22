@@ -9,6 +9,9 @@ import { Users } from '../../models/Users/Users';
   providedIn: 'root'
 })
 export class AuthService {
+  getCurrentUser() {
+    throw new Error('Method not implemented.');
+  }
 
   private apiUrl = 'https://localhost:7139/api/Auth';
   private loginApiUrl = `${this.apiUrl}/login`;

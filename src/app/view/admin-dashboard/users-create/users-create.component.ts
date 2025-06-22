@@ -6,6 +6,9 @@ import { Users } from '../../../core/models/Users/Users';
 import { AuthService } from '../../../core/services/Auth/auth.service';
 import { UsersService } from '../../../core/services/Users/users.service';
 import Swal from 'sweetalert2';
+import { DomSanitizer } from '@angular/platform-browser';
+import { Centres } from '../../../core/models/Centres/Centres';
+import { CentresService } from '../../../core/services/Centres/centres.service';
 
 @Component({
   selector: 'app-users-create',
@@ -22,10 +25,17 @@ export class UsersCreateComponent implements OnInit {
 users: Users[] = []; // Liste des utilisateurs.
   userForm!: FormGroup; // Formulaire pour créer un utilisateur.
   currentStep: number = 1; // Étape actuelle dans le processus de création.
-  availableRoles: string[] = ['admin', 'employe', 'manager', 'laveur']; // Rôles disponibles pour un utilisateur.
+  availableRoles: string[] = ['admin', 'manager', 'washer']; // Rôles disponibles pour un utilisateur.
   selectedPhoto: string | null = null; // Pour prévisualiser la photo sélectionnée
+  centres: Centres[] = [];
+
+  displayedUsers: Users[] = []; // Liste des utilisateurs affichés sur la page actuelle.
+  currentUser: Users | null = null; // Utilisateur actuellement connecté.
+  user: Users | null = null; // Informations sur l'utilisateur connecté.
 
   constructor(
+    private sanitizer: DomSanitizer,
+    private centresService: CentresService,
     private router: Router, // Service Angular pour gérer la navigation.
     private usersService: UsersService, // Service pour interagir avec les utilisateurs.
     private authService: AuthService, // Service pour gérer l'authentification.
@@ -54,7 +64,7 @@ users: Users[] = []; // Liste des utilisateurs.
       photoUrl: [''] // URL de la photo, optionnel
     });
 
-    this.selectedPhoto = null; // Réinitialisation de la prévisualisation de la photo
+    this.selectedPhoto = null ; // Réinitialisation de la prévisualisation de la photo
   }
 
 
@@ -65,6 +75,200 @@ users: Users[] = []; // Liste des utilisateurs.
   ngOnInit(): void {
     this.getUsers(); // Charge tous les utilisateurs.
     this.initializeForm(); // Réinitialise le formulaire.
+    this.getUsers(); // Récupère les utilisateurs.
+    this.loadCurrentUser(); // Charge l'utilisateur connecté
+    this.getCentres(); // Récupère les centres disponibles
+    this.loadUserPhotos(); // Charge les photos des utilisateurs
+
+    // S'abonner aux changements de l'utilisateur connecté
+    this.authService.currentUser$.subscribe((user) => {
+      if (user && user !== this.currentUser) {
+        this.currentUser = user;
+        this.loadCurrentUserPhoto();
+      }
+    });
+  }
+
+
+  /**
+   * NOUVELLE MÉTHODE: Vérifie si le rôle "washer" est sélectionné
+   * @returns true si le rôle washer est sélectionné, false sinon
+   */
+  isWasherRoleSelected(): boolean {
+    const selectedRoles = this.userForm.get('roles')?.value || [];
+    return selectedRoles.includes('washer');
+  }
+
+
+
+  /**
+   * Récupère tous les centres depuis le service.
+   */
+  getCentres(): void {
+    this.centresService.getAllCentres().subscribe({
+      next: (data) => {
+        this.centres = data;
+        console.log('Centres chargés:', this.centres);
+      },
+      error: (error) => {
+        console.error("Erreur lors du chargement des centres", error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Erreur!',
+          text: 'Impossible de charger la liste des centres.',
+          confirmButtonText: 'Ok'
+        });
+      }
+    });
+  }
+
+  /**
+   * Charge les photos des utilisateurs et les sécurise pour l'affichage.
+   * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
+   */
+  loadUserPhotos(): void {
+    this.displayedUsers.forEach((user) => {
+      if (user.photoUrl && typeof user.photoUrl === 'string') {
+        this.usersService.getUserPhoto(user.photoUrl).subscribe((blob) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            user.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
+              reader.result as string
+            );
+          };
+          reader.readAsDataURL(blob);
+        });
+      }
+    });
+  }
+
+  /**
+   * Charge l'utilisateur actuellement connecté.
+   * Essaie d'abord de récupérer l'utilisateur depuis le service d'authentification,
+   */
+  loadCurrentUser(): void {
+    // D'abord, essaie de récupérer depuis le service d'authentification
+    this.authService.loadCurrentUserProfile().subscribe({
+      next: (user) => {
+        if (user) {
+          this.currentUser = user;
+          this.loadCurrentUserPhoto();
+        } else {
+          // Si pas d'utilisateur depuis AuthService, utilise UsersService
+          this.usersService.getCurrentUser().subscribe({
+            next: (user) => {
+              this.currentUser = user;
+              this.loadCurrentUserPhoto();
+            },
+            error: (error) => {
+              console.error(
+                "Erreur lors du chargement de l'utilisateur connecté",
+                error
+              );
+            },
+          });
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement du profil utilisateur', error);
+        // Fallback vers UsersService
+        this.usersService.getCurrentUser().subscribe({
+          next: (user) => {
+            this.currentUser = user;
+            this.loadCurrentUserPhoto();
+          },
+          error: (error) => {
+            console.error(
+              "Erreur lors du chargement de l'utilisateur connecté",
+              error
+            );
+          },
+        });
+      },
+    });
+  }
+
+  /**
+   * Charge la photo de l'utilisateur actuellement connecté.
+   *
+   * Utilise le service UsersService pour obtenir la photo de l'utilisateur.
+   */
+  loadCurrentUserPhoto(): void {
+    if (!this.currentUser) return;
+
+    if (
+      this.currentUser.photoUrl &&
+      typeof this.currentUser.photoUrl === 'string'
+    ) {
+      this.usersService.getUserPhoto(this.currentUser.photoUrl).subscribe({
+        next: (blob) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            this.currentUser!.photoSafeUrl =
+              this.sanitizer.bypassSecurityTrustUrl(reader.result as string);
+          };
+          reader.readAsDataURL(blob);
+        },
+        error: (error) => {
+          console.error(
+            'Erreur lors du chargement de la photo utilisateur',
+            error
+          );
+          // Image par défaut
+          this.currentUser!.photoSafeUrl =
+            this.sanitizer.bypassSecurityTrustUrl(
+              'assets/images/default-avatar.png'
+            );
+        },
+      });
+    } else {
+      // Si pas de photoUrl, utiliser une image par défaut
+      this.currentUser.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
+        'assets/images/default-avatar.png'
+      );
+    }
+  }
+
+  /**
+   * Retourne le nom complet de l'utilisateur connecté
+   * @returns Le nom complet formaté ou un texte par défaut
+   */
+  getFullName(): string {
+    if (this.currentUser) {
+      const firstName = this.currentUser.firstName || '';
+      const lastName = this.currentUser.lastName || '';
+      return `${firstName} ${lastName}`.trim() || 'Utilisateur';
+    }
+    return 'Utilisateur';
+  }
+
+  /**
+   * Retourne le rôle de l'utilisateur connecté
+   * @returns Le rôle de l'utilisateur ou un texte par défaut
+   */
+  getUserRole(): string {
+    // Si pas d'utilisateur connecté
+    if (!this.currentUser) return 'Rôle non défini';
+
+    // Si l'utilisateur a des rôles
+    if (this.currentUser.roles && this.currentUser.roles.length > 0) {
+      return this.mapRoleIdToName(this.currentUser.roles[0]);
+    }
+
+    // Sinon, utilise le service d'authentification
+    const role = this.authService.getUserRole();
+    return role ? this.mapRoleIdToName(role) : 'Rôle non défini';
+  }
+
+  private mapRoleIdToName(roleId: string): string {
+    const roleMapping: { [key: string]: string } = {
+      '1': 'Administrateur',
+      '2': 'Manager',
+      '3': 'Éditeur',
+      '4': 'Utilisateur',
+    };
+
+    return roleMapping[roleId] || 'Administrateur';
   }
 
   /**
@@ -80,6 +284,25 @@ users: Users[] = []; // Liste des utilisateurs.
   onRoleChange(event: any): void {
     const selectedOptions = Array.from(event.target.selectedOptions, (option: any) => option.value);
     this.userForm.get('roles')?.setValue(selectedOptions);
+
+    // Mettre à jour la validation du champ centreId en fonction du rôle sélectionné
+    this.updateCentreValidation();
+  }
+
+  updateCentreValidation(): void {
+    const centreIdControl = this.userForm.get('centreId');
+
+    if (this.isWasherRoleSelected()) {
+      // Si washer est sélectionné, le centre devient obligatoire
+      centreIdControl?.setValidators([Validators.required]);
+    } else {
+      // Sinon, le centre n'est pas obligatoire
+      centreIdControl?.clearValidators();
+      centreIdControl?.setValue(''); // Réinitialiser la valeur
+    }
+
+    // Appliquer les nouvelles validations
+    centreIdControl?.updateValueAndValidity();
   }
 
   /**
@@ -143,10 +366,6 @@ onPhotoSelected(event: Event): void {
 
 
   /**
-   * Récupère les détails de l'utilisateur actuellement connecté.
-   */
-
-  /**
    * Récupère tous les utilisateurs depuis le service.
    */
   getUsers(): void {
@@ -160,9 +379,9 @@ onPhotoSelected(event: Event): void {
     );
   }
 
-  /**
-   * Soumet le formulaire pour créer un nouvel utilisateur.
-   */
+/**
+ * Soumet le formulaire pour créer un nouvel utilisateur.
+ */
 onSubmit(): void {
   if (this.userForm.valid) {
     // Vérifier que les mots de passe correspondent
@@ -176,130 +395,63 @@ onSubmit(): void {
       return;
     }
 
-    // Deux approches possibles selon votre API backend:
+    // Préparation de l'objet utilisateur
+    const formData = this.userForm.value;
 
-    // APPROCHE 1: Si votre API accepte le FormData (recommandé pour les fichiers)
+    // *** CORRECTION: Créer l'objet avec tous les paramètres explicites ***
+    const user = new Users(
+      '', // id - sera généré par le backend
+      formData.firstName,
+      formData.lastName,
+      formData.email,
+      formData.phoneNumber,
+      formData.isEnabled,
+      formData.roles, // roles
+      formData.workingHours,
+      formData.isPartTime,
+      new Date(formData.hireDate),
+      formData.gender,
+      formData.contractType,
+      formData.numberOfChildren,
+      formData.maritalStatus,
+      formData.residence,
+      formData.postalAddress,
+      formData.centreId,
+      '', // photoUrl sera géré par le backend
+      formData.password, // *** IMPORTANT: Password ***
+      formData.confirmPassword // *** IMPORTANT: ConfirmPassword ***
+    );
+
+    // *** ALTERNATIVE: Si le constructeur ne fonctionne pas, assignez manuellement ***
+    user.password = formData.password;
+    user.confirmPassword = formData.confirmPassword;
+
+    // Debug: Vérifier que le password est bien assigné
+    console.log('User object password après création:', user.password);
+    console.log('User object confirmPassword après création:', user.confirmPassword);
+    console.log('Form password value:', formData.password);
+
+    // Si une photo est sélectionnée, utiliser registerUserWithPhoto
     if (this.selectedPhoto) {
-      // Création d'un objet FormData pour l'envoi multipart
-      const formDataObj = new FormData();
-
-      // Ajout des champs textuels
-      Object.keys(this.userForm.value).forEach(key => {
-        // Ne pas ajouter directement photoUrl car nous allons gérer le fichier séparément
-        if (key !== 'photoUrl' && key !== 'confirmPassword') {
-          let value = this.userForm.get(key)?.value;
-
-          // Formatage de la date si nécessaire
-          if (key === 'hireDate' && value instanceof Date) {
-            value = value.toISOString();
-          }
-
-          // Gestion spéciale pour les tableaux (comme roles)
-          if (Array.isArray(value)) {
-            value.forEach(item => formDataObj.append(`${key}[]`, item));
-          } else {
-            formDataObj.append(key, value === null ? '' : value);
-          }
-        }
-      });
-
-      // Ajout du mot de passe de confirmation
-      formDataObj.append('confirmPassword', this.userForm.get('confirmPassword')?.value || '');
-
-      // Récupération du fichier depuis l'input
       const fileInput = document.getElementById('photo-upload') as HTMLInputElement;
       if (fileInput && fileInput.files && fileInput.files.length > 0) {
         const photoFile = fileInput.files[0];
-        formDataObj.append('photo', photoFile, photoFile.name);
+
+        this.usersService.registerUserWithPhoto(user, photoFile).subscribe(
+          (response) => {
+            console.log("Utilisateur créé avec succès", response);
+            this.handleSuccess();
+          },
+          (error) => {
+            console.error("Erreur lors de la création de l'utilisateur", error);
+            this.handleError();
+          }
+        );
+      } else {
+        this.registerWithoutPhoto(user);
       }
-
-      // Envoi du FormData à l'API
-      this.usersService.registerUserWithPhoto(formDataObj).subscribe(
-        (response) => {
-          console.log("Utilisateur créé avec succès", response);
-          this.initializeForm();
-          this.getUsers();
-          this.selectedPhoto = null; // Réinitialiser la prévisualisation
-
-          Swal.fire({
-            icon: 'success',
-            title: 'Succès!',
-            text: 'Utilisateur créé avec succès!',
-            confirmButtonText: 'Ok'
-          });
-        },
-        (error) => {
-          console.error("Erreur lors de la création de l'utilisateur", error);
-
-          Swal.fire({
-            icon: 'error',
-            title: 'Erreur!',
-            text: 'Erreur lors de la création de l\'utilisateur.',
-            confirmButtonText: 'Ok'
-          });
-        }
-      );
-    }
-    // APPROCHE 2: Si votre API accepte du JSON avec la photo en base64
-    else {
-      // Préparation de l'objet utilisateur
-      const formData = this.userForm.value;
-
-      // Conversion de la photo en base64 si nécessaire
-      let photoUrl = formData.photoUrl;
-      if (this.selectedPhoto && typeof this.selectedPhoto === 'string') {
-        // Si selectedPhoto est déjà une chaîne base64, l'utiliser directement
-        photoUrl = this.selectedPhoto;
-      }
-
-      const user = new Users(
-        '', // l'ID sera généré par le backend
-        formData.firstName,
-        formData.lastName,
-        formData.email,
-        formData.phoneNumber,
-        formData.isEnabled,
-        formData.roles,
-        formData.workingHours,
-        formData.isPartTime,
-        new Date(formData.hireDate),
-        formData.gender,
-        formData.contractType,
-        formData.numberOfChildren,
-        formData.maritalStatus,
-        formData.residence,
-        formData.postalAddress,
-        formData.centreId,
-        photoUrl, // Utiliser la photo en base64
-        formData.password,
-        formData.confirmPassword // Ajout du champ confirmPassword
-      );
-
-      this.usersService.registerUser(user).subscribe(
-        (response) => {
-          console.log("Utilisateur créé avec succès", response);
-          this.initializeForm();
-          this.getUsers();
-          this.selectedPhoto = null; // Réinitialiser la prévisualisation
-
-          Swal.fire({
-            icon: 'success',
-            title: 'Succès!',
-            text: 'Utilisateur créé avec succès!',
-            confirmButtonText: 'Ok'
-          });
-        },
-        (error) => {
-          console.error("Erreur lors de la création de l'utilisateur", error);
-
-          Swal.fire({
-            icon: 'error',
-            title: 'Erreur!',
-            text: 'Erreur lors de la création de l\'utilisateur.',
-            confirmButtonText: 'Ok'
-          });
-        }
-      );
+    } else {
+      this.registerWithoutPhoto(user);
     }
   } else {
     // Marquer tous les champs comme touchés pour afficher les erreurs
@@ -315,6 +467,50 @@ onSubmit(): void {
       confirmButtonText: 'Ok'
     });
   }
+}
+
+/**
+ * Enregistre un utilisateur sans photo
+ */
+private registerWithoutPhoto(user: Users): void {
+  this.usersService.registerUser(user).subscribe(
+    (response) => {
+      console.log("Utilisateur créé avec succès", response);
+      this.handleSuccess();
+    },
+    (error) => {
+      console.error("Erreur lors de la création de l'utilisateur", error);
+      this.handleError();
+    }
+  );
+}
+
+/**
+ * Gère le succès de la création d'utilisateur
+ */
+private handleSuccess(): void {
+  this.initializeForm();
+  this.getUsers();
+  this.selectedPhoto = null;
+
+  Swal.fire({
+    icon: 'success',
+    title: 'Succès!',
+    text: 'Utilisateur créé avec succès!',
+    confirmButtonText: 'Ok'
+  });
+}
+
+/**
+ * Gère les erreurs de création d'utilisateur
+ */
+private handleError(): void {
+  Swal.fire({
+    icon: 'error',
+    title: 'Erreur!',
+    text: 'Erreur lors de la création de l\'utilisateur.',
+    confirmButtonText: 'Ok'
+  });
 }
 
   /**

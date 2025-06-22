@@ -1,3 +1,5 @@
+import { SafeUrl } from "@angular/platform-browser";
+
 export class Users {
   id: string;
   firstName?: string;
@@ -16,7 +18,10 @@ export class Users {
   residence?: string;
   postalAddress?: string;
   centreId?: string;
+  photoId?: string;
+  photoFile?: File;
   photoUrl?: string | File;
+  photoSafeUrl?: SafeUrl | null;
   password?: string
   confirmPassword?: string;
 
@@ -38,6 +43,8 @@ export class Users {
     residence?: string,
     postalAddress?: string,
     centreId?: string,
+    photoId?: string,
+    photoFile?: File,
     photoUrl?: string,
     password?: string,
     confirmPassword?: string
@@ -59,8 +66,15 @@ export class Users {
     this.residence = residence;
     this.postalAddress = postalAddress;
     this.centreId = centreId;
+    this.photoId = photoId;
+    this.photoFile = photoFile;
     this.photoUrl = photoUrl;
     this.password = password;
     this.confirmPassword = confirmPassword;
   }
+
+
+
 }
+
+

@@ -893,8 +893,10 @@ body {
   padding: 30px;
   margin-bottom: 30px;
   /* Augmentation de la largeur maximale */
-  max-width: 1200px; /* Augmenter selon vos besoins */
-  width: 95%; /* Utiliser un pourcentage pour la responsivité */
+  max-width: 1200px;
+  /* Augmenter selon vos besoins */
+  width: 95%;
+  /* Utiliser un pourcentage pour la responsivité */
   margin-left: auto;
   margin-right: auto;
 }
@@ -963,7 +965,8 @@ body {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  table-layout: fixed; /* Pour un meilleur contrôle de la largeur des colonnes */
+  table-layout: fixed;
+  /* Pour un meilleur contrôle de la largeur des colonnes */
 }
 
 .page-content {
@@ -1013,21 +1016,46 @@ body {
 .user-info-cell {
   display: flex;
   align-items: center;
-  min-width: 200px; /* Garantir un minimum de largeur */
+  gap: 10px;
 }
 
-.user-avatar {
+.user-avatar-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.user-photo {
   width: 40px;
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  margin-right: 15px;
+  border: 2px solid #e9ecef;
+  transition: all 0.2s ease;
+}
+
+.user-photo:hover {
+  border-color: #007bff;
+  transform: scale(1.05);
+}
+
+.user-initials {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
 }
 
 .user-name {
   font-weight: 500;
-  color: #2d3748;
-  margin-bottom: 2px;
+  color: #2c3e50;
+  margin: 0;
 }
 
 .user-email {
@@ -1201,80 +1229,80 @@ body {
 
 
 .actions-cell {
-    display: flex;
-    gap: 8px;
-    align-items: center;
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .btn-toggle {
-    position: relative;
-    width: 60px;
-    height: 30px;
-    border-radius: 15px;
-    border: none;
-    background-color: #e0e0e0;
-    cursor: pointer;
-    padding: 0;
+  position: relative;
+  width: 60px;
+  height: 30px;
+  border-radius: 15px;
+  border: none;
+  background-color: #e0e0e0;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5px;
+
+  &.active {
+    background-color: #4CAF50;
+  }
+
+  .toggle-thumb {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background-color: white;
+    left: 2px;
     transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 5px;
+  }
 
-    &.active {
-        background-color: #4CAF50;
+  &.active .toggle-thumb {
+    left: calc(100% - 28px);
+  }
+
+  i {
+    color: white;
+    font-size: 14px;
+    transition: all 0.3s ease;
+
+    &.fa-toggle-on {
+      opacity: 1;
     }
 
-    .toggle-thumb {
-        position: absolute;
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        background-color: white;
-        left: 2px;
-        transition: all 0.3s ease;
+    &.fa-toggle-off {
+      opacity: 0.7;
     }
+  }
 
-    &.active .toggle-thumb {
-        left: calc(100% - 28px);
-    }
-
-    i {
-        color: white;
-        font-size: 14px;
-        transition: all 0.3s ease;
-
-        &.fa-toggle-on {
-            opacity: 1;
-        }
-
-        &.fa-toggle-off {
-            opacity: 0.7;
-        }
-    }
-
-    &:hover {
-        opacity: 0.9;
-    }
+  &:hover {
+    opacity: 0.9;
+  }
 }
 
 .btn-icon-action {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
 
-    &.btn-view {
-        background-color: #2196F3;
-        color: white;
-    }
+  &.btn-view {
+    background-color: #2196F3;
+    color: white;
+  }
 
-    &:hover {
-        transform: scale(1.1);
-    }
+  &:hover {
+    transform: scale(1.1);
+  }
 }

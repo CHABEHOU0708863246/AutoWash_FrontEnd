@@ -1,300 +1,341 @@
 <html lang="fr">
+
 <head>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet">
 </head>
+
 <body>
-    <!-- Sidebar -->
-<div class="sidebar" id="sidebar">
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
     <div class="logo">
-        <i class="fas fa-hashtag"></i> AUTOWASH
+      <i class="fas fa-hashtag"></i> AUTOWASH
     </div>
     <div class="user-profile">
-        <img src="https://media.licdn.com/dms/image/v2/D4E03AQFl4HpioZZvhQ/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1722776592369?e=1752105600&v=beta&t=rO8ASWATTrkWn2YaWXch8SnDzwUcyCtDkcAJsdEQ2n4" alt="User Profile">
-        <div class="user-info">
-            <h4>Afffery Auxence Delors CHABEHOU<span class="status-indicator"></span></h4>
-            <p>Administrateur</p>
-        </div>
+      <img [src]="currentUser?.photoSafeUrl" [alt]="'Photo de ' + (currentUser?.firstName || 'Utilisateur')"
+        class="user-avatar">
+      <div class="user-info">
+        <h4>
+          {{ getFullName() }}
+          <span class="status-indicator"></span>
+        </h4>
+      </div>
     </div>
     <div class="nav-menu">
-        <!-- Dashboard -->
-        <div class="dropdown dropdown-hover">
-            <a class="nav-item active" data-mdb-dropdown-init>
-                <i class="fas fa-tachometer-alt" [routerLink]="['/admin/dashboard']"></i>
-                <span>Tableau de bord</span>
-            </a>
-        </div>
+      <!-- Dashboard -->
+      <div class="dropdown dropdown-hover">
+        <a class="nav-item active" data-mdb-dropdown-init>
+          <i class="fas fa-tachometer-alt" [routerLink]="['/admin/dashboard']"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
 
-        <!-- Gestion des Utilisateurs -->
-        <div class="dropdown dropdown-hover">
-            <button class="nav-item" data-mdb-dropdown-init>
-                <i class="fas fa-users-cog"></i>
-                <span>Utilisateurs</span>
-                <i class="fas fa-chevron-right dropdown-arrow"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-hover">
-                <li><a class="dropdown-item" [routerLink]="['/admin/users-list']"><i class="fas fa-list"></i> Liste des utilisateurs</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/users-create']"><i class="fas fa-user-plus"></i> Ajouter un utilisateur</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/users-permissions']"><i class="fas fa-user-shield"></i> Permissions</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/users-attendance']"><i class="fas fa-user-clock"></i> Présences</a></li>
-            </ul>
-        </div>
+      <!-- Gestion des Utilisateurs -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-users-cog"></i>
+          <span>Utilisateurs</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-list']"><i class="fas fa-list"></i> Liste des
+              utilisateurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-create']"><i class="fas fa-user-plus"></i> Ajouter
+              un utilisateur</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-permissions']"><i class="fas fa-user-shield"></i>
+              Permissions</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-attendance']"><i class="fas fa-user-clock"></i>
+              Présences</a></li>
+        </ul>
+      </div>
 
-        <!-- Centres de Lavage -->
-        <div class="dropdown dropdown-hover">
-            <button class="nav-item" data-mdb-dropdown-init>
-                <i class="fa-solid fa-car"></i>
-                <span>Centres</span>
-                <i class="fas fa-chevron-right dropdown-arrow"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-hover">
-                <li><a class="dropdown-item" [routerLink]="['/admin/centres-list']"><i class="fas fa-list"></i> Tous les centres</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/centres-create']"><i class="fas fa-plus-circle"></i> Nouveau centre</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/centres-stock']"><i class="fas fa-boxes"></i> Stocks par centre</a></li>
-            </ul>
-        </div>
+      <!-- Centres de Lavage -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fa-solid fa-car"></i>
+          <span>Centres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-list']"><i class="fas fa-list"></i> Tous les
+              centres</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-create']"><i class="fas fa-plus-circle"></i>
+              Nouveau centre</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-stock']"><i class="fas fa-boxes"></i> Stocks par
+              centre</a></li>
+        </ul>
+      </div>
 
-        <!-- Sessions de Lavage -->
-        <div class="dropdown dropdown-hover">
-            <button class="nav-item" data-mdb-dropdown-init>
-                <i class="fas fa-car-side"></i>
-                <span>Lavages</span>
-                <i class="fas fa-chevron-right dropdown-arrow"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-hover">
-                <li><a class="dropdown-item" [routerLink]="['/admin/wash-sessions']"><i class="fas fa-list"></i> Toutes les sessions</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/wash-now']"><i class="fas fa-play-circle"></i> Nouveau lavage</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/wash-queue']"><i class="fas fa-clock"></i> File d'attente</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/wash-types']"><i class="fas fa-list-alt"></i> Types de lavage</a></li>
-            </ul>
-        </div>
+      <!-- Sessions de Lavage -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-car-side"></i>
+          <span>Lavages</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-sessions']"><i class="fas fa-list"></i> Toutes les
+              sessions</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-now']"><i class="fas fa-play-circle"></i> Nouveau
+              lavage</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-queue']"><i class="fas fa-clock"></i> File
+              d'attente</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-types']"><i class="fas fa-list-alt"></i> Types de
+              lavage</a></li>
+        </ul>
+      </div>
 
-        <!-- Paiements -->
-        <div class="dropdown dropdown-hover">
-            <button class="nav-item" data-mdb-dropdown-init>
-                <i class="fas fa-money-bill-wave"></i>
-                <span>Paiements</span>
-                <i class="fas fa-chevron-right dropdown-arrow"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-hover">
-                <li><a class="dropdown-item" [routerLink]="['/admin/payments-washers']"><i class="fas fa-user-tie"></i> Paiements laveurs</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/payments-customers']"><i class="fas fa-users"></i> Paiements clients</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/payments-methods']"><i class="fas fa-credit-card"></i> Méthodes de paiement</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/payments-reports']"><i class="fas fa-file-invoice-dollar"></i> Rapports</a></li>
-            </ul>
-        </div>
+      <!-- Paiements -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-money-bill-wave"></i>
+          <span>Paiements</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-washers']"><i class="fas fa-user-tie"></i>
+              Paiements laveurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-customers']"><i class="fas fa-users"></i>
+              Paiements clients</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-methods']"><i class="fas fa-credit-card"></i>
+              Méthodes de paiement</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-reports']"><i
+                class="fas fa-file-invoice-dollar"></i> Rapports</a></li>
+        </ul>
+      </div>
 
-        <!-- Stocks -->
-        <div class="dropdown dropdown-hover">
-            <button class="nav-item" data-mdb-dropdown-init>
-                <i class="fas fa-box-open"></i>
-                <span>Stocks</span>
-                <i class="fas fa-chevron-right dropdown-arrow"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-hover">
-                <li><a class="dropdown-item" [routerLink]="['/admin/stocks-list']"><i class="fas fa-boxes"></i> Inventaire</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/stocks-alerts']"><i class="fas fa-exclamation-triangle"></i> Alertes stock</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/stocks-movements']"><i class="fas fa-exchange-alt"></i> Mouvements</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/stocks-suppliers']"><i class="fas fa-truck"></i> Fournisseurs</a></li>
-            </ul>
-        </div>
+      <!-- Stocks -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-box-open"></i>
+          <span>Stocks</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-list']"><i class="fas fa-boxes"></i> Inventaire</a>
+          </li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-alerts']"><i
+                class="fas fa-exclamation-triangle"></i> Alertes stock</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-movements']"><i class="fas fa-exchange-alt"></i>
+              Mouvements</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-suppliers']"><i class="fas fa-truck"></i>
+              Fournisseurs</a></li>
+        </ul>
+      </div>
 
-        <!-- Statistiques & Rapports -->
-        <div class="dropdown dropdown-hover">
-            <button class="nav-item" data-mdb-dropdown-init>
-                <i class="fas fa-chart-pie"></i>
-                <span>Statistiques</span>
-                <i class="fas fa-chevron-right dropdown-arrow"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-hover">
-                <li><a class="dropdown-item" [routerLink]="['/admin/reports-daily']"><i class="fas fa-calendar-day"></i> Journalier</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/reports-weekly']"><i class="fas fa-calendar-week"></i> Hebdomadaire</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/reports-monthly']"><i class="fas fa-calendar-alt"></i> Mensuel</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/reports-comparison']"><i class="fas fa-balance-scale"></i> Comparaison</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/reports-export']"><i class="fas fa-file-export"></i> Exports</a></li>
-            </ul>
-        </div>
+      <!-- Statistiques & Rapports -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-chart-pie"></i>
+          <span>Statistiques</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-daily']"><i class="fas fa-calendar-day"></i>
+              Journalier</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-weekly']"><i class="fas fa-calendar-week"></i>
+              Hebdomadaire</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-monthly']"><i class="fas fa-calendar-alt"></i>
+              Mensuel</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-comparison']"><i class="fas fa-balance-scale"></i>
+              Comparaison</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-export']"><i class="fas fa-file-export"></i>
+              Exports</a></li>
+        </ul>
+      </div>
 
-        <!-- Audit -->
-        <div class="dropdown dropdown-hover">
-            <button class="nav-item" data-mdb-dropdown-init>
-                <i class="fas fa-clipboard-check"></i>
-                <span>Audit</span>
-                <i class="fas fa-chevron-right dropdown-arrow"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-hover">
-                <li><a class="dropdown-item" [routerLink]="['/admin/audit-logs']"><i class="fas fa-clipboard-list"></i> Journal d'activité</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/audit-changes']"><i class="fas fa-history"></i> Historique modifications</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/audit-security']"><i class="fas fa-shield-alt"></i> Sécurité</a></li>
-            </ul>
-        </div>
+      <!-- Audit -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-clipboard-check"></i>
+          <span>Audit</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-logs']"><i class="fas fa-clipboard-list"></i>
+              Journal d'activité</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-changes']"><i class="fas fa-history"></i> Historique
+              modifications</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-security']"><i class="fas fa-shield-alt"></i>
+              Sécurité</a></li>
+        </ul>
+      </div>
 
-        <!-- Dépenses -->
-        <div class="dropdown dropdown-hover">
-            <button class="nav-item" data-mdb-dropdown-init>
-                <i class="fas fa-file-invoice-dollar"></i>
-                <span>Dépenses</span>
-                <i class="fas fa-chevron-right dropdown-arrow"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-hover">
-                <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i> Eau/Électricité</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/expenses-products']"><i class="fas fa-shopping-basket"></i> Produits</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/expenses-rent']"><i class="fas fa-home"></i> Loyer</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/expenses-other']"><i class="fas fa-receipt"></i> Divers</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/expenses-profitability']"><i class="fas fa-chart-line"></i> Rentabilité</a></li>
-            </ul>
-        </div>
+      <!-- Dépenses -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-file-invoice-dollar"></i>
+          <span>Dépenses</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>
+              Eau/Électricité</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-products']"><i
+                class="fas fa-shopping-basket"></i> Produits</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-rent']"><i class="fas fa-home"></i> Loyer</a>
+          </li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-other']"><i class="fas fa-receipt"></i>
+              Divers</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-profitability']"><i
+                class="fas fa-chart-line"></i> Rentabilité</a></li>
+        </ul>
+      </div>
 
-        <!-- Paramètres -->
-        <div class="dropdown dropdown-hover">
-            <button class="nav-item" data-mdb-dropdown-init>
-                <i class="fas fa-cogs"></i>
-                <span>Paramètres</span>
-                <i class="fas fa-chevron-right dropdown-arrow"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-hover">
-                <li><a class="dropdown-item" [routerLink]="['/admin/settings-schedule']"><i class="fas fa-clock"></i> Horaires</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/settings-services']"><i class="fas fa-concierge-bell"></i> Prestations</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/settings-vehicles']"><i class="fas fa-car"></i> Types de véhicules</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/settings-pricing']"><i class="fas fa-tags"></i> Tarification</a></li>
-                <li><a class="dropdown-item" [routerLink]="['/admin/settings-system']"><i class="fas fa-sliders-h"></i> Système</a></li>
-            </ul>
-        </div>
+      <!-- Paramètres -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-cogs"></i>
+          <span>Paramètres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-schedule']"><i class="fas fa-clock"></i>
+              Horaires</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-services']"><i class="fas fa-concierge-bell"></i>
+              Prestations</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-vehicles']"><i class="fas fa-car"></i> Types de
+              véhicules</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-pricing']"><i class="fas fa-tags"></i>
+              Tarification</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-system']"><i class="fas fa-sliders-h"></i>
+              Système</a></li>
+        </ul>
+      </div>
     </div>
-</div>
+  </div>
 
-    <!-- Main Content -->
-    <div class="main-content" id="main-content">
-        <div class="top-bar">
-            <div class="menu-toggle" id="menu-toggle">
-                <i class="fas fa-bars"></i>
-            </div>
-            <div class="search-box">
-                <input
-                  type="text"
-                  class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
-                  placeholder="Rechercher un utilisateur..."
-                  [(ngModel)]="searchTerm"
-                  (ngModelChange)="filterUsers()"
-                />
-            </div>
-            <div class="top-right">
-                <div class="icon-button">
-                    <i class="fas fa-envelope"></i>
-                </div>
-                <div class="icon-button">
-                    <i class="fas fa-bell"></i>
-                    <span class="badge">3</span>
-                </div>
-                <div class="dropdown dropdown-hover">
-                    <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
-                        <img src="https://via.placeholder.com/32" alt="User">
-                        <span>Affery Auxence Delors CHABEHOU</span>
-                        <i class="fas fa-chevron-down"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Mon profil</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
-                        <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
-                        <li>
-                        <a class="dropdown-item" (click)="logout()">
-                          <i class="fas fa-sign-out-alt"></i> Déconnexion
-                        </a>
-                      </li>
-
-                    </ul>
-                </div>
-            </div>
+  <!-- Main Content -->
+  <div class="main-content" id="main-content">
+    <div class="top-bar">
+      <div class="menu-toggle" id="menu-toggle">
+        <i class="fas fa-bars"></i>
+      </div>
+      <div class="search-box">
+        <input type="text"
+          class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
+          placeholder="Rechercher un utilisateur..." [(ngModel)]="searchTerm" (ngModelChange)="filterUsers()" />
+      </div>
+      <div class="top-right">
+        <div class="icon-button">
+          <i class="fas fa-envelope"></i>
         </div>
+        <div class="icon-button">
+          <i class="fas fa-bell"></i>
+          <span class="badge">3</span>
+        </div>
+        <div class="dropdown dropdown-hover">
+          <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
+            <!-- Photo sécurisée si elle existe -->
+            <img *ngIf="currentUser?.photoSafeUrl as safeUrl" [src]="safeUrl" alt="User" class="user-avatar">
+            <!-- Nom complet -->
+            <span>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
+            <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Mon profil</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
+            <li>
+              <a class="dropdown-item" (click)="logout()">
+                <i class="fas fa-sign-out-alt"></i> Déconnexion
+              </a>
+            </li>
 
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="blank-page">
         <div class="page-content">
-            <div class="blank-page">
-                <div class="page-content">
-            <div class="users-table-container">
-                <div class="table-header">
-                    <div class="table-title">Liste des Utilisateurs</div>
-                    <div class="table-actions">
-                        <button class="btn-action btn-outline">
-                            <i class="fas fa-filter btn-icon"></i>Filtrer
-                        </button>
-                        <button (click)="exportUsers()" class="btn-action btn-outline">
-                            <i class="fas fa-download btn-icon"></i>Exporter
-                        </button>
-                        <button [routerLink]="['/admin/users-create']" class="btn-action btn-primary">
-                            <i class="fas fa-plus btn-icon"></i>Ajouter un utilisateur
-                        </button>
-                    </div>
-                </div>
-
-                <table class="users-table">
-                    <thead>
-                        <tr>
-                            <th>Prénom</th>
-                            <th>Nom</th>
-                            <th>Rôles</th>
-                            <th>Email</th>
-                            <th>Statut</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let user of displayedUsers">
-                            <td>
-                                <div class="user-info-cell">
-                                    <div>
-                                        <div class="user-name">{{ user?.firstName }}</div>
-                                        <div class="user-img">{{ user?.photoUrl }}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td>{{ user?.lastName }}</td>
-                            <td>{{ user?.roles }}</td>
-                            <td>{{ user?.email }}</td>
-                           <td>
-                            <span class="status" [class.status-active]="user?.isEnabled" [class.status-inactive]="!user?.isEnabled">
-                              {{ user?.isEnabled ? 'Actif' : 'Inactif' }}
-                            </span>
-                           </td>
-                            <td>
-                                <div class="actions-cell">
-                                    <button (click)="toggleAccount(user)"
-                                            class="btn-toggle"
-                                            [class.active]="user.isEnabled"
-                                            title="{{ user.isEnabled ? 'Désactiver' : 'Activer' }}">
-                                        <span class="toggle-thumb"></span>
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                <div class="table-pagination">
-                    <div class="pagination-info">
-                        Page {{ currentPage }} sur {{ totalPages }} • Nombre d'utilisateurs = {{ totalItems }} utilisateurs
-                    </div>
-                    <div class="pagination-controls">
-                        <button (click)="previousPage()"
-                                [disabled]="currentPage === 1"
-                                class="pagination-btn">
-                            <i class="fas fa-angle-double-left"></i>
-                        </button>
-                        <button (click)="nextPage()"
-                                [disabled]="currentPage === totalPages"
-                                class="pagination-btn">
-                            <i class="fas fa-angle-double-right"></i>
-                        </button>
-                    </div>
-                </div>
+          <div class="users-table-container">
+            <div class="table-header">
+              <div class="table-title">Liste des Utilisateurs</div>
+              <div class="table-actions">
+                <button class="btn-action btn-outline">
+                  <i class="fas fa-filter btn-icon"></i>Filtrer
+                </button>
+                <button (click)="exportUsers()" class="btn-action btn-outline">
+                  <i class="fas fa-download btn-icon"></i>Exporter
+                </button>
+                <button [routerLink]="['/admin/users-create']" class="btn-action btn-primary">
+                  <i class="fas fa-plus btn-icon"></i>Ajouter un utilisateur
+                </button>
+              </div>
             </div>
-        </div>
-            </div>
-        </div>
 
-        <div class="footer">
-            <div>©2025 AutoWash, Tous droit reservé.</div>
-            <div>Crée par <a href="https://www.linkedin.com/in/afferyauxencedelorschabehou/">Affery Auxence Delors CHABEHOU</a></div>
+            <table class="users-table">
+              <thead>
+                <tr>
+                  <th>Prénom</th>
+                  <th>Nom</th>
+                  <th>Rôles</th>
+                  <th>Email</th>
+                  <th>Statut</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let user of displayedUsers">
+                  <td>
+                    <div class="user-info-cell">
+                      <div>
+                        <div class="user-name">{{ user?.firstName }}</div>
+                        <img *ngIf="user?.photoSafeUrl" [src]="user.photoSafeUrl" alt="Photo de profil"
+                          class="user-photo">
+                        <div *ngIf="!user?.photoSafeUrl" class="user-initials">
+                          {{ (user?.firstName?.charAt(0) || '') + (user?.lastName?.charAt(0) || '') }}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td>{{ user?.lastName }}</td>
+                  <td>{{ user?.roles }}</td>
+                  <td>{{ user?.email }}</td>
+                  <td>
+                    <span class="status" [class.status-active]="user?.isEnabled"
+                      [class.status-inactive]="!user?.isEnabled">
+                      {{ user?.isEnabled ? 'Actif' : 'Inactif' }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="actions-cell">
+                      <button (click)="toggleAccount(user)" class="btn-toggle" [class.active]="user.isEnabled"
+                        title="{{ user.isEnabled ? 'Désactiver' : 'Activer' }}">
+                        <span class="toggle-thumb"></span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="table-pagination">
+              <div class="pagination-info">
+                Page {{ currentPage }} sur {{ totalPages }} • Nombre d'utilisateurs = {{ totalItems }} utilisateurs
+              </div>
+              <div class="pagination-controls">
+                <button (click)="previousPage()" [disabled]="currentPage === 1" class="pagination-btn">
+                  <i class="fas fa-angle-double-left"></i>
+                </button>
+                <button (click)="nextPage()" [disabled]="currentPage === totalPages" class="pagination-btn">
+                  <i class="fas fa-angle-double-right"></i>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
+
+    <div class="footer">
+      <div>©2025 AutoWash, Tous droit reservé.</div>
+      <div>Crée par <a href="https://www.linkedin.com/in/afferyauxencedelorschabehou/">Affery Auxence Delors
+          CHABEHOU</a></div>
+    </div>
+  </div>
 </body>
+
 </html>

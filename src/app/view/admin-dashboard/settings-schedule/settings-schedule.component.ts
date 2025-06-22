@@ -5,6 +5,12 @@ import { UsersService } from '../../../core/services/Users/users.service';
 import { FormGroup, FormBuilder, Validators, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { DaySchedule } from '../../../core/models/Settings/DaySchedule';
 import { CommonModule } from '@angular/common';
+import { DayOfWeek } from '../../../core/models/Settings/DayOfWeek';
+import { ScheduleSettings } from '../../../core/models/Settings/ScheduleSettings';
+import { SettingsService } from '../../../core/services/Settings/settings.service';
+import { CentresService } from '../../../core/services/Centres/centres.service';
+import { DomSanitizer } from '@angular/platform-browser';
+import { Users } from '../../../core/models/Users/Users';
 
 @Component({
   selector: 'app-settings-schedule',
@@ -20,11 +26,22 @@ export class SettingsScheduleComponent implements OnInit {
   scheduleForm!: FormGroup;
   showPreview: boolean = false;
   weekDays: DaySchedule[] = [];
+  isLoading: boolean = false;
+  errorMessage: string | null = null;
+  successMessage: string | null = null;
+
+  users: Users[] = []; // Liste complète des utilisateurs.
+  displayedUsers: Users[] = []; // Liste des utilisateurs affichés sur la page actuelle.
+  currentUser: Users | null = null; // Utilisateur actuellement connecté.
+  user: Users | null = null; // Informations sur l'utilisateur connecté.
 
   constructor(
+    private sanitizer: DomSanitizer,
     private formBuilder: FormBuilder,
     private router: Router,
     private usersService: UsersService,
+    private settingsService: SettingsService,
+    private centresService: CentresService,
     private authService: AuthService
   ) {
     this.initializeForm();
@@ -32,6 +49,181 @@ export class SettingsScheduleComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadCurrentSchedule();
+        this.getUsers(); // Récupère les utilisateurs.
+    this.loadCurrentUser(); // Charge l'utilisateur connecté
+
+    // S'abonner aux changements de l'utilisateur connecté
+    this.authService.currentUser$.subscribe((user) => {
+      if (user && user !== this.currentUser) {
+        this.currentUser = user;
+        this.loadCurrentUserPhoto();
+      }
+    });
+  }
+
+  /**
+   * Charge les photos des utilisateurs et les sécurise pour l'affichage.
+   * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
+   */
+  loadUserPhotos(): void {
+    this.displayedUsers.forEach((user) => {
+      if (user.photoUrl && typeof user.photoUrl === 'string') {
+        this.usersService.getUserPhoto(user.photoUrl).subscribe((blob) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            user.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
+              reader.result as string
+            );
+          };
+          reader.readAsDataURL(blob);
+        });
+      }
+    });
+  }
+
+  /**
+   * Récupère tous les utilisateurs et charge leurs photos.
+   * Utilise le service UsersService pour obtenir la liste des utilisateurs.
+   */
+  getUsers(): void {
+    this.usersService.getAllUsers().subscribe({
+      next: (data) => {
+        this.users = data;
+        this.loadUserPhotos(); // Charge les photos après avoir reçu les utilisateurs
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des utilisateurs', error);
+      },
+    });
+  }
+
+  /**
+   * Charge l'utilisateur actuellement connecté.
+   * Essaie d'abord de récupérer l'utilisateur depuis le service d'authentification,
+   */
+  loadCurrentUser(): void {
+    // D'abord, essaie de récupérer depuis le service d'authentification
+    this.authService.loadCurrentUserProfile().subscribe({
+      next: (user) => {
+        if (user) {
+          this.currentUser = user;
+          this.loadCurrentUserPhoto();
+        } else {
+          // Si pas d'utilisateur depuis AuthService, utilise UsersService
+          this.usersService.getCurrentUser().subscribe({
+            next: (user) => {
+              this.currentUser = user;
+              this.loadCurrentUserPhoto();
+            },
+            error: (error) => {
+              console.error(
+                "Erreur lors du chargement de l'utilisateur connecté",
+                error
+              );
+            },
+          });
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement du profil utilisateur', error);
+        // Fallback vers UsersService
+        this.usersService.getCurrentUser().subscribe({
+          next: (user) => {
+            this.currentUser = user;
+            this.loadCurrentUserPhoto();
+          },
+          error: (error) => {
+            console.error(
+              "Erreur lors du chargement de l'utilisateur connecté",
+              error
+            );
+          },
+        });
+      },
+    });
+  }
+
+  /**
+   * Charge la photo de l'utilisateur actuellement connecté.
+   *
+   * Utilise le service UsersService pour obtenir la photo de l'utilisateur.
+   */
+  loadCurrentUserPhoto(): void {
+    if (!this.currentUser) return;
+
+    if (
+      this.currentUser.photoUrl &&
+      typeof this.currentUser.photoUrl === 'string'
+    ) {
+      this.usersService.getUserPhoto(this.currentUser.photoUrl).subscribe({
+        next: (blob) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            this.currentUser!.photoSafeUrl =
+              this.sanitizer.bypassSecurityTrustUrl(reader.result as string);
+          };
+          reader.readAsDataURL(blob);
+        },
+        error: (error) => {
+          console.error(
+            'Erreur lors du chargement de la photo utilisateur',
+            error
+          );
+          // Image par défaut
+          this.currentUser!.photoSafeUrl =
+            this.sanitizer.bypassSecurityTrustUrl(
+              'assets/images/default-avatar.png'
+            );
+        },
+      });
+    } else {
+      // Si pas de photoUrl, utiliser une image par défaut
+      this.currentUser.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
+        'assets/images/default-avatar.png'
+      );
+    }
+  }
+
+  /**
+   * Retourne le nom complet de l'utilisateur connecté
+   * @returns Le nom complet formaté ou un texte par défaut
+   */
+  getFullName(): string {
+    if (this.currentUser) {
+      const firstName = this.currentUser.firstName || '';
+      const lastName = this.currentUser.lastName || '';
+      return `${firstName} ${lastName}`.trim() || 'Utilisateur';
+    }
+    return 'Utilisateur';
+  }
+
+  /**
+   * Retourne le rôle de l'utilisateur connecté
+   * @returns Le rôle de l'utilisateur ou un texte par défaut
+   */
+  getUserRole(): string {
+    // Si pas d'utilisateur connecté
+    if (!this.currentUser) return 'Rôle non défini';
+
+    // Si l'utilisateur a des rôles
+    if (this.currentUser.roles && this.currentUser.roles.length > 0) {
+      return this.mapRoleIdToName(this.currentUser.roles[0]);
+    }
+
+    // Sinon, utilise le service d'authentification
+    const role = this.authService.getUserRole();
+    return role ? this.mapRoleIdToName(role) : 'Rôle non défini';
+  }
+
+  private mapRoleIdToName(roleId: string): string {
+    const roleMapping: { [key: string]: string } = {
+      '1': 'Administrateur',
+      '2': 'Manager',
+      '3': 'Éditeur',
+      '4': 'Utilisateur',
+    };
+
+    return roleMapping[roleId] || 'Administrateur';
   }
 
   /**
@@ -97,7 +289,6 @@ export class SettingsScheduleComponent implements OnInit {
    */
   private timeValidator(control: any) {
     if (!control.value) return null;
-
     const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
     return timeRegex.test(control.value) ? null : { invalidTime: true };
   }
@@ -140,76 +331,202 @@ export class SettingsScheduleComponent implements OnInit {
     }
   }
 
-  /**
+/**
    * Charge les horaires actuels depuis le service
    */
-  private loadCurrentSchedule(): void {
-    // TODO: Implémenter la récupération des horaires depuis l'API
-    console.log('Chargement des horaires actuels...');
-
-    // Exemple de données par défaut
-    const defaultSchedule = {
-      mondayEnabled: true,
-      mondayStart: '08:00',
-      mondayEnd: '17:00',
-      tuesdayEnabled: true,
-      tuesdayStart: '08:00',
-      tuesdayEnd: '17:00',
-      wednesdayEnabled: true,
-      wednesdayStart: '08:00',
-      wednesdayEnd: '17:00',
-      thursdayEnabled: true,
-      thursdayStart: '08:00',
-      thursdayEnd: '17:00',
-      fridayEnabled: true,
-      fridayStart: '08:00',
-      fridayEnd: '17:00',
-      saturdayEnabled: false,
-      saturdayStart: '09:00',
-      saturdayEnd: '13:00',
-      sundayEnabled: false,
-      sundayStart: '09:00',
-      sundayEnd: '13:00',
-      timezone: 'Africa/Abidjan',
-      defaultBreakDuration: 60,
-      overtimeThreshold: 40,
-      notificationsEnabled: true,
-      arrivalTolerance: 15,
-      weekStartDay: 'monday'
-    };
-
-    this.scheduleForm.patchValue(defaultSchedule);
+  loadCurrentSchedule(): void {
+    this.isLoading = true;
+    this.errorMessage = null;
+    this.centresService.getAllCentres().subscribe({
+      next: (centres) => {
+        if (centres.length > 0) {
+          const firstCentreId = centres[0].id;
+          if (firstCentreId) {
+            this.settingsService.getScheduleSettings(firstCentreId).subscribe({
+              next: (settings) => {
+                this.populateFormFromSettings(settings);
+                this.isLoading = false;
+              },
+              error: (error) => {
+                console.error('Erreur lors du chargement', error);
+                this.setDefaultSchedule();
+                this.isLoading = false;
+                this.errorMessage = 'Erreur lors du chargement des horaires. Valeurs par défaut appliquées.';
+              }
+            });
+          } else {
+            this.setDefaultSchedule();
+            this.isLoading = false;
+            this.errorMessage = 'Aucun centre trouvé. Valeurs par défaut appliquées.';
+          }
+        } else {
+          this.setDefaultSchedule();
+          this.isLoading = false;
+          this.errorMessage = 'Aucun centre trouvé. Valeurs par défaut appliquées.';
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des centres', error);
+        this.setDefaultSchedule();
+        this.isLoading = false;
+        this.errorMessage = 'Erreur lors du chargement des centres. Valeurs par défaut appliquées.';
+      }
+    });
   }
 
-  /**
-   * Soumet le formulaire et enregistre les horaires
-   */
-  onSubmit(): void {
-    if (this.scheduleForm.valid) {
-      const formData = this.scheduleForm.value;
+ /**
+ * Soumet le formulaire et enregistre les horaires pour tous les centres
+ */
+onSubmit(): void {
+  if (this.scheduleForm.invalid) {
+    this.markFormGroupTouched();
+    this.errorMessage = 'Veuillez corriger les erreurs dans le formulaire.';
+    return;
+  }
 
-      console.log('Données des horaires à enregistrer:', formData);
+  if (!this.validateAllTimeRanges()) {
+    this.errorMessage = 'Certaines plages horaires sont invalides (heure de fin avant heure de début).';
+    return;
+  }
 
-      // TODO: Appel API pour sauvegarder les horaires
-      this.saveSchedule(formData);
-    } else {
-      console.log('Formulaire invalide');
-      this.markFormGroupTouched();
+  if (!confirm('Voulez-vous appliquer ces horaires à TOUS les centres ?')) {
+    return;
+  }
+
+  this.isLoading = true;
+  this.errorMessage = null;
+  this.successMessage = null;
+
+  const formData = this.scheduleForm.value;
+  const scheduleSettings = this.mapFormToScheduleSettings(formData);
+
+  // Récupérer tous les IDs de centre
+  this.centresService.getAllCentres().subscribe({
+    next: (centres) => {
+      const centreIds = centres.map(c => c.id).filter((id): id is string => !!id);
+
+      if (centreIds.length === 0) {
+        this.isLoading = false;
+        this.errorMessage = 'Aucun centre disponible';
+        return;
+      }
+
+      // Appliquer les horaires à tous les centres
+      this.settingsService.updateMultipleCentresSchedules(centreIds, scheduleSettings).subscribe({
+        next: (results) => {
+          this.isLoading = false;
+          const successCount = results.filter(r => r).length;
+
+          if (successCount === centreIds.length) {
+            this.successMessage = `Horaires enregistrés avec succès pour ${successCount} centres !`;
+          } else {
+            this.errorMessage = `Horaires enregistrés pour ${successCount}/${centreIds.length} centres. Certains centres n'ont pas pu être mis à jour.`;
+          }
+
+          this.loadCurrentSchedule();
+        },
+        error: (error) => {
+          this.isLoading = false;
+          this.errorMessage = 'Une erreur est survenue lors de l\'enregistrement des horaires.';
+          console.error('Erreur lors de l\'enregistrement', error);
+        }
+      });
+    },
+    error: (error) => {
+      this.isLoading = false;
+      this.errorMessage = 'Impossible de charger la liste des centres';
+      console.error('Erreur lors du chargement des centres', error);
     }
+  });
+}
+
+  private validateAllTimeRanges(): boolean {
+    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    return days.every(day => {
+      if (!this.scheduleForm.get(`${day}Enabled`)?.value) return true;
+      const start = this.scheduleForm.get(`${day}Start`)?.value;
+      const end = this.scheduleForm.get(`${day}End`)?.value;
+      return start && end && start < end;
+    });
   }
 
   /**
    * Sauvegarde les horaires via l'API
    */
-  private saveSchedule(scheduleData: any): void {
-    // TODO: Implémenter l'appel API
-    console.log('Sauvegarde des horaires:', scheduleData);
+  saveSchedule(formData: any): void {
+  // Transformation des données du formulaire en modèle ScheduleSettings
+  const scheduleSettings = this.mapFormToScheduleSettings(formData);
 
-    // Simulation d'une sauvegarde réussie
-    setTimeout(() => {
+  this.settingsService.updateScheduleSettings('centreId', scheduleSettings).subscribe({
+    next: (response) => {
+      console.log('Enregistrement réussi', response);
       alert('Horaires enregistrés avec succès !');
-    }, 500);
+      // Optionnel: recharger les données
+      this.loadCurrentSchedule();
+    },
+    error: (error) => {
+      console.error('Erreur lors de l\'enregistrement', error);
+      alert('Une erreur est survenue lors de l\'enregistrement');
+    }
+  });
+}
+
+
+mapFormToScheduleSettings(formData: any): any {
+  const scheduleSettings: any = {
+    weeklySchedule: {},
+    specialDays: [],
+    is24Hours: false,
+    defaultOpenTime: this.formatTimeForApi(formData.defaultOpenTime || '08:00'),
+    defaultCloseTime: this.formatTimeForApi(formData.defaultCloseTime || '18:00')
+  };
+
+  const dayMapping = {
+    monday: DayOfWeek.Monday,
+    tuesday: DayOfWeek.Tuesday,
+    wednesday: DayOfWeek.Wednesday,
+    thursday: DayOfWeek.Thursday,
+    friday: DayOfWeek.Friday,
+    saturday: DayOfWeek.Saturday,
+    sunday: DayOfWeek.Sunday
+  };
+
+  Object.entries(dayMapping).forEach(([formKey, dayOfWeek]) => {
+    scheduleSettings.weeklySchedule[dayOfWeek] = {
+      isOpen: formData[`${formKey}Enabled`],
+      openTime: this.formatTimeForApi(formData[`${formKey}Start`]),
+      closeTime: this.formatTimeForApi(formData[`${formKey}End`]),
+      breaks: []
+    };
+  });
+
+  return { scheduleSettings }; // Notez l'objet englobant
+}
+
+private formatTimeForApi(time: string): string {
+  // Convertit "HH:mm" en "HH:mm:00" pour l'API
+  if (time && time.length === 5 && time.includes(':')) {
+    return `${time}:00`;
   }
+  return time;
+}
+
+
+
+
+populateFormFromSettings(settings: ScheduleSettings): void {
+  const formData: any = {};
+
+  // Mapping des jours
+  settings.weeklySchedule.forEach((daySchedule, dayOfWeek) => {
+    const dayKey = dayOfWeek.toLowerCase();
+    formData[`${dayKey}Enabled`] = daySchedule.isOpen;
+    formData[`${dayKey}Start`] = daySchedule.openTime; // Correction ici
+    formData[`${dayKey}End`] = daySchedule.closeTime;  // Correction ici
+  });
+
+  this.scheduleForm.patchValue(formData);
+}
 
   /**
    * Réinitialise le formulaire
@@ -290,6 +607,7 @@ export class SettingsScheduleComponent implements OnInit {
   previewSchedule(): void {
     this.generateWeekDaysPreview();
     this.showPreview = true;
+    this.errorMessage = null;
   }
 
   /**
@@ -361,3 +679,7 @@ export class SettingsScheduleComponent implements OnInit {
     }
   }
 }
+
+
+
+

@@ -11,13 +11,17 @@
     <div class="logo">
       <i class="fas fa-hashtag"></i> AUTOWASH
     </div>
-    <div class="user-profile">
-      <img
-        src="https://media.licdn.com/dms/image/v2/D4E03AQFl4HpioZZvhQ/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1722776592369?e=1752105600&v=beta&t=rO8ASWATTrkWn2YaWXch8SnDzwUcyCtDkcAJsdEQ2n4"
-        alt="User Profile">
+    <div class="user-profile" *ngIf="currentUser">
+      <div class="user-photo-container">
+        <img *ngIf="currentUser.photoSafeUrl" [src]="currentUser.photoSafeUrl"
+          [alt]="'Photo de ' + (currentUser.firstName || 'Utilisateur')" class="user-avatar">
+        <div *ngIf="!currentUser.photoSafeUrl" class="user-initials">
+          {{ (currentUser.firstName?.charAt(0) || '') + (currentUser.lastName?.charAt(0) || '') }}
+        </div>
+      </div>
       <div class="user-info">
-        <h4>Afffery Auxence Delors CHABEHOU<span class="status-indicator"></span></h4>
-        <p>Administrateur</p>
+        <h4>{{ getFullName() }}</h4>
+        <p>{{ getUserRole() }}</p>
       </div>
     </div>
     <div class="nav-menu">
@@ -220,8 +224,10 @@
         </div>
         <div class="dropdown dropdown-hover">
           <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
-            <img src="https://via.placeholder.com/32" alt="User">
-            <span>Affery Auxence Delors CHABEHOU</span>
+            <!-- Photo sécurisée si elle existe -->
+            <img *ngIf="currentUser?.photoSafeUrl as safeUrl" [src]="safeUrl" alt="User" class="user-avatar">
+            <!-- Nom complet -->
+            <span>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
             <i class="fas fa-chevron-down"></i>
           </button>
           <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
@@ -235,222 +241,194 @@
     </div>
 
     <div class="page-content">
-      <div class="container-fluid">
-        <!-- Header avec titre et bouton d'ajout -->
-        <div class="d-flex justify-content-between align-items-center mb-4">
-          <div>
-            <h1 class="h3 mb-0 text-gray-800">Types de véhicules</h1>
-            <p class="mb-0">Configurez les différents types de véhicules acceptés dans vos centres</p>
-          </div>
-          <button class="btn btn-primary" (click)="openAddModal()">
-            <i class="fas fa-plus me-2"></i> Ajouter un type
-          </button>
-        </div>
-
-        <!-- Carte principale -->
-        <div class="card shadow mb-4">
-          <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-primary">Liste des types de véhicules</h6>
-            <div class="d-flex">
-              <div class="input-group input-group-sm" style="width: 250px;">
-                <input type="text" class="form-control" placeholder="Rechercher..." aria-label="Search"
-                  [(ngModel)]="searchQuery" (input)="onSearch()">
-                <button class="btn btn-outline-primary" type="button" (click)="onSearch()">
-                  <i class="fas fa-search"></i>
-                </button>
-              </div>
-              <button class="btn btn-sm btn-outline-secondary ms-2">
-                <i class="fas fa-filter"></i> Filtrer
-              </button>
-            </div>
-          </div>
-          <div class="card-body">
-            <!-- Error Message -->
-            <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
-            <!-- Loading Indicator -->
-            <div class="text-center" *ngIf="isLoading">
-              <i class="fas fa-spinner fa-spin"></i> Chargement...
-            </div>
-            <div class="table-responsive" *ngIf="!isLoading">
-              <table class="table table-hover">
-                <thead class="table-light">
-                  <tr>
-                    <th width="50px"></th>
-                    <th>Nom</th>
-                    <th>Catégorie</th>
-                    <th>Multiplicateur</th>
-                    <th>Statut</th>
-                    <th>Ordre</th>
-                    <th width="120px">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr *ngFor="let vehicleType of filteredVehicleTypes">
-                    <td>
-                      <div class="vehicle-icon-{{ vehicleType.size.toLowerCase() }}">
-                        <i class="{{ vehicleType.iconUrl || 'fas fa-car' }}"></i>
-                      </div>
-                    </td>
-                    <td>
-                      <strong>{{ vehicleType.name }}</strong>
-                      <p class="text-muted small mb-0">{{ vehicleType.description }}</p>
-                    </td>
-                    <td><span class="badge bg-light text-dark">{{ vehicleType.size }}</span></td>
-                    <td>{{ vehicleType.sizeMultiplier }}x</td>
-                    <td>
-                      <span class="badge" [ngClass]="vehicleType.isActive ? 'bg-success' : 'bg-secondary'">
-                        {{ vehicleType.isActive ? 'Actif' : 'Inactif' }}
-                      </span>
-                    </td>
-                    <td>{{ vehicleType.sortOrder }}</td>
-                    <td>
-                      <button class="btn btn-sm btn-outline-primary" title="Modifier"
-                        (click)="openEditModal(vehicleType)">
-                        <i class="fas fa-pencil-alt"></i>
-                      </button>
-                      <button class="btn btn-sm"
-                        [ngClass]="vehicleType.isActive ? 'btn-outline-danger' : 'btn-outline-success'"
-                        [title]="vehicleType.isActive ? 'Désactiver' : 'Activer'"
-                        (click)="toggleVehicleTypeStatus(vehicleType)">
-                        <i class="{{ vehicleType.isActive ? 'fas fa-ban' : 'fas fa-check' }}"></i>
-                      </button>
-                    </td>
-                  </tr>
-                  <tr *ngIf="filteredVehicleTypes.length === 0">
-                    <td colspan="7" class="text-center">Aucun type de véhicule trouvé</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <!-- Pagination (Placeholder, can be enhanced later) -->
-            <nav aria-label="Page navigation">
-              <ul class="pagination justify-content-end">
-                <li class="page-item disabled">
-                  <a class="page-link" href="#" tabindex="-1" aria-disabled="true">Précédent</a>
-                </li>
-                <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                <li class="page-item"><a class="page-link" href="#">2</a></li>
-                <li class="page-item"><a class="page-link" href="#">3</a></li>
-                <li class="page-item">
-                  <a class="page-link" href="#">Suivant</a>
-                </li>
-              </ul>
-            </nav>
-          </div>
-        </div>
+  <div class="container-fluid">
+    <!-- Header avec titre et bouton d'ajout -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h1 class="h3 mb-0 text-gray-800">Types de véhicules</h1>
+        <p class="mb-0">Configurez les différents types de véhicules acceptés dans vos centres</p>
       </div>
+      <button class="btn btn-primary" (click)="openAddModal(addModal)">
+        <i class="fas fa-plus me-2"></i> Ajouter un type
+      </button>
     </div>
 
-    <!-- Modal d'ajout/modification de type de véhicule -->
-    <div class="modal fade" id="addVehicleTypeModal" tabindex="-1" aria-labelledby="addVehicleTypeModalLabel"
-      aria-hidden="true">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header bg-primary text-white">
-            <h5 class="modal-title" id="addVehicleTypeModalLabel">{{ isEditMode ? 'Modifier le type de véhicule' :
-              'Ajouter un type de véhicule' }}</h5>
-            <button type="button" class="btn-close btn-close-white" data-mdb-dismiss="modal"
-              aria-label="Close"></button>
-          </div>
-          <div class="modal-body">
-            <form>
-              <div class="row mb-4">
-                <div class="col-md-6">
-                  <div class="form-outline">
-                    <input type="text" id="vehicleTypeName" class="form-control" [(ngModel)]="vehicleTypeForm.name" />
-                    <label class="form-label" for="vehicleTypeName">Nom du type de véhicule</label>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="form-outline">
-                    <textarea class="form-control" id="vehicleTypeDescription" rows="1"
-                      [(ngModel)]="vehicleTypeForm.description"></textarea>
-                    <label class="form-label" for="vehicleTypeDescription">Description</label>
-                  </div>
-                </div>
-              </div>
-
-              <div class="row mb-4">
-                <div class="col-md-4">
-                  <div class="form-outline">
-                    <select class="form-select" id="vehicleSize" [(ngModel)]="vehicleTypeForm.size">
-                      <option *ngFor="let size of vehicleSizes" [value]="size.value">{{ size.label }}</option>
-                    </select>
-                    <label class="form-label" for="vehicleSize">Catégorie de taille</label>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="form-outline">
-                    <input type="number" step="0.1" id="sizeMultiplier" class="form-control"
-                      [(ngModel)]="vehicleTypeForm.sizeMultiplier" />
-                    <label class="form-label" for="sizeMultiplier">Multiplicateur de prix</label>
-                  </div>
-                </div>
-                <div class="col-md-4">
-                  <div class="form-outline">
-                    <input type="number" id="sortOrder" class="form-control" [(ngModel)]="vehicleTypeForm.sortOrder" />
-                    <label class="form-label" for="sortOrder">Ordre d'affichage</label>
-                  </div>
-                </div>
-              </div>
-
-              <div class="row mb-4">
-                <div class="col-md-6">
-                  <div class="form-outline">
-                    <input type="text" id="iconUrl" class="form-control" [(ngModel)]="vehicleTypeForm.iconUrl"
-                      readonly />
-                    <label class="form-label" for="iconUrl">URL de l'icône (optionnel)</label>
-                  </div>
-                  <div class="mt-2">
-                    <p class="small text-muted mb-2">Icônes disponibles:</p>
-                    <div class="d-flex flex-wrap gap-2">
-                      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="selectIcon('fas fa-car')">
-                        <i class="fas fa-car me-1"></i> Voiture
-                      </button>
-                      <button type="button" class="btn btn-sm btn-outline-secondary"
-                        (click)="selectIcon('fas fa-truck')">
-                        <i class="fas fa-truck me-1"></i> Camion
-                      </button>
-                      <button type="button" class="btn btn-sm btn-outline-secondary"
-                        (click)="selectIcon('fas fa-motorcycle')">
-                        <i class="fas fa-motorcycle me-1"></i> Moto
-                      </button>
-                      <button type="button" class="btn btn-sm btn-outline-secondary" (click)="selectIcon('fas fa-bus')">
-                        <i class="fas fa-bus me-1"></i> Bus
-                      </button>
-                      <button type="button" class="btn btn-sm btn-outline-secondary"
-                        (click)="selectIcon('fas fa-truck-pickup')">
-                        <i class="fas fa-truck-pickup me-1"></i> Pickup
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="border p-3 rounded text-center">
-                    <div class="vehicle-icon-preview mb-3">
-                      <i class="{{ vehicleTypeForm.iconUrl || 'fas fa-car' }}"></i>
-                    </div>
-                    <p class="small text-muted mb-0">Aperçu de l'icône</p>
-                  </div>
-                </div>
-              </div>
-
-              <div class="form-check form-switch mb-4">
-                <input class="form-check-input" type="checkbox" id="isActive" [(ngModel)]="vehicleTypeForm.isActive" />
-                <label class="form-check-label" for="isActive">Type de véhicule actif</label>
-              </div>
-            </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-mdb-dismiss="modal">Annuler</button>
-            <button type="button" class="btn btn-primary" (click)="saveVehicleType()" [disabled]="isLoading">
-              {{ isLoading ? 'Enregistrement...' : 'Enregistrer' }}
+    <!-- Carte principale -->
+    <div class="card shadow mb-4">
+      <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">Liste des types de véhicules</h6>
+        <div class="d-flex">
+          <div class="input-group input-group-sm" style="width: 250px;">
+            <input type="text" class="form-control" placeholder="Rechercher..."
+                   [(ngModel)]="searchQuery" (input)="onSearch()">
+            <button class="btn btn-outline-primary" type="button" (click)="onSearch()">
+              <i class="fas fa-search"></i>
             </button>
           </div>
         </div>
       </div>
+
+      <div class="card-body">
+        <!-- Messages d'erreur -->
+        <div class="alert alert-danger" *ngIf="errorMessage" @fadeInOut>
+          {{ errorMessage }}
+          <button type="button" class="btn-close" (click)="errorMessage = null"></button>
+        </div>
+
+        <!-- Loading -->
+        <div class="text-center py-5" *ngIf="isLoading && vehicleTypes.length === 0">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Chargement...</span>
+          </div>
+          <p class="mt-2">Chargement des types de véhicules...</p>
+        </div>
+
+        <!-- Tableau -->
+        <div class="table-responsive" *ngIf="!isLoading || vehicleTypes.length > 0">
+          <table class="table table-hover">
+            <thead class="table-light">
+              <tr>
+                <th width="50px"></th>
+                <th>Nom</th>
+                <th>Catégorie</th>
+                <th>Multiplicateur</th>
+                <th>Statut</th>
+                <th>Ordre</th>
+                <th width="120px">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let vehicleType of filteredVehicleTypes">
+                <td>
+                  <div class="vehicle-icon">
+                    <i [class]="vehicleType.iconUrl || 'fas fa-car'"></i>
+                  </div>
+                </td>
+                <td>
+                  <strong>{{ vehicleType.name }}</strong>
+                  <p class="text-muted small mb-0">{{ vehicleType.description || 'Aucune description' }}</p>
+                </td>
+                <td><span class="badge bg-light text-dark">{{ vehicleType.size }}</span></td>
+                <td>{{ vehicleType.sizeMultiplier }}x</td>
+                <td>
+                  <span class="badge" [ngClass]="vehicleType.isActive ? 'bg-success' : 'bg-secondary'">
+                    {{ vehicleType.isActive ? 'Actif' : 'Inactif' }}
+                  </span>
+                </td>
+                <td>{{ vehicleType.sortOrder }}</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-primary me-2"
+                          (click)="openEditModal(editModal, vehicleType)">
+                    <i class="fas fa-edit"></i>
+                  </button>
+                  <button class="btn btn-sm"
+                          [ngClass]="vehicleType.isActive ? 'btn-outline-danger' : 'btn-outline-success'"
+                          (click)="toggleVehicleTypeStatus(vehicleType)">
+                    <i [class]="vehicleType.isActive ? 'fas fa-toggle-off' : 'fas fa-toggle-on'"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="filteredVehicleTypes.length === 0 && !isLoading">
+                <td colspan="7" class="text-center py-4">
+                  Aucun type de véhicule trouvé
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
+  </div>
+</div>
+
+    <ng-template #addModal let-modal>
+  <div class="modal-header">
+    <h5 class="modal-title">{{ isEditMode ? 'Modifier' : 'Ajouter' }} un type de véhicule</h5>
+    <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
+  </div>
+  <div class="modal-body">
+    <form (ngSubmit)="saveVehicleType()">
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label for="vehicleName" class="form-label">Nom*</label>
+          <input type="text" class="form-control" id="vehicleName"
+                 [(ngModel)]="vehicleTypeForm.name" name="name" required>
+        </div>
+        <div class="col-md-6">
+          <label for="vehicleSize" class="form-label">Catégorie*</label>
+          <select class="form-select" id="vehicleSize"
+                  [(ngModel)]="vehicleTypeForm.size" name="size" required>
+            <option *ngFor="let size of vehicleSizes" [value]="size.value">{{size.label}}</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label for="vehicleMultiplier" class="form-label">Multiplicateur*</label>
+          <input type="number" step="0.1" min="0.1" class="form-control" id="vehicleMultiplier"
+                 [(ngModel)]="vehicleTypeForm.sizeMultiplier" name="sizeMultiplier" required>
+        </div>
+        <div class="col-md-6">
+          <label for="vehicleOrder" class="form-label">Ordre d'affichage*</label>
+          <input type="number" min="0" class="form-control" id="vehicleOrder"
+                 [(ngModel)]="vehicleTypeForm.sortOrder" name="sortOrder" required>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="vehicleDescription" class="form-label">Description</label>
+        <textarea class="form-control" id="vehicleDescription" rows="3"
+                  [(ngModel)]="vehicleTypeForm.description" name="description"></textarea>
+      </div>
+
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">Icône</label>
+          <div class="input-group">
+            <span class="input-group-text">
+              <i [class]="vehicleTypeForm.iconUrl"></i>
+            </span>
+            <input type="text" class="form-control" placeholder="Classe FontAwesome (ex: fas fa-car)"
+                   [(ngModel)]="vehicleTypeForm.iconUrl" name="iconUrl">
+          </div>
+          <div class="mt-2">
+            <small class="text-muted">Icônes courantes:</small>
+            <div class="d-flex gap-2 mt-1">
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="selectIcon('fas fa-car')">
+                <i class="fas fa-car"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="selectIcon('fas fa-truck')">
+                <i class="fas fa-truck"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-secondary" (click)="selectIcon('fas fa-motorcycle')">
+                <i class="fas fa-motorcycle"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <label class="form-label">Statut</label>
+          <div class="form-check form-switch mt-2">
+            <input class="form-check-input" type="checkbox" id="vehicleStatus"
+                   [(ngModel)]="vehicleTypeForm.isActive" name="isActive">
+            <label class="form-check-label" for="vehicleStatus">
+              {{ vehicleTypeForm.isActive ? 'Actif' : 'Inactif' }}
+            </label>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Annuler</button>
+    <button type="button" class="btn btn-primary" (click)="saveVehicleType()" [disabled]="isLoading">
+      <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-1"></span>
+      {{ isEditMode ? 'Mettre à jour' : 'Enregistrer' }}
+    </button>
+  </div>
+</ng-template>
 
 
     <div class="footer">
