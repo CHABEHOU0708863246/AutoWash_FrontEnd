@@ -1050,3 +1050,53 @@ body {
 .vehicle-icon-xlarge {
   color: #dc3545; /* Rouge pour très grands véhicules */
 }
+
+
+/* Ajoutez ces styles dans votre fichier SCSS */
+.vehicle-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.badge {
+  font-weight: 500;
+  font-size: 0.8rem;
+
+  &.bg-info-light {
+    background-color: rgba(#0dcaf0, 0.1);
+    border: 1px solid rgba(#0dcaf0, 0.2);
+  }
+
+  &.bg-primary-light {
+    background-color: rgba(#0d6efd, 0.1);
+    border: 1px solid rgba(#0d6efd, 0.2);
+  }
+
+  &.bg-warning-light {
+    background-color: rgba(#ffc107, 0.1);
+    border: 1px solid rgba(#ffc107, 0.2);
+  }
+
+  &.bg-danger-light {
+    background-color: rgba(#dc3545, 0.1);
+    border: 1px solid rgba(#dc3545, 0.2);
+  }
+
+  &.bg-success-light {
+    background-color: rgba(#198754, 0.1);
+    border: 1px solid rgba(#198754, 0.2);
+  }
+
+  &.bg-secondary-light {
+    background-color: rgba(#6c757d, 0.1);
+    border: 1px solid rgba(#6c757d, 0.2);
+  }
+}
+
+.table-hover tbody tr:hover {
+  .badge {
+    opacity: 0.9;
+  }
+}

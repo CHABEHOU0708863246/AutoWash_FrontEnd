@@ -269,77 +269,96 @@
               </div>
             </div>
 
-            <table class="users-table">
-              <thead>
-                <tr>
-                  <th>Nom du centre</th>
-                  <th>Precision sur la localisation</th>
-                  <th>Gerant du centre</th>
-                  <th>Nombres d'employé du centre</th>
-                  <th>Statut</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- Ligne cliquable pour modification -->
-                <tr *ngFor="let centre of displayedCentre" class="clickable-row" [class.has-error]="!centre.id"
-                  style="cursor: pointer;">
-                  <td>
-                    <div class="user-info-cell">
-                      <div>
-                        <div class="user-name">{{ centre?.name }}</div>
-                        <div class="user-img"></div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>{{ centre?.location }}</td>
-                  <td>{{ centre?.ownerName }}</td>
-                  <td>A determiner</td>
-                  <td>
-                    <span class="status" [class.status-active]="centre?.isActive"
-                      [class.status-inactive]="!centre?.isActive">
-                      {{ centre?.isActive ? 'Actif' : 'Inactif' }}
-                    </span>
-                  </td>
-                  <td>
-                    <div class="actions-cell" (click)="$event.stopPropagation()">
-                      <!-- Affichage conditionnel basé sur la présence de l'ID -->
-                      <ng-container *ngIf="centre.id; else noIdTemplate">
-                        <!-- Bouton de modification -->
-                        <button (click)="editCentre(centre.id!)" class="btn-icon-action btn-edit"
-                          title="Modifier le centre">
-                          <i class="fas fa-edit"></i>
-                        </button>
+<div class="table-responsive" *ngIf="displayedCentre.length > 0">
+  <table class="table table-hover align-middle">
+    <thead class="table-light">
+      <tr>
+        <th>Nom du centre</th>
+        <th>Précision sur la localisation</th>
+        <th>Gérant du centre</th>
+        <th>Nombre d'employés</th>
+        <th>Statut</th>
+        <th width="120px">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let centre of displayedCentre" [class.has-error]="!centre.id" class="clickable-row">
+        <td>
+          <div class="d-flex align-items-center">
+            <div class="bg-light rounded-circle p-2 me-3" style="width: 40px; height: 40px;">
+              <i class="fas fa-store text-primary"></i>
+            </div>
+            <div>
+              <strong class="d-block">{{ centre?.name || 'Non renseigné' }}</strong>
+            </div>
+          </div>
+        </td>
+        <td>
+          <span class="badge bg-light text-dark py-2 px-3">
+            <i class="fas fa-map-marker-alt me-2 text-muted"></i>
+            {{ centre?.location || 'Non renseigné' }}
+          </span>
+        </td>
+        <td>
+          <span *ngIf="centre?.ownerName" class="badge bg-light text-dark py-2 px-3">
+            <i class="fas fa-user-tie me-2 text-muted"></i>
+            {{ centre.ownerName }}
+          </span>
+          <span *ngIf="!centre?.ownerName" class="badge bg-light text-muted py-2 px-3">
+            Non attribué
+          </span>
+        </td>
+        <td>
+          <span class="badge bg-light text-dark rounded-pill py-2 px-3">
+            <i class="fas fa-users me-2 text-muted"></i>
+            {{'À déterminer' }}
+          </span>
+        </td>
+        <td>
+          <span class="badge rounded-pill py-2 px-3"
+                [ngClass]="centre?.isActive ? 'bg-success-light text-success' : 'bg-secondary-light text-secondary'">
+            <i [class]="centre?.isActive ? 'fas fa-check-circle me-1' : 'fas fa-times-circle me-1'"></i>
+            {{ centre?.isActive ? 'Actif' : 'Inactif' }}
+          </span>
+        </td>
+        <td>
+          <div class="d-flex" (click)="$event.stopPropagation()">
+            <ng-container *ngIf="centre.id; else noIdTemplate">
+              <button class="btn btn-sm btn-outline-primary rounded-circle me-2"
+                      style="width: 32px; height: 32px;"
+                      (click)="editCentre(centre.id!)"
+                      title="Modifier">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-sm rounded-circle"
+                      style="width: 32px; height: 32px;"
+                      [ngClass]="centre?.isActive ? 'btn-outline-danger' : 'btn-outline-success'"
+                      (click)="deleteCentre(centre.id!)"
+                      [title]="centre?.isActive ? 'Désactiver' : 'Activer'">
+                <i [class]="centre?.isActive ? 'fas fa-toggle-off' : 'fas fa-toggle-on'"></i>
+              </button>
+            </ng-container>
 
-                        <!-- Bouton d'activation/désactivation -->
-                        <button (click)="deleteCentre(centre.id!)" class="btn-toggle" [class.active]="centre?.isActive"
-                          title="{{ centre?.isActive ? 'Désactiver' : 'Activer' }}">
-                          <span class="toggle-thumb"></span>
-                        </button>
-                      </ng-container>
+            <ng-template #noIdTemplate>
+              <span class="badge bg-danger-light text-danger py-2 px-3">
+                <i class="fas fa-exclamation-circle me-1"></i>
+                ID manquant
+              </span>
+            </ng-template>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
-                      <!-- Template si l'ID est manquant -->
-                      <ng-template #noIdTemplate>
-                        <span class="error-text">ID manquant - Actions indisponibles</span>
-                      </ng-template>
-
-                      <!-- Notification Toast -->
-                      <div class="notification-toast" *ngIf="notification.show"
-                        [class.success]="notification.type === 'success'" [class.error]="notification.type === 'error'">
-                        <div class="notification-content">
-                          <i class="icon" [class.fa-check-circle]="notification.type === 'success'"
-                            [class.fa-exclamation-circle]="notification.type === 'error'"></i>
-                          <span>{{ notification.message }}</span>
-                        </div>
-                        <button class="close-btn" (click)="hideNotification()">
-                          <i class="fa fa-times"></i>
-                        </button>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+<div *ngIf="displayedCentre.length === 0" class="text-center py-5">
+  <div class="bg-light rounded-circle p-4 d-inline-block mb-3">
+    <i class="fas fa-store fa-2x text-muted"></i>
+  </div>
+  <h5 class="text-muted">Aucun centre trouvé</h5>
+  <p class="text-muted">Ajoutez un nouveau centre pour commencer</p>
+</div>
 
             <!-- Modal de modification avec loading -->
             <div class="modal-overlay" *ngIf="showEditModal" (click)="closeEditModal()">

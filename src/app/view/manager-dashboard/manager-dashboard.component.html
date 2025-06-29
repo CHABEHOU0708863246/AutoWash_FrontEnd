@@ -11,13 +11,17 @@
     <div class="logo">
       <i class="fas fa-hashtag"></i> AUTOWASH
     </div>
-    <div class="user-profile">
-      <img
-        src="https://media.licdn.com/dms/image/v2/D4E03AQFl4HpioZZvhQ/profile-displayphoto-shrink_200_200/profile-displayphoto-shrink_200_200/0/1722776592369?e=1752105600&v=beta&t=rO8ASWATTrkWn2YaWXch8SnDzwUcyCtDkcAJsdEQ2n4"
-        alt="User Profile">
+    <div class="user-profile" *ngIf="currentUser">
+      <div class="user-photo-container">
+        <img *ngIf="currentUser.photoSafeUrl" [src]="currentUser.photoSafeUrl"
+          [alt]="'Photo de ' + (currentUser.firstName || 'Utilisateur')" class="user-avatar">
+        <div *ngIf="!currentUser.photoSafeUrl" class="user-initials">
+          {{ (currentUser.firstName?.charAt(0) || '') + (currentUser.lastName?.charAt(0) || '') }}
+        </div>
+      </div>
       <div class="user-info">
-        <h4>Afffery Auxence Delors CHABEHOU<span class="status-indicator"></span></h4>
-        <p>Administrateur</p>
+        <h4>{{ getFullName() }}</h4>
+        <p>{{ getUserRole() }}</p>
       </div>
     </div>
     <div class="nav-menu">
@@ -132,8 +136,10 @@
         </div>
         <div class="dropdown dropdown-hover">
           <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
-            <img src="https://via.placeholder.com/32" alt="User">
-            <span>Affery Auxence Delors CHABEHOU</span>
+            <!-- Photo sécurisée si elle existe -->
+            <img *ngIf="currentUser?.photoSafeUrl as safeUrl" [src]="safeUrl" alt="User" class="user-avatar">
+            <!-- Nom complet -->
+            <span>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
             <i class="fas fa-chevron-down"></i>
           </button>
           <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">

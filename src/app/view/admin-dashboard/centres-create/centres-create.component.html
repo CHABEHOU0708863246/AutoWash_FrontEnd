@@ -279,7 +279,7 @@
                 <label class="form-label">Gérant <span class="required">*</span></label>
                 <select class="form-control" formControlName="ownerId" (change)="onManagerChange($event)"
                   [compareWith]="compareManagers">
-                  <option value="">Sélectionnez un gérant</option>
+                  <option value="">Sélectionnez un gérant (obligatoire)</option>
                   <option *ngFor="let manager of managers" [value]="manager.id">
                     {{ manager.firstName || '' }} {{ manager.lastName || manager.email }}
                   </option>

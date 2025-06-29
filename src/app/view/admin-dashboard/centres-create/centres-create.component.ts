@@ -57,7 +57,7 @@ export class CentresCreateComponent {
     this.centreForm = this.formBuilder.group({
       name: ['', Validators.required],
       location: ['', Validators.required],
-      ownerId: ['', Validators.required], // Assurez-vous que c'est bien une string
+      ownerId: [''],
       isActive: [true],
       ownerName: [''],
     });
@@ -314,51 +314,53 @@ export class CentresCreateComponent {
     this.notification.show = false;
   }
 
-  // Modifiez votre méthode onSubmit
-  onSubmit(): void {
-    if (this.centreForm.valid) {
-      this.isSubmitting = true;
-      const formValue = this.centreForm.value;
 
-      // Validation...
-      if (!formValue.ownerId || formValue.ownerId.toString() === '[object Object]') {
-        this.isSubmitting = false;
-        this.showNotification('error', 'Veuillez sélectionner un gérant valide');
-        return;
-      }
+  /**
+   * Méthode pour soumettre le formulaire de création de centre.
+   * Valide le formulaire, vérifie les données et envoie la requête de création
+   * au service `CentresService`.
+   * Si la création réussit, affiche une notification de succès et redirige vers la
+   * liste des centres. En cas d'erreur, affiche une notification d'erreur.
+   * Si le formulaire n'est pas valide, affiche une notification d'erreur.
+   */
+onSubmit(): void {
+  if (this.centreForm.valid) {
+    this.isSubmitting = true;
+    const formValue = this.centreForm.value;
 
+    // Préparer les données pour l'API
+    const centreData: any = {
+      name: formValue.name.trim(),
+      location: formValue.location.trim(),
+      isActive: Boolean(formValue.isActive),
+      ownerId: formValue.ownerId || null, // Explicitement null si vide
+      ownerName: null // Toujours envoyer null et laisser le backend gérer
+    };
+
+    // Si un gérant est sélectionné, ajouter ses informations
+    if (formValue.ownerId) {
       const selectedManager = this.managers.find(m => m.id === formValue.ownerId.toString());
-
-      if (!selectedManager) {
-        this.isSubmitting = false;
-        this.showNotification('error', 'Gérant sélectionné introuvable');
-        return;
+      if (selectedManager) {
+        centreData.ownerName = `${selectedManager.firstName} ${selectedManager.lastName}`.trim();
       }
-
-      const centreData = {
-        name: formValue.name.trim(),
-        location: formValue.location.trim(),
-        ownerId: formValue.ownerId.toString(),
-        ownerName: `${selectedManager.firstName} ${selectedManager.lastName}`.trim(),
-        isActive: Boolean(formValue.isActive),
-      };
-
-      this.centreService.createCentre(centreData).subscribe({
-        next: (response) => {
-          this.isSubmitting = false;
-          this.showNotification('success', 'Centre créé avec succès!');
-          setTimeout(() => this.router.navigate(['/admin/centres-list']), 1500);
-        },
-        error: (error) => {
-          this.isSubmitting = false;
-          this.showNotification('error', error.error?.message || 'Échec de la création du centre');
-        },
-      });
-    } else {
-      this.showNotification('error', 'Veuillez remplir correctement tous les champs obligatoires');
-      this.centreForm.markAllAsTouched();
     }
+
+    this.centreService.createCentre(centreData).subscribe({
+      next: (response) => {
+        this.isSubmitting = false;
+        this.showNotification('success', 'Centre créé avec succès!');
+        setTimeout(() => this.router.navigate(['/admin/centres-list']), 1500);
+      },
+      error: (error) => {
+        this.isSubmitting = false;
+        this.showNotification('error', error.error?.message || 'Échec de la création du centre');
+      },
+    });
+  } else {
+    this.showNotification('error', 'Veuillez remplir correctement tous les champs obligatoires');
+    this.centreForm.markAllAsTouched();
   }
+}
 
   /**
    * Méthode pour comparer les valeurs dans le select (Angular)

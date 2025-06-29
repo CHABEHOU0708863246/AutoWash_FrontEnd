@@ -1795,3 +1795,64 @@ body {
     font-size: 13px;
   }
 }
+
+
+/* Styles spécifiques pour le tableau des centres */
+.clickable-row {
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+
+    .badge {
+      opacity: 0.9;
+    }
+  }
+}
+
+.has-error {
+  background-color: rgba(#dc3545, 0.05) !important;
+}
+
+/* Notification Toast (si conservé) */
+.notification-toast {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 1050;
+  max-width: 350px;
+
+  &.success {
+    background-color: rgba(#198754, 0.9);
+    color: white;
+  }
+
+  &.error {
+    background-color: rgba(#dc3545, 0.9);
+    color: white;
+  }
+
+  .notification-content {
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+
+    .icon {
+      margin-right: 0.75rem;
+      font-size: 1.25rem;
+    }
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    color: inherit;
+    opacity: 0.8;
+    padding: 0 0.5rem;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}

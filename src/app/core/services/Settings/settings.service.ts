@@ -6,7 +6,6 @@ import { ApplicationSettings } from '../../models/Settings/ApplicationSettings';
 import { DiscountRule } from '../../models/Settings/DiscountRule';
 import { ScheduleSettings } from '../../models/Settings/ScheduleSettings';
 import { ServiceCategory, ServiceSetting } from '../../models/Settings/ServiceSetting';
-import { VehicleSize, VehicleTypeSetting } from '../../models/Settings/VehicleTypeSetting';
 import { DaySchedule } from '../../models/Settings/DaySchedule';
 import { SpecialSchedule } from '../../models/Settings/SpecialSchedule';
 import { DayOfWeek } from '../../models/Settings/DayOfWeek';
@@ -19,6 +18,8 @@ import { IntegrationSettings } from '../../models/Settings/IntegrationSettings';
 import { MaintenanceSettings } from '../../models/Settings/MaintenanceSettings';
 import { NotificationRule, NotificationChannel } from '../../models/Settings/NotificationRule';
 import { SecuritySettings } from '../../models/Settings/SecuritySettings';
+import { VehicleTypeConfiguration } from '../../models/Settings/VehicleTypeConfiguration';
+import { VehicleType } from '../../models/Vehicles/VehicleType';
 
 
 @Injectable({
@@ -333,117 +334,6 @@ updateMultipleCentresSchedules(centreIds: string[], settings: ScheduleSettings):
       { params }
     ).pipe(
       map(response => response.map(s => new SpecialSchedule(s))),
-      catchError(this.handleError)
-    );
-  }
-
-  /**
-   * Récupère tous les types de véhicules
-   * @param centreId L'identifiant du centre
-   * @returns Observable<VehicleTypeSetting[]> Liste des types de véhicules
-   */
-  getVehicleTypes(centreId: string): Observable<VehicleTypeSetting[]> {
-    return this.http.get<VehicleTypeSetting[]>(
-      `${this.apiUrl}/${centreId}/vehicle-types`
-    ).pipe(
-      map(response => response.map(v => new VehicleTypeSetting(v))),
-      catchError(this.handleError)
-    );
-  }
-
-  /**
-   * Récupère un type de véhicule par son ID
-   * @param centreId L'identifiant du centre
-   * @param vehicleTypeId L'identifiant du type de véhicule
-   * @returns Observable<VehicleTypeSetting> Le type de véhicule demandé
-   */
-  getVehicleTypeById(centreId: string, vehicleTypeId: string): Observable<VehicleTypeSetting> {
-    return this.http.get<VehicleTypeSetting>(
-      `${this.apiUrl}/${centreId}/vehicle-types/${vehicleTypeId}`
-    ).pipe(
-      map(response => new VehicleTypeSetting(response)),
-      catchError(this.handleError)
-    );
-  }
-
-  /**
-   * Crée un nouveau type de véhicule
-   * @param centreId L'identifiant du centre
-   * @param vehicleType Les données du nouveau type
-   * @returns Observable<VehicleTypeSetting> Le type créé
-   */
-  createVehicleType(centreId: string, vehicleType: VehicleTypeSetting): Observable<VehicleTypeSetting> {
-    return this.http.post<VehicleTypeSetting>(
-      `${this.apiUrl}/${centreId}/vehicle-types`,
-      vehicleType
-    ).pipe(
-      map(response => new VehicleTypeSetting(response)),
-      catchError(this.handleError)
-    );
-  }
-
-  /**
-   * Met à jour un type de véhicule
-   * @param centreId L'identifiant du centre
-   * @param vehicleTypeId L'identifiant du type à mettre à jour
-   * @param vehicleType Les nouvelles données
-   * @returns Observable<VehicleTypeSetting> Le type mis à jour
-   */
-  updateVehicleType(
-    centreId: string,
-    vehicleTypeId: string,
-    vehicleType: VehicleTypeSetting
-  ): Observable<VehicleTypeSetting> {
-    return this.http.put<VehicleTypeSetting>(
-      `${this.apiUrl}/${centreId}/vehicle-types/${vehicleTypeId}`,
-      vehicleType
-    ).pipe(
-      map(response => new VehicleTypeSetting(response)),
-      catchError(this.handleError)
-    );
-  }
-
-  /**
-   * Supprime un type de véhicule
-   * @param centreId L'identifiant du centre
-   * @param vehicleTypeId L'identifiant du type à supprimer
-   * @returns Observable<boolean> True si la suppression a réussi
-   */
-  deleteVehicleType(centreId: string, vehicleTypeId: string): Observable<boolean> {
-    return this.http.delete<boolean>(
-      `${this.apiUrl}/${centreId}/vehicle-types/${vehicleTypeId}`
-    ).pipe(
-      catchError(this.handleError)
-    );
-  }
-
-  /**
-   * Active/désactive un type de véhicule
-   * @param centreId L'identifiant du centre
-   * @param vehicleTypeId L'identifiant du type
-   * @returns Observable<boolean> Le nouveau statut (true = actif)
-   */
-  toggleVehicleTypeStatus(centreId: string, vehicleTypeId: string): Observable<boolean> {
-    return this.http.patch<{isActive: boolean}>(
-      `${this.apiUrl}/${centreId}/vehicle-types/${vehicleTypeId}/toggle`,
-      {}
-    ).pipe(
-      map(response => response.isActive),
-      catchError(this.handleError)
-    );
-  }
-
-  /**
-   * Récupère les types de véhicule par taille
-   * @param centreId L'identifiant du centre
-   * @param size La taille des véhicules
-   * @returns Observable<VehicleTypeSetting[]> Liste des types correspondants
-   */
-  getVehicleTypesBySize(centreId: string, size: VehicleSize): Observable<VehicleTypeSetting[]> {
-    return this.http.get<VehicleTypeSetting[]>(
-      `${this.apiUrl}/${centreId}/vehicle-types/size/${size}`
-    ).pipe(
-      map(response => response.map(v => new VehicleTypeSetting(v))),
       catchError(this.handleError)
     );
   }
@@ -1156,61 +1046,193 @@ updateMultipleCentresSchedules(centreIds: string[], settings: ScheduleSettings):
     );
   }
 
-  /**
-   * Récupère l'historique des modifications
-   * @param centreId L'identifiant du centre
-   * @param startDate Date de début (optionnelle)
-   * @param endDate Date de fin (optionnelle)
-   * @returns Observable<SettingsAuditLog[]> Liste des entrées d'historique
-   */
-  // getSettingsHistory(
-  //   centreId: string,
-  //   startDate?: Date,
-  //   endDate?: Date
-  // ): Observable<SettingsAuditLog[]> {
-  //   let params: any = {};
-  //   if (startDate) params.startDate = startDate.toISOString();
-  //   if (endDate) params.endDate = endDate.toISOString();
+  // ==============================================
+  // Gestion des types de véhicules (globaux)
+  // ==============================================
 
-  //   return this.http.get<SettingsAuditLog[]>(
-  //     `${this.apiUrl}/${centreId}/audit`,
-  //     { params }
-  //   ).pipe(
-  //     map(response => response.map(log => new SettingsAuditLog(log))),
-  //     catchError(this.handleError)
-  //   );
-  // }
+  /**
+   * Récupère tous les types de véhicules disponibles
+   */
+  getAllVehicleTypes(): Observable<VehicleType[]> {
+    return this.http.get<VehicleType[]>(`${this.apiUrl}/vehicle-types`).pipe(
+      map(types => types.map(t => new VehicleType(t))),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Récupère un type de véhicule par son ID
+   * @param vehicleTypeId ID du type de véhicule
+   */
+  getVehicleTypeById(vehicleTypeId: string): Observable<VehicleType> {
+    return this.http.get<VehicleType>(`${this.apiUrl}/vehicle-types/${vehicleTypeId}`).pipe(
+      map(type => new VehicleType(type)),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Crée un nouveau type de véhicule
+   * @param vehicleType Données du type de véhicule à créer
+   */
+createVehicleType(vehicleType: VehicleType): Observable<VehicleType> {
+  // Votre API exige un Id même pour la création - générer un GUID/UUID
+  const vehicleTypeData = {
+    id: this.generateGuid(), // Générer un GUID unique
+    label: vehicleType.label,
+    description: vehicleType.description,
+    size: vehicleType.size,
+    iconUrl: vehicleType.iconUrl,
+    defaultSizeMultiplier: vehicleType.defaultSizeMultiplier,
+    defaultSortOrder: vehicleType.defaultSortOrder,
+    isActive: vehicleType.isActive,
+    isGlobalType: vehicleType.isGlobalType,
+  };
+
+  return this.http.post<VehicleType>(`${this.apiUrl}/vehicle-types`, vehicleTypeData).pipe(
+    map(type => new VehicleType(type)),
+    catchError(this.handleError)
+  );
+}
+
+// Méthode pour générer un GUID/UUID compatible avec votre backend
+private generateGuid(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
+  /**
+   * Met à jour un type de véhicule existant
+   * @param vehicleTypeId ID du type de véhicule à mettre à jour
+   * @param vehicleType Données mises à jour
+   */
+  updateVehicleType(id: string, vehicleType: VehicleType): Observable<VehicleType> {
+  const vehicleTypeData = {
+    id: id,
+    label: vehicleType.label,
+    description: vehicleType.description,
+    size: vehicleType.size,
+    iconUrl: vehicleType.iconUrl,
+    defaultSizeMultiplier: vehicleType.defaultSizeMultiplier,
+    defaultSortOrder: vehicleType.defaultSortOrder,
+    isActive: vehicleType.isActive,
+    isGlobalType: vehicleType.isGlobalType,
+    createdAt: vehicleType.createdAt,
+    updatedAt: new Date()
+  };
+
+  return this.http.put<VehicleType>(`${this.apiUrl}/vehicle-types/${id}`, vehicleTypeData).pipe(
+    map(type => new VehicleType(type)),
+    catchError(this.handleError)
+  );
+}
+
+  /**
+   * Supprime un type de véhicule global
+   * @param vehicleTypeId ID du type de véhicule à supprimer
+   */
+  deleteVehicleType(vehicleTypeId: string): Observable<boolean> {
+    return this.http.delete<{success: boolean}>(`${this.apiUrl}/vehicle-types/${vehicleTypeId}`).pipe(
+      map(response => response.success),
+      catchError(this.handleError)
+    );
+  }
+
+  // ==============================================
+  // Gestion des configurations par centre
+  // ==============================================
+
+  /**
+   * Récupère la configuration d'un type de véhicule pour un centre spécifique
+   * @param centreId ID du centre
+   * @param vehicleTypeId ID du type de véhicule
+   */
+  getVehicleTypeConfiguration(centreId: string, vehicleTypeId: string): Observable<VehicleTypeConfiguration> {
+    return this.http.get<VehicleTypeConfiguration>(`${this.apiUrl}/${centreId}/vehicle-types/${vehicleTypeId}`).pipe(
+      map(config => new VehicleTypeConfiguration(config)),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Met à jour la configuration d'un type de véhicule pour un centre
+   * @param centreId ID du centre
+   * @param vehicleTypeId ID du type de véhicule
+   * @param config Configuration mise à jour
+   */
+  updateVehicleTypeConfiguration(
+    centreId: string,
+    vehicleTypeId: string,
+    config: VehicleTypeConfiguration
+  ): Observable<VehicleTypeConfiguration> {
+    return this.http.put<VehicleTypeConfiguration>(
+      `${this.apiUrl}/${centreId}/vehicle-types/${vehicleTypeId}`,
+      config
+    ).pipe(
+      map(updatedConfig => new VehicleTypeConfiguration(updatedConfig)),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Active ou désactive un type de véhicule pour un centre
+   * @param centreId ID du centre
+   * @param vehicleTypeId ID du type de véhicule
+   */
+  toggleVehicleTypeStatus(centreId: string, vehicleTypeId: string): Observable<boolean> {
+    return this.http.patch<{isActive: boolean}>(
+      `${this.apiUrl}/${centreId}/vehicle-types/${vehicleTypeId}/toggle`,
+      {}
+    ).pipe(
+      map(response => response.isActive),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Supprime la configuration d'un type de véhicule pour un centre
+   * @param centreId ID du centre
+   * @param vehicleTypeId ID du type de véhicule
+   */
+  deleteVehicleTypeConfiguration(centreId: string, vehicleTypeId: string): Observable<boolean> {
+    return this.http.delete<{success: boolean}>(
+      `${this.apiUrl}/${centreId}/vehicle-types/${vehicleTypeId}`
+    ).pipe(
+      map(response => response.success),
+      catchError(this.handleError)
+    );
+  }
+
 
   /**
    * Gère les erreurs HTTP
    * @param error - L'erreur survenue
    * @returns Observable<never> - Un observable qui émet l'erreur
    */
-  private handleError(error: HttpErrorResponse) {
-    console.error('Erreur complète:', error);
+private handleError(error: HttpErrorResponse) {
+  console.error('Erreur complète:', error);
 
-    if (error.error instanceof ErrorEvent) {
-      console.error('Erreur client:', error.error.message);
+  let errorMessage = 'Une erreur est survenue';
+
+  if (error.error instanceof ErrorEvent) {
+    errorMessage = `Erreur client: ${error.error.message}`;
+  } else {
+    if (error.status === 400 && error.error.errors) {
+      // Affichez les erreurs de validation
+      const validationErrors = Object.values(error.error.errors).flat();
+      errorMessage = `Erreurs de validation: ${validationErrors.join(', ')}`;
+    } else if (error.error.message) {
+      errorMessage = error.error.message;
     } else {
-      console.error(
-        `Le serveur a retourné le code ${error.status}, contenu:`,
-        error.error
-      );
+      errorMessage = `Erreur serveur (${error.status}): ${error.statusText}`;
     }
-
-    if (error.status === 404) {
-      return throwError(() => new Error('Paramètres non trouvés'));
-    } else if (error.status === 400) {
-      return throwError(
-        () => new Error(`Requête invalide: ${JSON.stringify(error.error)}`)
-      );
-    } else if (error.status === 500) {
-      return throwError(
-        () => new Error(`Erreur serveur: ${error.error?.message || 'Inconnu'}`)
-      );
-    }
-    return throwError(() => new Error('Une erreur inattendue est survenue'));
   }
+
+  return throwError(() => new Error(errorMessage));
+}
 
 
 }

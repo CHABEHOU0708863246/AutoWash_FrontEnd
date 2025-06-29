@@ -1,65 +1,83 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, TemplateRef } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/Auth/auth.service';
 import { SettingsService } from '../../../core/services/Settings/settings.service';
-import { VehicleTypeSetting, VehicleSize } from '../../../core/models/Settings/VehicleTypeSetting';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Users } from '../../../core/models/Users/Users';
 import { UsersService } from '../../../core/services/Users/users.service';
+import { Subscription } from 'rxjs';
+import { VehicleSize, VehicleType } from '../../../core/models/Vehicles/VehicleType';
 
 @Component({
   selector: 'app-settings-vehicles',
   imports: [RouterLink, CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './settings-vehicles.component.html',
-  styleUrl: './settings-vehicles.component.scss'
+  styleUrl: './settings-vehicles.component.scss',
 })
 export class SettingsVehiclesComponent implements OnInit {
-  vehicleTypes: VehicleTypeSetting[] = [];
-  filteredVehicleTypes: VehicleTypeSetting[] = [];
-  selectedVehicleType: VehicleTypeSetting | null = null;
-  searchQuery: string = '';
+
+  VehicleSize = VehicleSize;
+  displayedUsers: Users[] = [];
+  user: Users | null = null;
+  users: Users[] = [];
+  currentUser: Users | null = null;
   isLoading: boolean = false;
   errorMessage: string | null = null;
   centreId: string = '';
   isEditMode: boolean = false;
+  searchQuery: string = '';
+  vehicleTypes: VehicleType[] = [];
+  filteredVehicleTypes: VehicleType[] = [];
+  vehicleTypeForm: Partial<VehicleType> = {
+    label: '',
+    size: VehicleSize.Medium,
+    defaultSizeMultiplier: 1,
+    defaultSortOrder: 0,
+    isActive: true,
+    isGlobalType: true
+  };
   currentVehicleTypeId: string | null = null;
 
-  // Form fields for modal
-  vehicleTypeForm = {
-  name: '',
-  description: '',
-  size: VehicleSize.Medium,
-  sizeMultiplier: 1.0,
-  sortOrder: 0,
-  isActive: true,
-  iconUrl: '' // Gardez une valeur par défaut mais rendez le type optionnel
-} as {
-  name: string;
-  description: string;
-  size: VehicleSize;
-  sizeMultiplier: number;
-  sortOrder: number;
-  isActive: boolean;
-  iconUrl?: string; // Notez le ? pour rendre optionnel
-};
+  getSizeIcon(size: VehicleSize): string {
+  switch(size) {
+    case VehicleSize.Small: return 'fas fa-motorcycle';
+    case VehicleSize.Medium: return 'fas fa-car';
+    case VehicleSize.Large: return 'fas fa-truck-pickup';
+    case VehicleSize.XLarge: return 'fas fa-truck';
+    default: return 'fas fa-question';
+  }
+}
 
-  vehicleSizes = Object.values(VehicleSize).map(size => ({
-    value: size,
-    label: size
-  }));
-editModal: any;
+getSizeLabel(size: VehicleSize): string {
+  switch(size) {
+    case VehicleSize.Small: return 'Petit';
+    case VehicleSize.Medium: return 'Moyen';
+    case VehicleSize.Large: return 'Grand';
+    case VehicleSize.XLarge: return 'Très grand';
+    default: return 'Autre';
+  }
+}
 
-  users: Users[] = []; // Liste complète des utilisateurs.
-  displayedUsers: Users[] = []; // Liste des utilisateurs affichés sur la page actuelle.
-  currentUser: Users | null = null; // Utilisateur actuellement connecté.
-  user: Users | null = null; // Informations sur l'utilisateur connecté.
+  // Référence au modal ouvert
+  private modalRef: NgbModalRef | null = null;
+
+  // Subscription pour éviter les fuites mémoire
+  private subscriptions: Subscription = new Subscription();
+
+  // Options pour les formulaires
+  vehicleSizes = [
+    { value: 'Small', label: 'Petit' },
+    { value: 'Medium', label: 'Moyen' },
+    { value: 'Large', label: 'Grand' },
+    { value: 'XLarge', label: 'Très grand' }
+  ];
 
   constructor(
     private sanitizer: DomSanitizer,
-    private usersService: UsersService, // Service pour interagir avec les utilisateurs.
+    private usersService: UsersService,
     private router: Router,
     private settingsService: SettingsService,
     private authService: AuthService,
@@ -67,24 +85,285 @@ editModal: any;
   ) {}
 
   ngOnInit(): void {
-    this.loadCurrentCentre();
+    this.loadCurrentUser();
     this.loadVehicleTypes();
-    this.getUsers(); // Récupère les utilisateurs.
-    this.loadCurrentUser(); // Charge l'utilisateur connecté
+    this.getUsers();
 
-    // S'abonner aux changements de l'utilisateur connecté
-    this.authService.currentUser$.subscribe((user) => {
+    const userSub = this.authService.currentUser$.subscribe((user) => {
       if (user && user !== this.currentUser) {
         this.currentUser = user;
         this.loadCurrentUserPhoto();
       }
     });
+    this.subscriptions.add(userSub);
+  }
+
+  ngOnDestroy(): void {
+    // Nettoyer les subscriptions
+    this.subscriptions.unsubscribe();
+    // Fermer le modal s'il est ouvert
+    if (this.modalRef) {
+      this.modalRef.dismiss();
+    }
   }
 
   /**
-   * Charge les photos des utilisateurs et les sécurise pour l'affichage.
-   * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
+   * Charge la liste des types de véhicules
    */
+  loadVehicleTypes(): void {
+    this.isLoading = true;
+    this.errorMessage = null;
+
+    this.subscriptions.add(
+      this.settingsService.getAllVehicleTypes().subscribe({
+        next: (types) => {
+          this.vehicleTypes = types;
+          this.filteredVehicleTypes = [...types];
+          this.isLoading = false;
+        },
+        error: (error) => {
+          this.errorMessage = 'Erreur lors du chargement des types de véhicules';
+          console.error(error);
+          this.isLoading = false;
+        }
+      })
+    );
+  }
+
+  /**
+   * Filtre les types de véhicules selon la recherche
+   */
+  onSearch(): void {
+    if (!this.searchQuery) {
+      this.filteredVehicleTypes = [...this.vehicleTypes];
+      return;
+    }
+
+    const query = this.searchQuery.toLowerCase();
+    this.filteredVehicleTypes = this.vehicleTypes.filter(type =>
+      type.label.toLowerCase().includes(query) ||
+      type.description?.toLowerCase().includes(query) ||
+      VehicleSize[type.size].toLowerCase().includes(query)
+    );
+  }
+
+  /**
+   * Réinitialise le formulaire
+   */
+  resetForm(): void {
+    this.vehicleTypeForm = {
+      label: '',
+      size: VehicleSize.Medium,
+      defaultSizeMultiplier: 1,
+      defaultSortOrder: 0,
+      isActive: true,
+      isGlobalType: true,
+      description: '',
+      iconUrl: ''
+    };
+    this.currentVehicleTypeId = null;
+    this.isEditMode = false;
+  }
+
+  /**
+   * Ouvre le modal d'ajout
+   */
+  openAddModal(modal: TemplateRef<any>): void {
+    this.resetForm();
+    this.isEditMode = false;
+    this.modalRef = this.modalService.open(modal, { size: 'lg' });
+  }
+
+  /**
+   * Ouvre le modal d'édition avec les données pré-remplies
+   */
+  openEditModal(modal: TemplateRef<any>, vehicleType: VehicleType): void {
+    // Vérifier que vehicleType existe et a un ID
+    if (!vehicleType || !vehicleType.id) {
+      this.errorMessage = 'Impossible de modifier ce type de véhicule';
+      return;
+    }
+
+    // Activer le mode édition
+    this.isEditMode = true;
+    this.currentVehicleTypeId = vehicleType.id;
+
+    // Pré-remplir le formulaire avec les données du type de véhicule sélectionné
+    this.vehicleTypeForm = {
+      label: vehicleType.label || '',
+      description: vehicleType.description || '',
+      size: vehicleType.size || VehicleSize.Medium,
+      defaultSizeMultiplier: vehicleType.defaultSizeMultiplier || 1,
+      defaultSortOrder: vehicleType.defaultSortOrder || 0,
+      iconUrl: vehicleType.iconUrl || '',
+      isActive: vehicleType.isActive !== undefined ? vehicleType.isActive : true,
+      isGlobalType: vehicleType.isGlobalType !== undefined ? vehicleType.isGlobalType : true
+    };
+
+    // Debug pour vérifier les données
+    console.log('Ouverture modal édition:', {
+      isEditMode: this.isEditMode,
+      currentVehicleTypeId: this.currentVehicleTypeId,
+      vehicleTypeForm: this.vehicleTypeForm
+    });
+
+    // Ouvrir le modal
+    this.modalRef = this.modalService.open(modal, { size: 'lg' });
+  }
+
+  /**
+   * Sélectionne une icône
+   */
+  selectIcon(icon: string): void {
+    this.vehicleTypeForm.iconUrl = icon;
+  }
+
+  /**
+   * Sauvegarde un type de véhicule (ajout ou modification)
+   */
+  saveVehicleType(): void {
+    // Validation des champs obligatoires
+    if (!this.vehicleTypeForm.label?.trim() || this.vehicleTypeForm.size === undefined) {
+      this.errorMessage = 'Les champs obligatoires doivent être remplis';
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = null;
+
+    if (this.isEditMode && this.currentVehicleTypeId) {
+      // Mode modification
+      const vehicleTypeData = new VehicleType({
+        id: this.currentVehicleTypeId,
+        label: this.vehicleTypeForm.label.trim(),
+        description: this.vehicleTypeForm.description?.trim() || '',
+        size: this.vehicleTypeForm.size,
+        defaultSizeMultiplier: Number(this.vehicleTypeForm.defaultSizeMultiplier) || 1,
+        defaultSortOrder: Number(this.vehicleTypeForm.defaultSortOrder) || 0,
+        iconUrl: this.vehicleTypeForm.iconUrl?.trim() || '',
+        isActive: this.vehicleTypeForm.isActive ?? true,
+        isGlobalType: this.vehicleTypeForm.isGlobalType ?? true,
+        createdAt: this.vehicleTypeForm.createdAt || new Date(),
+        updatedAt: new Date()
+      });
+
+      this.subscriptions.add(
+        this.settingsService.updateVehicleType(this.currentVehicleTypeId, vehicleTypeData).subscribe({
+          next: (result) => {
+            console.log('Type de véhicule modifié avec succès:', result);
+            this.loadVehicleTypes();
+            this.modalRef?.close();
+            this.isLoading = false;
+            this.resetForm();
+          },
+          error: (error) => {
+            this.errorMessage = 'Erreur lors de la modification du type de véhicule';
+            console.error('Erreur modification:', error);
+            this.isLoading = false;
+          }
+        })
+      );
+    } else {
+      // Mode création
+      const vehicleTypeData = new VehicleType({
+        id: this.generateGuid(),
+        label: this.vehicleTypeForm.label.trim(),
+        description: this.vehicleTypeForm.description?.trim() || '',
+        size: this.vehicleTypeForm.size,
+        defaultSizeMultiplier: Number(this.vehicleTypeForm.defaultSizeMultiplier) || 1,
+        defaultSortOrder: Number(this.vehicleTypeForm.defaultSortOrder) || 0,
+        iconUrl: this.vehicleTypeForm.iconUrl?.trim() || '',
+        isActive: this.vehicleTypeForm.isActive ?? true,
+        isGlobalType: this.vehicleTypeForm.isGlobalType ?? true
+      });
+
+      this.subscriptions.add(
+        this.settingsService.createVehicleType(vehicleTypeData).subscribe({
+          next: (result) => {
+            console.log('Type de véhicule créé avec succès:', result);
+            this.loadVehicleTypes();
+            this.modalRef?.close();
+            this.isLoading = false;
+            this.resetForm();
+          },
+          error: (error) => {
+            this.errorMessage = 'Erreur lors de la création du type de véhicule';
+            console.error('Erreur création:', error);
+            this.isLoading = false;
+          }
+        })
+      );
+    }
+  }
+
+  /**
+   * Génère un GUID unique
+   */
+  generateGuid(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  /**
+   * Active/désactive un type de véhicule
+   */
+  toggleVehicleTypeStatus(vehicleType: VehicleType): void {
+    if (!vehicleType.id) return;
+
+    const newStatus = !vehicleType.isActive;
+
+    const updatedType = new VehicleType({
+      id: vehicleType.id,
+      label: vehicleType.label,
+      description: vehicleType.description,
+      size: vehicleType.size,
+      iconUrl: vehicleType.iconUrl,
+      defaultSizeMultiplier: vehicleType.defaultSizeMultiplier,
+      defaultSortOrder: vehicleType.defaultSortOrder,
+      isActive: newStatus,
+      isGlobalType: vehicleType.isGlobalType,
+      createdAt: vehicleType.createdAt,
+      updatedAt: new Date()
+    });
+
+    this.subscriptions.add(
+      this.settingsService.updateVehicleType(vehicleType.id, updatedType).subscribe({
+        next: () => {
+          this.loadVehicleTypes();
+        },
+        error: (error) => {
+          this.errorMessage = 'Erreur lors de la modification du statut';
+          console.error('Erreur toggle status:', error);
+        }
+      })
+    );
+  }
+
+  /**
+   * Supprime un type de véhicule
+   */
+  deleteVehicleType(vehicleTypeId: string): void {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer ce type de véhicule ?')) {
+      return;
+    }
+
+    this.subscriptions.add(
+      this.settingsService.deleteVehicleType(vehicleTypeId).subscribe({
+        next: () => {
+          this.loadVehicleTypes();
+        },
+        error: (error) => {
+          this.errorMessage = 'Erreur lors de la suppression du type de véhicule';
+          console.error(error);
+        }
+      })
+    );
+  }
+
+  // Autres méthodes (loadUserPhotos, getUsers, etc.) restent inchangées...
   loadUserPhotos(): void {
     this.displayedUsers.forEach((user) => {
       if (user.photoUrl && typeof user.photoUrl === 'string') {
@@ -101,15 +380,11 @@ editModal: any;
     });
   }
 
-  /**
-   * Récupère tous les utilisateurs et charge leurs photos.
-   * Utilise le service UsersService pour obtenir la liste des utilisateurs.
-   */
   getUsers(): void {
     this.usersService.getAllUsers().subscribe({
       next: (data) => {
         this.users = data;
-        this.loadUserPhotos(); // Charge les photos après avoir reçu les utilisateurs
+        this.loadUserPhotos();
       },
       error: (error) => {
         console.error('Erreur lors du chargement des utilisateurs', error);
@@ -117,19 +392,13 @@ editModal: any;
     });
   }
 
-  /**
-   * Charge l'utilisateur actuellement connecté.
-   * Essaie d'abord de récupérer l'utilisateur depuis le service d'authentification,
-   */
   loadCurrentUser(): void {
-    // D'abord, essaie de récupérer depuis le service d'authentification
     this.authService.loadCurrentUserProfile().subscribe({
       next: (user) => {
         if (user) {
           this.currentUser = user;
           this.loadCurrentUserPhoto();
         } else {
-          // Si pas d'utilisateur depuis AuthService, utilise UsersService
           this.usersService.getCurrentUser().subscribe({
             next: (user) => {
               this.currentUser = user;
@@ -146,7 +415,6 @@ editModal: any;
       },
       error: (error) => {
         console.error('Erreur lors du chargement du profil utilisateur', error);
-        // Fallback vers UsersService
         this.usersService.getCurrentUser().subscribe({
           next: (user) => {
             this.currentUser = user;
@@ -163,11 +431,6 @@ editModal: any;
     });
   }
 
-  /**
-   * Charge la photo de l'utilisateur actuellement connecté.
-   *
-   * Utilise le service UsersService pour obtenir la photo de l'utilisateur.
-   */
   loadCurrentUserPhoto(): void {
     if (!this.currentUser) return;
 
@@ -189,7 +452,6 @@ editModal: any;
             'Erreur lors du chargement de la photo utilisateur',
             error
           );
-          // Image par défaut
           this.currentUser!.photoSafeUrl =
             this.sanitizer.bypassSecurityTrustUrl(
               'assets/images/default-avatar.png'
@@ -197,17 +459,12 @@ editModal: any;
         },
       });
     } else {
-      // Si pas de photoUrl, utiliser une image par défaut
       this.currentUser.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
         'assets/images/default-avatar.png'
       );
     }
   }
 
-  /**
-   * Retourne le nom complet de l'utilisateur connecté
-   * @returns Le nom complet formaté ou un texte par défaut
-   */
   getFullName(): string {
     if (this.currentUser) {
       const firstName = this.currentUser.firstName || '';
@@ -217,25 +474,18 @@ editModal: any;
     return 'Utilisateur';
   }
 
-  /**
-   * Retourne le rôle de l'utilisateur connecté
-   * @returns Le rôle de l'utilisateur ou un texte par défaut
-   */
   getUserRole(): string {
-    // Si pas d'utilisateur connecté
     if (!this.currentUser) return 'Rôle non défini';
 
-    // Si l'utilisateur a des rôles
     if (this.currentUser.roles && this.currentUser.roles.length > 0) {
       return this.mapRoleIdToName(this.currentUser.roles[0]);
     }
 
-    // Sinon, utilise le service d'authentification
     const role = this.authService.getUserRole();
     return role ? this.mapRoleIdToName(role) : 'Rôle non défini';
   }
 
-  private mapRoleIdToName(roleId: string): string {
+  mapRoleIdToName(roleId: string): string {
     const roleMapping: { [key: string]: string } = {
       '1': 'Administrateur',
       '2': 'Manager',
@@ -246,176 +496,13 @@ editModal: any;
     return roleMapping[roleId] || 'Administrateur';
   }
 
-  loadCurrentCentre(): void {
-  this.authService.currentUser$.subscribe({
-    next: (user) => {
-      if (user && user.centreId) {
-        this.centreId = user.centreId;
-        this.loadVehicleTypes(); // Charger les types de véhicules une fois qu'on a le centreId
-      } else {
-        this.errorMessage = 'Impossible de déterminer le centre actuel';
-        // Optionnel: charger le profil si pas disponible
-        this.authService.getCurrentUserProfile().subscribe();
-      }
-    },
-    error: (err) => {
-      this.errorMessage = 'Erreur lors de la récupération des informations utilisateur';
-      console.error(err);
-    }
-  });
-}
-
-  loadVehicleTypes(): void {
-    if (!this.centreId) return;
-
-    this.isLoading = true;
-    this.errorMessage = null;
-
-    this.settingsService.getVehicleTypes(this.centreId).subscribe({
-      next: (vehicleTypes) => {
-        this.vehicleTypes = vehicleTypes;
-        this.filteredVehicleTypes = [...vehicleTypes];
-        this.isLoading = false;
-      },
-      error: (error) => {
-        this.errorMessage = 'Erreur lors du chargement des types de véhicules';
-        console.error('Erreur:', error);
-        this.isLoading = false;
-      }
-    });
-  }
-
-  onSearch(): void {
-    if (!this.searchQuery.trim()) {
-      this.filteredVehicleTypes = [...this.vehicleTypes];
-      return;
-    }
-    const query = this.searchQuery.toLowerCase();
-    this.filteredVehicleTypes = this.vehicleTypes.filter(vt =>
-      vt.name.toLowerCase().includes(query) ||
-      vt.description.toLowerCase().includes(query)
-    );
-  }
-
-  openAddModal(content: any): void {
-    this.isEditMode = false;
-    this.currentVehicleTypeId = null;
-    this.resetForm();
-    this.modalService.open(content, { size: 'lg' });
-  }
-
-  openEditModal(content: any, vehicleType: VehicleTypeSetting): void {
-    this.isEditMode = true;
-    this.currentVehicleTypeId = vehicleType.id;
-    this.vehicleTypeForm = { ...vehicleType };
-    this.modalService.open(content, { size: 'lg' });
-  }
-
-  saveVehicleType(): void {
-    if (!this.validateForm()) {
-        this.errorMessage = 'Veuillez remplir tous les champs obligatoires correctement.';
-        return;
-    }
-
-    this.isLoading = true;
-    this.errorMessage = null;
-
-    // Créez une nouvelle instance de VehicleTypeSetting
-    const vehicleTypeData = new VehicleTypeSetting({
-        id: this.currentVehicleTypeId || undefined, // undefined pour les nouvelles créations
-        name: this.vehicleTypeForm.name,
-        description: this.vehicleTypeForm.description,
-        size: this.vehicleTypeForm.size,
-        sizeMultiplier: this.vehicleTypeForm.sizeMultiplier,
-        sortOrder: this.vehicleTypeForm.sortOrder,
-        isActive: this.vehicleTypeForm.isActive,
-        iconUrl: this.vehicleTypeForm.iconUrl
-    });
-
-    const operation = this.isEditMode && this.currentVehicleTypeId
-        ? this.settingsService.updateVehicleType(this.centreId, this.currentVehicleTypeId, vehicleTypeData)
-        : this.settingsService.createVehicleType(this.centreId, vehicleTypeData);
-
-    operation.subscribe({
-        next: () => {
-            this.loadVehicleTypes();
-            this.modalService.dismissAll();
-            this.isLoading = false;
-        },
-        error: (error) => {
-            this.errorMessage = this.isEditMode
-                ? 'Échec de la mise à jour du type de véhicule'
-                : 'Échec de la création du type de véhicule';
-            console.error('Erreur:', error);
-            this.isLoading = false;
-        }
-    });
-}
-
-  toggleVehicleTypeStatus(vehicleType: VehicleTypeSetting): void {
-    if (!vehicleType.id) return;
-
-    const confirmMessage = vehicleType.isActive
-      ? 'Désactiver ce type de véhicule ?'
-      : 'Activer ce type de véhicule ?';
-
-    if (!confirm(confirmMessage)) return;
-
-    this.isLoading = true;
-    this.settingsService.toggleVehicleTypeStatus(this.centreId, vehicleType.id).subscribe({
-      next: (isActive) => {
-        vehicleType.isActive = isActive;
-        this.isLoading = false;
-      },
-      error: (error) => {
-        this.errorMessage = 'Erreur lors de la modification du statut';
-        console.error('Erreur:', error);
-        this.isLoading = false;
-      }
-    });
-  }
-
-  private validateForm(): boolean {
-    return (
-      !!this.vehicleTypeForm.name &&
-      !!this.vehicleTypeForm.size &&
-      this.vehicleTypeForm.sizeMultiplier > 0 &&
-      this.vehicleTypeForm.sortOrder >= 0
-    );
-  }
-
-  private resetForm(): void {
-    this.vehicleTypeForm = {
-      name: '',
-      description: '',
-      size: VehicleSize.Medium,
-      sizeMultiplier: 1.0,
-      sortOrder: 0,
-      isActive: true,
-      iconUrl: 'fas fa-car'
-    };
-  }
-
-
-
-  selectIcon(iconClass: string): void {
-    this.vehicleTypeForm.iconUrl = iconClass;
-  }
-
-  private updateIconPreview(iconClass: string): void {
-    const previewElement = document.querySelector('.vehicle-icon-preview i');
-    if (previewElement) {
-      previewElement.className = iconClass;
-    }
-  }
-
   logout(): void {
     if (this.authService.isAuthenticated()) {
       try {
         console.log('État du localStorage avant déconnexion:', {
           token: !!this.authService.getToken(),
           userRole: localStorage.getItem('userRole'),
-          profile: localStorage.getItem('currentUserProfile')
+          profile: localStorage.getItem('currentUserProfile'),
         });
 
         this.authService.logout();
@@ -423,7 +510,7 @@ editModal: any;
         console.log('État du localStorage après déconnexion:', {
           token: !!this.authService.getToken(),
           userRole: localStorage.getItem('userRole'),
-          profile: localStorage.getItem('currentUserProfile')
+          profile: localStorage.getItem('currentUserProfile'),
         });
 
         this.router.navigate(['/auth/login']);
