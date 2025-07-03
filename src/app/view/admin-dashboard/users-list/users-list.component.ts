@@ -14,35 +14,44 @@ import { DomSanitizer } from '@angular/platform-browser';
   styleUrl: './users-list.component.scss',
 })
 export class UsersListComponent {
-  users: Users[] = []; // Liste complète des utilisateurs.
-  filteredUsers: Users[] = []; // Liste des utilisateurs après filtrage.
-  displayedUsers: Users[] = []; // Liste des utilisateurs affichés sur la page actuelle.
-  currentUser: Users | null = null; // Utilisateur actuellement connecté.
-  isLoading: boolean = true; // Indique si les données sont en cours de chargement.
+  // SECTION 1: PROPRIÉTÉS DE CLASSE
+  // ====================================================================
 
-  currentPage = 1; // Page actuelle.
-  itemsPerPage = 5; // Nombre d'éléments par page.
-  totalItems = 0; // Nombre total d'éléments après filtrage.
-  totalPages = 0; // Nombre total de pages calculées.
+  // Liste des utilisateurs
+  users: Users[] = [];
+  filteredUsers: Users[] = [];
+  displayedUsers: Users[] = [];
+  currentUser: Users | null = null;
 
-  user: Users | null = null; // Informations sur l'utilisateur connecté.
-  searchTerm: string = ''; // Terme de recherche utilisé pour filtrer les utilisateurs.
+  // États et chargement
+  isLoading: boolean = true;
+
+  // Pagination
+  currentPage = 1;
+  itemsPerPage = 5;
+  totalItems = 0;
+  totalPages = 0;
+
+  // Recherche
+  searchTerm: string = '';
 
   constructor(
-    private router: Router, // Service pour la navigation entre les routes.
-    private usersService: UsersService, // Service pour interagir avec les utilisateurs.
-    private authService: AuthService, // Service pour gérer l'authentification.
+    private router: Router,
+    private usersService: UsersService,
+    private authService: AuthService,
     private sanitizer: DomSanitizer
   ) {}
 
+  // SECTION 2: LIFECYCLE HOOKS
+  // ====================================================================
+
   /**
-   * Méthode appelée au moment de l'initialisation du composant.
+   * Initialisation du composant
    */
   ngOnInit(): void {
-    this.getUsers(); // Récupère les utilisateurs.
-    this.loadCurrentUser(); // Charge l'utilisateur connecté
+    this.getUsers();
+    this.loadCurrentUser();
 
-    // S'abonner aux changements de l'utilisateur connecté
     this.authService.currentUser$.subscribe(user => {
       if (user && user !== this.currentUser) {
         this.currentUser = user;
@@ -51,9 +60,11 @@ export class UsersListComponent {
     });
   }
 
+  // SECTION 3: GESTION DE L'UTILISATEUR COURANT
+  // ====================================================================
+
   /**
-   * Retourne le nom complet de l'utilisateur connecté
-   * @returns Le nom complet formaté ou un texte par défaut
+   * Récupère le nom complet de l'utilisateur connecté
    */
   getFullName(): string {
     if (this.currentUser) {
@@ -65,30 +76,27 @@ export class UsersListComponent {
   }
 
   /**
-   * Retourne le rôle de l'utilisateur connecté
-   * @returns Le rôle de l'utilisateur ou un texte par défaut
+   * Récupère le rôle de l'utilisateur connecté
    */
   getUserRole(): string {
-    // Essaie d'abord de récupérer le rôle depuis l'utilisateur courant
     if (this.currentUser?.roles && this.currentUser.roles.length > 0) {
-      return this.currentUser.roles[0]; // Prend le premier rôle
+      return this.currentUser.roles[0];
     }
 
-    // Sinon, utilise le service d'authentification
     const role = this.authService.getUserRole();
     return role || 'Rôle non défini';
   }
 
-
+  /**
+   * Charge les informations de l'utilisateur connecté
+   */
   loadCurrentUser(): void {
-    // D'abord, essaie de récupérer depuis le service d'authentification
     this.authService.loadCurrentUserProfile().subscribe({
       next: (user) => {
         if (user) {
           this.currentUser = user;
           this.loadCurrentUserPhoto();
         } else {
-          // Si pas d'utilisateur depuis AuthService, utilise UsersService
           this.usersService.getCurrentUser().subscribe({
             next: (user) => {
               this.currentUser = user;
@@ -102,7 +110,6 @@ export class UsersListComponent {
       },
       error: (error) => {
         console.error('Erreur lors du chargement du profil utilisateur', error);
-        // Fallback vers UsersService
         this.usersService.getCurrentUser().subscribe({
           next: (user) => {
             this.currentUser = user;
@@ -116,51 +123,92 @@ export class UsersListComponent {
     });
   }
 
+  // SECTION 4: GESTION DES PHOTOS
+  // ====================================================================
 
+  /**
+   * Charge la photo de l'utilisateur courant
+   */
   loadCurrentUserPhoto(): void {
-  if (this.currentUser?.photoUrl && typeof this.currentUser.photoUrl === 'string') {
-    // Utilisation du UsersService au lieu de usersService
-    this.usersService.getUserPhoto(this.currentUser.photoUrl).subscribe({
-      next: (blob) => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          this.currentUser!.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
-            reader.result as string
-          );
-        };
-        reader.readAsDataURL(blob);
-      },
-      error: (error) => {
-        console.error('Erreur lors du chargement de la photo utilisateur', error);
-        // Optionnel : définir une image par défaut
-        // this.currentUser!.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl('assets/default-avatar.png');
+    if (this.currentUser?.photoUrl && typeof this.currentUser.photoUrl === 'string') {
+      this.usersService.getUserPhoto(this.currentUser.photoUrl).subscribe({
+        next: (blob) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            this.currentUser!.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
+              reader.result as string
+            );
+          };
+          reader.readAsDataURL(blob);
+        },
+        error: (error) => {
+          console.error('Erreur lors du chargement de la photo utilisateur', error);
+        }
+      });
+    }
+  }
+
+  /**
+   * Charge les photos des utilisateurs affichés
+   */
+  loadUserPhotos(): void {
+    this.displayedUsers.forEach(user => {
+      if (user.photoUrl && typeof user.photoUrl === 'string') {
+        this.usersService.getUserPhoto(user.photoUrl).subscribe(blob => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            user.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
+              reader.result as string
+            );
+          };
+          reader.readAsDataURL(blob);
+        });
       }
     });
   }
-}
+
+  // SECTION 5: GESTION DES UTILISATEURS
+  // ====================================================================
 
   /**
-   * Charge les photos des utilisateurs et les sécurise pour l'affichage.
-   * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
+   * Récupère la liste des utilisateurs
    */
-  loadUserPhotos(): void {
-  this.displayedUsers.forEach(user => {
-    if (user.photoUrl && typeof user.photoUrl === 'string') {
-      this.usersService.getUserPhoto(user.photoUrl).subscribe(blob => {
-        const reader = new FileReader();
-        reader.onload = () => {
-          user.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
-            reader.result as string
-          );
-        };
-        reader.readAsDataURL(blob);
-      });
-    }
-  });
-}
+  getUsers(): void {
+    this.usersService.getAllUsers().subscribe({
+      next: (data) => {
+        this.users = data;
+        this.filteredUsers = data;
+        this.totalItems = data.length;
+        this.calculateTotalPages();
+        this.updateDisplayedUsers();
+        this.loadUserPhotos();
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des utilisateurs', error);
+      },
+    });
+  }
 
   /**
-   * Filtre les utilisateurs en fonction du terme de recherche.
+   * Active/désactive un compte utilisateur
+   */
+  toggleAccount(user: Users): void {
+    this.usersService.toggleUserAccount(user.id).subscribe(
+      (response) => {
+        user.isEnabled = !user.isEnabled;
+        console.log(`L'état de l'utilisateur ${user.firstName} a été basculé`);
+      },
+      (error) => {
+        console.error("Erreur lors de la bascule de l'utilisateur", error);
+      }
+    );
+  }
+
+  // SECTION 6: FILTRAGE ET RECHERCHE
+  // ====================================================================
+
+  /**
+   * Filtre les utilisateurs selon le terme de recherche
    */
   filterUsers(): void {
     if (this.searchTerm) {
@@ -177,13 +225,78 @@ export class UsersListComponent {
     } else {
       this.filteredUsers = this.users;
     }
-    this.totalItems = this.filteredUsers.length; // Met à jour le nombre total d'éléments filtrés.
-    this.calculateTotalPages(); // Calcule le nombre total de pages.
-    this.updateDisplayedUsers(); // Met à jour les utilisateurs affichés.
+    this.totalItems = this.filteredUsers.length;
+    this.calculateTotalPages();
+    this.updateDisplayedUsers();
   }
 
   /**
-   * Exporte les utilisateurs au format Excel.
+   * Applique le filtre de pagination
+   */
+  applyFilter(): void {
+    const start = (this.currentPage - 1) * this.itemsPerPage;
+    const end = start + this.itemsPerPage;
+    this.filteredUsers = this.users.slice(start, end);
+  }
+
+  // SECTION 7: PAGINATION
+  // ====================================================================
+
+  /**
+   * Calcule le nombre total de pages
+   */
+  calculateTotalPages(): void {
+    this.totalPages = Math.ceil(this.filteredUsers.length / this.itemsPerPage);
+    if (this.currentPage > this.totalPages) {
+      this.currentPage = this.totalPages || 1;
+    }
+  }
+
+  /**
+   * Met à jour la liste des utilisateurs affichés
+   */
+  updateDisplayedUsers(): void {
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = Math.min(
+      startIndex + this.itemsPerPage,
+      this.filteredUsers.length
+    );
+    this.displayedUsers = this.filteredUsers.slice(startIndex, endIndex);
+  }
+
+  /**
+   * Page précédente
+   */
+  previousPage(): void {
+    if (this.currentPage > 1) {
+      this.currentPage--;
+      this.updateDisplayedUsers();
+    }
+  }
+
+  /**
+   * Page suivante
+   */
+  nextPage(): void {
+    if (this.currentPage < this.totalPages) {
+      this.currentPage++;
+      this.updateDisplayedUsers();
+    }
+  }
+
+  /**
+   * Changement de page
+   */
+  pageChanged(event: any): void {
+    this.currentPage = event;
+    this.applyFilter();
+  }
+
+  // SECTION 8: EXPORT ET DÉCONNEXION
+  // ====================================================================
+
+  /**
+   * Exporte les utilisateurs au format Excel
    */
   exportUsers(): void {
     this.usersService.exportUsers('xlsx').subscribe(
@@ -194,7 +307,7 @@ export class UsersListComponent {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = 'utilisateurs.xlsx'; // Nom du fichier téléchargé.
+        a.download = 'utilisateurs.xlsx';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -207,127 +320,32 @@ export class UsersListComponent {
   }
 
   /**
-   * Calcule le nombre total de pages en fonction du nombre d'éléments filtrés.
-   */
-  calculateTotalPages(): void {
-    this.totalPages = Math.ceil(this.filteredUsers.length / this.itemsPerPage);
-    if (this.currentPage > this.totalPages) {
-      this.currentPage = this.totalPages || 1; // Ajuste la page actuelle si elle dépasse la limite.
-    }
-  }
-
-  /**
-   * Met à jour les utilisateurs affichés sur la page actuelle.
-   */
-  updateDisplayedUsers(): void {
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex = Math.min(
-      startIndex + this.itemsPerPage,
-      this.filteredUsers.length
-    );
-    this.displayedUsers = this.filteredUsers.slice(startIndex, endIndex);
-  }
-
-  /**
-   * Navigue vers la page précédente si possible.
-   */
-  previousPage(): void {
-    if (this.currentPage > 1) {
-      this.currentPage--;
-      this.updateDisplayedUsers();
-    }
-  }
-
-  /**
-   * Navigue vers la page suivante si possible.
-   */
-  nextPage(): void {
-    if (this.currentPage < this.totalPages) {
-      this.currentPage++;
-      this.updateDisplayedUsers();
-    }
-  }
-
-  /**
-   * Change la page actuelle en fonction de l'événement reçu.
-   */
-  pageChanged(event: any): void {
-    this.currentPage = event;
-    this.applyFilter();
-  }
-
-  /**
-   * Applique un filtre basé sur la pagination.
-   */
-  applyFilter(): void {
-    const start = (this.currentPage - 1) * this.itemsPerPage;
-    const end = start + this.itemsPerPage;
-    this.filteredUsers = this.users.slice(start, end);
-  }
-
-  getUsers(): void {
-  this.usersService.getAllUsers().subscribe({
-    next: (data) => {
-      this.users = data;
-      this.filteredUsers = data;
-      this.totalItems = data.length;
-      this.calculateTotalPages();
-      this.updateDisplayedUsers();
-      this.loadUserPhotos(); // Charge les photos après avoir reçu les utilisateurs
-    },
-    error: (error) => {
-      console.error('Erreur lors du chargement des utilisateurs', error);
-    },
-  });
-}
-
-  toggleAccount(user: Users): void {
-    this.usersService.toggleUserAccount(user.id).subscribe(
-      (response) => {
-        user.isEnabled = !user.isEnabled;
-        console.log(`L'état de l'utilisateur ${user.firstName} a été basculé`);
-      },
-      (error) => {
-        console.error("Erreur lors de la bascule de l'utilisateur", error);
-      }
-    );
-  }
-
-  /**
-   * Déconnecte l'utilisateur et le redirige vers la page de connexion.
+   * Déconnecte l'utilisateur
    */
   logout(): void {
-    // Vérifie si l'utilisateur est bien authentifié avant de le déconnecter
     if (this.authService.isAuthenticated()) {
       try {
-        // Log l'état du localStorage avant la déconnexion (pour debug)
         console.log('État du localStorage avant déconnexion:', {
           token: !!this.authService.getToken(),
           userRole: localStorage.getItem('userRole'),
           profile: localStorage.getItem('currentUserProfile')
         });
 
-        // Appel au service de déconnexion
         this.authService.logout();
 
-        // Vérifie que le localStorage a bien été vidé
         console.log('État du localStorage après déconnexion:', {
           token: !!this.authService.getToken(),
           userRole: localStorage.getItem('userRole'),
           profile: localStorage.getItem('currentUserProfile')
         });
 
-        // Redirige vers la page de login seulement après confirmation que tout est bien déconnecté
         this.router.navigate(['/auth/login']);
       } catch (error) {
         console.error('Erreur lors de la déconnexion:', error);
-        // Fallback en cas d'erreur - force la redirection
         this.router.navigate(['/auth/login']);
       }
     } else {
-      // Si l'utilisateur n'est pas authentifié, rediriger directement
       this.router.navigate(['/auth/login']);
     }
   }
-
 }

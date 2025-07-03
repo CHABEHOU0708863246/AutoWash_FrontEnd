@@ -28,32 +28,71 @@ interface Notification {
   styleUrl: './centres-create.component.scss',
 })
 export class CentresCreateComponent {
+  //#region Propriétés du composant
+  users: Users[] = []; // Liste complète des utilisateurs
+  displayedUsers: Users[] = []; // Liste des utilisateurs affichés
+  currentUser: Users | null = null; // Utilisateur actuellement connecté
+  user: Users | null = null; // Informations sur l'utilisateur connecté
 
-  users: Users[] = []; // Liste complète des utilisateurs.
-  displayedUsers: Users[] = []; // Liste des utilisateurs affichés sur la page actuelle.
-  currentUser: Users | null = null; // Utilisateur actuellement connecté.
-  user: Users | null = null; // Informations sur l'utilisateur connecté.
+  centre: Centres[] = []; // Liste des centres
+  centreForm!: FormGroup; // Formulaire pour créer un centre
+  currentStep: number = 1; // Étape actuelle dans le processus de création
+  managers: Users[] = []; // Liste des gérants disponibles
+  isSubmitting = false; // Indicateur de soumission en cours
 
-  centre: Centres[] = []; // Liste des centres.
-  centreForm!: FormGroup; // Formulaire pour créer un centre.
-  currentStep: number = 1; // Étape actuelle dans le processus de création.
-  managers: Users[] = [];
-  isSubmitting = false;
+  // Configuration des notifications
   notification: Notification = {
     show: false,
     type: null,
     message: ''
   };
+  //#endregion
 
+  //#region Constructeur et initialisation
   constructor(
     private sanitizer: DomSanitizer,
-    private usersService: UsersService, // Service pour interagir avec les utilisateurs.
-    private router: Router, // Service Angular pour gérer la navigation.
-    private centreService: CentresService, // Service pour interagir avec les utilisateurs.
-    private authService: AuthService, // Service pour gérer l'authentification.
-    private formBuilder: FormBuilder // Service pour construire des formulaires réactifs.
+    private usersService: UsersService,
+    private router: Router,
+    private centreService: CentresService,
+    private authService: AuthService,
+    private formBuilder: FormBuilder
   ) {
-    // Initialisation du formulaire avec validation.
+    this.initializeForm();
+  }
+
+  ngOnInit(): void {
+    this.loadInitialData();
+    this.subscribeToCurrentUser();
+  }
+
+  /**
+   * Charge les données initiales du composant
+   */
+  private loadInitialData(): void {
+    this.getCentres();
+    this.getAvailableManagers();
+    this.getUsers();
+    this.loadCurrentUser();
+  }
+
+  /**
+   * S'abonne aux changements de l'utilisateur connecté
+   */
+  private subscribeToCurrentUser(): void {
+    this.authService.currentUser$.subscribe((user) => {
+      if (user && user !== this.currentUser) {
+        this.currentUser = user;
+        this.loadCurrentUserPhoto();
+      }
+    });
+  }
+  //#endregion
+
+  //#region Gestion du formulaire
+  /**
+   * Initialise le formulaire avec des valeurs par défaut
+   */
+  initializeForm(): void {
     this.centreForm = this.formBuilder.group({
       name: ['', Validators.required],
       location: ['', Validators.required],
@@ -64,36 +103,33 @@ export class CentresCreateComponent {
   }
 
   /**
-   * Réinitialise le formulaire.
+   * Réinitialise le formulaire aux valeurs par défaut
    */
-  initializeForm(): void {
+  onReset(): void {
     this.centreForm.reset({
-      isActive: true, // Valeur par défaut
+      isActive: true,
     });
   }
+  //#endregion
 
+  //#region Gestion des utilisateurs
   /**
-   * Méthode exécutée lors de l'initialisation du composant.
+   * Récupère tous les utilisateurs et charge leurs photos
    */
-  ngOnInit(): void {
-    this.getCentres(); // Charge tous les utilisateurs.
-    this.initializeForm(); // Réinitialise le formulaire.
-    this.getAvailableManagers();
-    this.getUsers(); // Récupère les utilisateurs.
-    this.loadCurrentUser(); // Charge l'utilisateur connecté
-
-    // S'abonner aux changements de l'utilisateur connecté
-    this.authService.currentUser$.subscribe((user) => {
-      if (user && user !== this.currentUser) {
-        this.currentUser = user;
-        this.loadCurrentUserPhoto();
-      }
+  getUsers(): void {
+    this.usersService.getAllUsers().subscribe({
+      next: (data) => {
+        this.users = data;
+        this.loadUserPhotos();
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des utilisateurs', error);
+      },
     });
   }
 
   /**
-   * Charge les photos des utilisateurs et les sécurise pour l'affichage.
-   * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
+   * Charge les photos des utilisateurs pour l'affichage
    */
   loadUserPhotos(): void {
     this.displayedUsers.forEach((user) => {
@@ -112,79 +148,46 @@ export class CentresCreateComponent {
   }
 
   /**
-   * Récupère tous les utilisateurs et charge leurs photos.
-   * Utilise le service UsersService pour obtenir la liste des utilisateurs.
-   */
-  getUsers(): void {
-    this.usersService.getAllUsers().subscribe({
-      next: (data) => {
-        this.users = data;
-        this.loadUserPhotos(); // Charge les photos après avoir reçu les utilisateurs
-      },
-      error: (error) => {
-        console.error('Erreur lors du chargement des utilisateurs', error);
-      },
-    });
-  }
-
-  /**
-   * Charge l'utilisateur actuellement connecté.
-   * Essaie d'abord de récupérer l'utilisateur depuis le service d'authentification,
+   * Charge l'utilisateur actuellement connecté
    */
   loadCurrentUser(): void {
-    // D'abord, essaie de récupérer depuis le service d'authentification
     this.authService.loadCurrentUserProfile().subscribe({
       next: (user) => {
         if (user) {
           this.currentUser = user;
           this.loadCurrentUserPhoto();
         } else {
-          // Si pas d'utilisateur depuis AuthService, utilise UsersService
-          this.usersService.getCurrentUser().subscribe({
-            next: (user) => {
-              this.currentUser = user;
-              this.loadCurrentUserPhoto();
-            },
-            error: (error) => {
-              console.error(
-                "Erreur lors du chargement de l'utilisateur connecté",
-                error
-              );
-            },
-          });
+          this.loadCurrentUserFallback();
         }
       },
-      error: (error) => {
-        console.error('Erreur lors du chargement du profil utilisateur', error);
-        // Fallback vers UsersService
-        this.usersService.getCurrentUser().subscribe({
-          next: (user) => {
-            this.currentUser = user;
-            this.loadCurrentUserPhoto();
-          },
-          error: (error) => {
-            console.error(
-              "Erreur lors du chargement de l'utilisateur connecté",
-              error
-            );
-          },
-        });
+      error: () => {
+        this.loadCurrentUserFallback();
       },
     });
   }
 
   /**
-   * Charge la photo de l'utilisateur actuellement connecté.
-   *
-   * Utilise le service UsersService pour obtenir la photo de l'utilisateur.
+   * Méthode de fallback pour charger l'utilisateur actuel
+   */
+  private loadCurrentUserFallback(): void {
+    this.usersService.getCurrentUser().subscribe({
+      next: (user) => {
+        this.currentUser = user;
+        this.loadCurrentUserPhoto();
+      },
+      error: (error) => {
+        console.error("Erreur lors du chargement de l'utilisateur connecté", error);
+      },
+    });
+  }
+
+  /**
+   * Charge la photo de l'utilisateur actuellement connecté
    */
   loadCurrentUserPhoto(): void {
     if (!this.currentUser) return;
 
-    if (
-      this.currentUser.photoUrl &&
-      typeof this.currentUser.photoUrl === 'string'
-    ) {
+    if (this.currentUser.photoUrl && typeof this.currentUser.photoUrl === 'string') {
       this.usersService.getUserPhoto(this.currentUser.photoUrl).subscribe({
         next: (blob) => {
           const reader = new FileReader();
@@ -194,29 +197,167 @@ export class CentresCreateComponent {
           };
           reader.readAsDataURL(blob);
         },
-        error: (error) => {
-          console.error(
-            'Erreur lors du chargement de la photo utilisateur',
-            error
-          );
-          // Image par défaut
-          this.currentUser!.photoSafeUrl =
-            this.sanitizer.bypassSecurityTrustUrl(
-              'assets/images/default-avatar.png'
-            );
+        error: () => {
+          this.setDefaultUserPhoto();
         },
       });
     } else {
-      // Si pas de photoUrl, utiliser une image par défaut
-      this.currentUser.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
-        'assets/images/default-avatar.png'
-      );
+      this.setDefaultUserPhoto();
     }
   }
 
   /**
+   * Définit une photo par défaut pour l'utilisateur
+   */
+  private setDefaultUserPhoto(): void {
+    this.currentUser!.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
+      'assets/images/default-avatar.png'
+    );
+  }
+  //#endregion
+
+  //#region Gestion des centres
+  /**
+   * Récupère tous les centres depuis le service
+   */
+  getCentres(): void {
+    this.centreService.getAllCentres().subscribe(
+      (data) => {
+        this.centre = data;
+      },
+      (error) => {
+        console.error('Erreur lors du chargement des centres', error);
+      }
+    );
+  }
+
+  /**
+   * Récupère les gérants disponibles pour les centres
+   */
+  getAvailableManagers(): void {
+    this.centreService.getAvailableManagers().subscribe({
+      next: (managers: Users[]) => {
+        this.managers = managers;
+      },
+      error: (error) => {
+        console.error('Erreur chargement gérants', error);
+        alert('Impossible de charger la liste des gérants. Veuillez réessayer plus tard.');
+      },
+    });
+  }
+  //#endregion
+
+  //#region Gestion de la soumission du formulaire
+  /**
+   * Soumet le formulaire de création de centre
+   */
+  onSubmit(): void {
+    if (this.centreForm.valid) {
+      this.isSubmitting = true;
+      const formValue = this.centreForm.value;
+
+      const centreData = this.prepareCentreData(formValue);
+
+      this.centreService.createCentre(centreData).subscribe({
+        next: () => this.handleCreateSuccess(),
+        error: (error) => this.handleCreateError(error),
+      });
+    } else {
+      this.showNotification('error', 'Veuillez remplir correctement tous les champs obligatoires');
+      this.centreForm.markAllAsTouched();
+    }
+  }
+
+  /**
+   * Prépare les données du centre pour l'API
+   */
+  private prepareCentreData(formValue: any): any {
+    const centreData: any = {
+      name: formValue.name.trim(),
+      location: formValue.location.trim(),
+      isActive: Boolean(formValue.isActive),
+      ownerId: formValue.ownerId || null,
+      ownerName: null
+    };
+
+    if (formValue.ownerId) {
+      const selectedManager = this.managers.find(m => m.id === formValue.ownerId.toString());
+      if (selectedManager) {
+        centreData.ownerName = `${selectedManager.firstName} ${selectedManager.lastName}`.trim();
+      }
+    }
+
+    return centreData;
+  }
+
+  /**
+   * Gère le succès de la création du centre
+   */
+  private handleCreateSuccess(): void {
+    this.isSubmitting = false;
+    this.showNotification('success', 'Centre créé avec succès!');
+    setTimeout(() => this.router.navigate(['/admin/centres-list']), 1500);
+  }
+
+  /**
+   * Gère les erreurs lors de la création du centre
+   */
+  private handleCreateError(error: any): void {
+    this.isSubmitting = false;
+    this.showNotification('error', error.error?.message || 'Échec de la création du centre');
+  }
+  //#endregion
+
+  //#region Gestion des gérants
+  /**
+   * Compare les managers pour le select (Angular)
+   */
+  compareManagers = (o1: any, o2: any): boolean => {
+    return String(o1) === String(o2);
+  };
+
+  /**
+   * Gère le changement de sélection du gérant
+   */
+  onManagerChange(event: Event): void {
+    const selectElement = event.target as HTMLSelectElement;
+    const selectedValue = selectElement.value;
+
+    this.centreForm.patchValue({
+      ownerId: selectedValue,
+    });
+
+    if (selectedValue && selectedValue !== '') {
+      this.updateOwnerName(selectedValue);
+    }
+  }
+
+  /**
+   * Met à jour le nom du propriétaire dans le formulaire
+   */
+  private updateOwnerName(managerId: string): void {
+    const selectedManager = this.managers.find(
+      (m) => String(m.id) === managerId
+    );
+
+    if (selectedManager) {
+      const ownerName =
+        `${selectedManager.firstName || ''} ${
+          selectedManager.lastName || ''
+        }`.trim() ||
+        selectedManager.email ||
+        'Nom non disponible';
+
+      this.centreForm.patchValue({
+        ownerName: ownerName,
+      });
+    }
+  }
+  //#endregion
+
+  //#region Utilitaires d'affichage
+  /**
    * Retourne le nom complet de l'utilisateur connecté
-   * @returns Le nom complet formaté ou un texte par défaut
    */
   getFullName(): string {
     if (this.currentUser) {
@@ -229,22 +370,21 @@ export class CentresCreateComponent {
 
   /**
    * Retourne le rôle de l'utilisateur connecté
-   * @returns Le rôle de l'utilisateur ou un texte par défaut
    */
   getUserRole(): string {
-    // Si pas d'utilisateur connecté
     if (!this.currentUser) return 'Rôle non défini';
 
-    // Si l'utilisateur a des rôles
     if (this.currentUser.roles && this.currentUser.roles.length > 0) {
       return this.mapRoleIdToName(this.currentUser.roles[0]);
     }
 
-    // Sinon, utilise le service d'authentification
     const role = this.authService.getUserRole();
     return role ? this.mapRoleIdToName(role) : 'Rôle non défini';
   }
 
+  /**
+   * Convertit un ID de rôle en nom lisible
+   */
   private mapRoleIdToName(roleId: string): string {
     const roleMapping: { [key: string]: string } = {
       '1': 'Administrateur',
@@ -255,50 +395,12 @@ export class CentresCreateComponent {
 
     return roleMapping[roleId] || 'Administrateur';
   }
+  //#endregion
 
+  //#region Gestion des notifications
   /**
-   * Récupère les gérants disponibles
+   * Affiche une notification
    */
-  getAvailableManagers(): void {
-    this.centreService.getAvailableManagers().subscribe({
-      next: (managers: Users[]) => {
-        this.managers = managers;
-        console.log('Gérants chargés:', this.managers);
-
-        // Debug: Affiche le premier manager pour vérification
-        if (this.managers.length > 0) {
-          console.log('Exemple de manager:', {
-            id: this.managers[0].id,
-            type: typeof this.managers[0].id,
-            name: `${this.managers[0].firstName} ${this.managers[0].lastName}`,
-          });
-        }
-      },
-      error: (error) => {
-        console.error('Erreur chargement gérants', error);
-        // Message plus explicite pour l'utilisateur
-        alert(
-          'Impossible de charger la liste des gérants. Veuillez réessayer plus tard.'
-        );
-      },
-    });
-  }
-
-  /**
-   * Récupère tous les utilisateurs depuis le service.
-   */
-  getCentres(): void {
-    this.centreService.getAllCentres().subscribe(
-      (data) => {
-        this.centre = data;
-      },
-      (error) => {
-        console.error('Erreur lors du chargement des utilisateurs', error);
-      }
-    );
-  }
-
-// Méthode pour afficher les notifications
   showNotification(type: 'success' | 'error', message: string) {
     this.notification = {
       show: true,
@@ -306,156 +408,33 @@ export class CentresCreateComponent {
       message
     };
 
-    // Disparaît automatiquement après 5 secondes
     setTimeout(() => this.hideNotification(), 5000);
   }
 
+  /**
+   * Masque la notification
+   */
   hideNotification() {
     this.notification.show = false;
   }
+  //#endregion
 
-
+  //#region Gestion de l'authentification
   /**
-   * Méthode pour soumettre le formulaire de création de centre.
-   * Valide le formulaire, vérifie les données et envoie la requête de création
-   * au service `CentresService`.
-   * Si la création réussit, affiche une notification de succès et redirige vers la
-   * liste des centres. En cas d'erreur, affiche une notification d'erreur.
-   * Si le formulaire n'est pas valide, affiche une notification d'erreur.
-   */
-onSubmit(): void {
-  if (this.centreForm.valid) {
-    this.isSubmitting = true;
-    const formValue = this.centreForm.value;
-
-    // Préparer les données pour l'API
-    const centreData: any = {
-      name: formValue.name.trim(),
-      location: formValue.location.trim(),
-      isActive: Boolean(formValue.isActive),
-      ownerId: formValue.ownerId || null, // Explicitement null si vide
-      ownerName: null // Toujours envoyer null et laisser le backend gérer
-    };
-
-    // Si un gérant est sélectionné, ajouter ses informations
-    if (formValue.ownerId) {
-      const selectedManager = this.managers.find(m => m.id === formValue.ownerId.toString());
-      if (selectedManager) {
-        centreData.ownerName = `${selectedManager.firstName} ${selectedManager.lastName}`.trim();
-      }
-    }
-
-    this.centreService.createCentre(centreData).subscribe({
-      next: (response) => {
-        this.isSubmitting = false;
-        this.showNotification('success', 'Centre créé avec succès!');
-        setTimeout(() => this.router.navigate(['/admin/centres-list']), 1500);
-      },
-      error: (error) => {
-        this.isSubmitting = false;
-        this.showNotification('error', error.error?.message || 'Échec de la création du centre');
-      },
-    });
-  } else {
-    this.showNotification('error', 'Veuillez remplir correctement tous les champs obligatoires');
-    this.centreForm.markAllAsTouched();
-  }
-}
-
-  /**
-   * Méthode pour comparer les valeurs dans le select (Angular)
-   */
-  compareManagers = (o1: any, o2: any): boolean => {
-    return String(o1) === String(o2);
-  };
-
-  /**
-   * Méthode pour gérer le changement de sélection du gérant
-   */
-  onManagerChange(event: Event): void {
-    const selectElement = event.target as HTMLSelectElement;
-    const selectedValue = selectElement.value;
-
-    console.log('Gérant sélectionné - Valeur brute:', selectedValue);
-    console.log('Type de la valeur:', typeof selectedValue);
-
-    // FORCE la mise à jour du FormControl avec la valeur string
-    this.centreForm.patchValue({
-      ownerId: selectedValue, // Forcer la valeur string
-    });
-
-    console.log(
-      'Valeur dans le FormControl après patch:',
-      this.centreForm.get('ownerId')?.value
-    );
-    console.log(
-      'Type dans le FormControl:',
-      typeof this.centreForm.get('ownerId')?.value
-    );
-
-    // Mise à jour du nom du propriétaire automatiquement
-    if (selectedValue && selectedValue !== '') {
-      const selectedManager = this.managers.find(
-        (m) => String(m.id) === selectedValue
-      );
-      if (selectedManager) {
-        const ownerName =
-          `${selectedManager.firstName || ''} ${
-            selectedManager.lastName || ''
-          }`.trim() ||
-          selectedManager.email ||
-          'Nom non disponible';
-        this.centreForm.patchValue({
-          ownerName: ownerName,
-        });
-        console.log('Nom du propriétaire mis à jour:', ownerName);
-      }
-    }
-  }
-
-  /**
-   * Réinitialise le formulaire.
-   */
-  onReset(): void {
-    this.centreForm.reset({
-      isActive: true,
-    });
-  }
-
-  /**
-   * Déconnecte l'utilisateur et le redirige vers la page de connexion.
+   * Déconnecte l'utilisateur et redirige vers la page de connexion
    */
   logout(): void {
-    // Vérifie si l'utilisateur est bien authentifié avant de le déconnecter
     if (this.authService.isAuthenticated()) {
       try {
-        // Log l'état du localStorage avant la déconnexion (pour debug)
-        console.log('État du localStorage avant déconnexion:', {
-          token: !!this.authService.getToken(),
-          userRole: localStorage.getItem('userRole'),
-          profile: localStorage.getItem('currentUserProfile'),
-        });
-
-        // Appel au service de déconnexion
         this.authService.logout();
-
-        // Vérifie que le localStorage a bien été vidé
-        console.log('État du localStorage après déconnexion:', {
-          token: !!this.authService.getToken(),
-          userRole: localStorage.getItem('userRole'),
-          profile: localStorage.getItem('currentUserProfile'),
-        });
-
-        // Redirige vers la page de login seulement après confirmation que tout est bien déconnecté
         this.router.navigate(['/auth/login']);
       } catch (error) {
         console.error('Erreur lors de la déconnexion:', error);
-        // Fallback en cas d'erreur - force la redirection
         this.router.navigate(['/auth/login']);
       }
     } else {
-      // Si l'utilisateur n'est pas authentifié, rediriger directement
       this.router.navigate(['/auth/login']);
     }
   }
+  //#endregion
 }

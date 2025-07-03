@@ -30,7 +30,7 @@ interface ManagerResponse {
 })
 export class CentresService {
 
-  private apiUrl = 'https://localhost:7139/api/Centres';
+  private readonly apiUrl = 'https://localhost:7139/api/Centres';
   private centreUpdatedSubject = new Subject<void>();
 
   constructor(private http: HttpClient) { }
@@ -51,8 +51,11 @@ export class CentresService {
    * @returns Observable contenant les détails du centre
    */
   getCentreById(centreId: string): Observable<Centres> {
-    const url = `${this.apiUrl}/${centreId}`;
-    return this.http.get<Centres>(url).pipe(
+    if (!centreId || centreId.trim() === '') {
+      return throwError(() => new Error('L\'identifiant du centre est requis'));
+    }
+
+    return this.http.get<Centres>(`${this.apiUrl}/${centreId}`).pipe(
       catchError(this.handleError)
     );
   }
@@ -63,6 +66,10 @@ export class CentresService {
    * @returns Observable contenant la réponse de l'API
    */
   createCentre(centre: any): Observable<any> {
+    if (!centre) {
+      return throwError(() => new Error('Les données du centre sont requises'));
+    }
+
     return this.http.post(this.apiUrl, centre).pipe(
       tap(() => {
         this.centreUpdatedSubject.next();
@@ -72,51 +79,56 @@ export class CentresService {
   }
 
   /**
- * Récupère la liste des gérants disponibles
- */
-getAvailableManagers(): Observable<Users[]> {
-  return this.http.get<any>(`${this.apiUrl}/managers`).pipe(
-    map((response: any) => {
-      // Vérifie si la réponse contient un tableau managerIds
-      const managersArray = response.managerIds || response;
+   * Récupère la liste des gérants disponibles
+   * @returns Observable contenant un tableau d'utilisateurs-gérants
+   */
+  getAvailableManagers(): Observable<Users[]> {
+    return this.http.get<any>(`${this.apiUrl}/managers`).pipe(
+      map((response: any) => {
+        if (!response) {
+          return [];
+        }
 
-      // Si ce n'est pas un tableau, on le transforme en tableau
-      const managers = Array.isArray(managersArray) ? managersArray : [managersArray];
+        // Vérifie si la réponse contient un tableau managerIds
+        const managersArray = response.managerIds || response;
 
-      return managers.map((manager: any) => {
-        // Extraction de l'ID selon la structure de la réponse
-        const managerId = manager.id?.toString() ||
-                         (manager.id?.timestamp ? manager.id.toString() : '');
+        // Si ce n'est pas un tableau, on le transforme en tableau
+        const managers = Array.isArray(managersArray) ? managersArray : [managersArray];
 
-        return new Users(
-          managerId,
-          manager.firstName,
-          manager.lastName,
-          manager.email || manager.userName,
-          manager.phoneNumber,
-          manager.isEnabled,
-          manager.roles ? manager.roles.map((r: any) => r.toString()) : ['MANAGER'],
-          manager.workingHours || 0,
-          manager.isPartTime || false,
-          manager.hireDate ? new Date(manager.hireDate) : new Date(),
-          manager.gender,
-          manager.contractType,
-          manager.numberOfChildren,
-          manager.maritalStatus,
-          manager.residence,
-          manager.postalAddress,
-          manager.centreId,
-          manager.photoUrl
-        );
-      });
-    }),
-    catchError(error => {
-      console.error('Erreur dans getAvailableManagers:', error);
-      return throwError(() => new Error('Erreur lors de la récupération des gérants'));
-    })
-  );
-}
+        return managers
+          .filter(manager => manager && manager.id) // Filtre les managers invalides
+          .map((manager: any) => {
+            // Extraction de l'ID selon la structure de la réponse
+            const managerId = this.extractManagerId(manager.id);
 
+            return new Users(
+              managerId,
+              manager.firstName || '',
+              manager.lastName || '',
+              manager.email || manager.userName || '',
+              manager.phoneNumber || '',
+              manager.isEnabled ?? true,
+              manager.roles ? manager.roles.map((r: any) => r.toString()) : ['MANAGER'],
+              manager.workingHours || 0,
+              manager.isPartTime || false,
+              manager.hireDate ? new Date(manager.hireDate) : new Date(),
+              manager.gender,
+              manager.contractType,
+              manager.numberOfChildren,
+              manager.maritalStatus,
+              manager.residence,
+              manager.postalAddress,
+              manager.centreId,
+              manager.photoUrl
+            );
+          });
+      }),
+      catchError(error => {
+        console.error('Erreur dans getAvailableManagers:', error);
+        return throwError(() => new Error('Erreur lors de la récupération des gérants'));
+      })
+    );
+  }
 
   /**
    * Met à jour un centre existant
@@ -125,13 +137,23 @@ getAvailableManagers(): Observable<Users[]> {
    * @returns Observable contenant la réponse de l'API
    */
   updateCentre(centreId: string, centreData: any): Observable<any> {
-    const url = `${this.apiUrl}/${centreId}`;
-    return this.http.put(url, centreData).pipe(
+    if (!centreId || centreId.trim() === '') {
+      return throwError(() => new Error('L\'identifiant du centre est requis'));
+    }
+
+    if (!centreData) {
+      return throwError(() => new Error('Les données du centre sont requises'));
+    }
+
+    return this.http.put(`${this.apiUrl}/${centreId}`, centreData).pipe(
       tap(() => {
         this.centreUpdatedSubject.next();
       }),
+      map(response => response || { message: 'Centre mis à jour avec succès' }),
       catchError((error: HttpErrorResponse) => {
+        // Gestion spéciale pour les codes de succès sans contenu
         if (error.status === 200 || error.status === 204) {
+          this.centreUpdatedSubject.next();
           return new Observable(observer => {
             observer.next({ message: 'Centre mis à jour avec succès' });
             observer.complete();
@@ -148,11 +170,15 @@ getAvailableManagers(): Observable<Users[]> {
    * @returns Observable avec un retour vide ou un message de confirmation
    */
   deleteCentre(centreId: string): Observable<any> {
-    const url = `${this.apiUrl}/${centreId}`;
-    return this.http.delete(url).pipe(
+    if (!centreId || centreId.trim() === '') {
+      return throwError(() => new Error('L\'identifiant du centre est requis'));
+    }
+
+    return this.http.delete(`${this.apiUrl}/${centreId}`).pipe(
       tap(() => {
         this.centreUpdatedSubject.next();
       }),
+      map(response => response || { message: 'Centre supprimé avec succès' }),
       catchError(this.handleError)
     );
   }
@@ -165,13 +191,44 @@ getAvailableManagers(): Observable<Users[]> {
     return this.centreUpdatedSubject.asObservable();
   }
 
-    /**
-   * Exportation des centres.
-   * @param fileType - Le type de fichier pour l'exportation (par exemple, 'CSV', 'PDF').
-   * @returns Un Observable contenant le fichier exporté en format Blob.
+  /**
+   * Exportation des centres
+   * @param fileType - Le type de fichier pour l'exportation (par exemple, 'CSV', 'PDF')
+   * @returns Un Observable contenant le fichier exporté en format Blob
    */
   exportCentres(fileType: string): Observable<Blob> {
-    return this.http.get<Blob>(`${this.apiUrl}/export-centres?fileType=${fileType}`, { responseType: 'blob' as 'json' }); // Récupère le fichier exporté dans le type demandé.
+    if (!fileType || fileType.trim() === '') {
+      return throwError(() => new Error('Le type de fichier est requis'));
+    }
+
+    const allowedTypes = ['CSV', 'PDF', 'EXCEL'];
+    if (!allowedTypes.includes(fileType.toUpperCase())) {
+      return throwError(() => new Error(`Type de fichier non supporté: ${fileType}`));
+    }
+
+    return this.http.get(`${this.apiUrl}/export-centres`, {
+      params: { fileType },
+      responseType: 'blob'
+    }).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Extrait l'ID du manager selon sa structure
+   * @param idObject L'objet ID du manager
+   * @returns L'ID en string
+   */
+  private extractManagerId(idObject: any): string {
+    if (typeof idObject === 'string') {
+      return idObject;
+    }
+
+    if (idObject && typeof idObject === 'object') {
+      return idObject.toString();
+    }
+
+    return '';
   }
 
   /**
@@ -179,16 +236,19 @@ getAvailableManagers(): Observable<Users[]> {
    * @param error - L'erreur capturée
    * @returns Observable avec un message d'erreur formaté
    */
-  private handleError(error: HttpErrorResponse): Observable<never> {
+  private handleError = (error: HttpErrorResponse): Observable<never> => {
     let errorMessage = 'Une erreur est survenue';
+
     if (error.error instanceof ErrorEvent) {
       // Erreur côté client
       errorMessage = `Erreur client: ${error.error.message}`;
     } else {
       // Erreur côté serveur
-      errorMessage = `Erreur serveur (HTTP ${error.status}): ${error.error}`;
+      const serverError = error.error?.message || error.error || 'Erreur serveur inconnue';
+      errorMessage = `Erreur serveur (HTTP ${error.status}): ${serverError}`;
     }
-    console.error(errorMessage);
+
+    console.error('Erreur dans CentresService:', errorMessage, error);
     return throwError(() => new Error(errorMessage));
   }
 }

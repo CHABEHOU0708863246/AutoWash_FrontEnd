@@ -28,6 +28,7 @@ import { UsersService } from '../../../core/services/Users/users.service';
   styleUrl: './settings-services.component.scss',
 })
 export class SettingsServicesComponent implements OnInit {
+  //#region PROPRIÉTÉS
   serviceForm: FormGroup;
   services: ServiceSetting[] = [];
   centres: Centres[] = [];
@@ -40,20 +41,22 @@ export class SettingsServicesComponent implements OnInit {
   hasDefaultSettings = false;
   isInitializingSettings = false;
 
-serviceCategories = [
-  { value: ServiceCategory.Basic, label: 'Basique' },
-  { value: ServiceCategory.Premium, label: 'Premium' },
-  { value: ServiceCategory.Interior, label: 'Intérieur' },
-  { value: ServiceCategory.Exterior, label: 'Extérieur' },
-  { value: ServiceCategory.Special, label: 'Spécial' },
-  { value: ServiceCategory.Maintenance, label: 'Maintenance' }
-];
+  serviceCategories = [
+    { value: ServiceCategory.Basic, label: 'Basique' },
+    { value: ServiceCategory.Premium, label: 'Premium' },
+    { value: ServiceCategory.Interior, label: 'Intérieur' },
+    { value: ServiceCategory.Exterior, label: 'Extérieur' },
+    { value: ServiceCategory.Special, label: 'Spécial' },
+    { value: ServiceCategory.Maintenance, label: 'Maintenance' }
+  ];
 
-  users: Users[] = []; // Liste complète des utilisateurs.
-  displayedUsers: Users[] = []; // Liste des utilisateurs affichés sur la page actuelle.
-  currentUser: Users | null = null; // Utilisateur actuellement connecté.
-  user: Users | null = null; // Informations sur l'utilisateur connecté.
+  users: Users[] = [];
+  displayedUsers: Users[] = [];
+  currentUser: Users | null = null;
+  user: Users | null = null;
+  //#endregion
 
+  //#region CONSTRUCTEUR ET INITIALISATION
   constructor(
     private sanitizer: DomSanitizer,
     private usersService: UsersService,
@@ -79,10 +82,9 @@ serviceCategories = [
 
   ngOnInit(): void {
     this.loadCentres();
-    this.getUsers(); // Récupère les utilisateurs.
-    this.loadCurrentUser(); // Charge l'utilisateur connecté
+    this.getUsers();
+    this.loadCurrentUser();
 
-    // S'abonner aux changements de l'utilisateur connecté
     this.authService.currentUser$.subscribe((user) => {
       if (user && user !== this.currentUser) {
         this.currentUser = user;
@@ -90,10 +92,11 @@ serviceCategories = [
       }
     });
   }
+  //#endregion
 
+  //#region GESTION DES UTILISATEURS
   /**
    * Charge les photos des utilisateurs et les sécurise pour l'affichage.
-   * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
    */
   loadUserPhotos(): void {
     this.displayedUsers.forEach((user) => {
@@ -113,13 +116,12 @@ serviceCategories = [
 
   /**
    * Récupère tous les utilisateurs et charge leurs photos.
-   * Utilise le service UsersService pour obtenir la liste des utilisateurs.
    */
   getUsers(): void {
     this.usersService.getAllUsers().subscribe({
       next: (data) => {
         this.users = data;
-        this.loadUserPhotos(); // Charge les photos après avoir reçu les utilisateurs
+        this.loadUserPhotos();
       },
       error: (error) => {
         console.error('Erreur lors du chargement des utilisateurs', error);
@@ -129,17 +131,14 @@ serviceCategories = [
 
   /**
    * Charge l'utilisateur actuellement connecté.
-   * Essaie d'abord de récupérer l'utilisateur depuis le service d'authentification,
    */
   loadCurrentUser(): void {
-    // D'abord, essaie de récupérer depuis le service d'authentification
     this.authService.loadCurrentUserProfile().subscribe({
       next: (user) => {
         if (user) {
           this.currentUser = user;
           this.loadCurrentUserPhoto();
         } else {
-          // Si pas d'utilisateur depuis AuthService, utilise UsersService
           this.usersService.getCurrentUser().subscribe({
             next: (user) => {
               this.currentUser = user;
@@ -156,7 +155,6 @@ serviceCategories = [
       },
       error: (error) => {
         console.error('Erreur lors du chargement du profil utilisateur', error);
-        // Fallback vers UsersService
         this.usersService.getCurrentUser().subscribe({
           next: (user) => {
             this.currentUser = user;
@@ -175,16 +173,11 @@ serviceCategories = [
 
   /**
    * Charge la photo de l'utilisateur actuellement connecté.
-   *
-   * Utilise le service UsersService pour obtenir la photo de l'utilisateur.
    */
   loadCurrentUserPhoto(): void {
     if (!this.currentUser) return;
 
-    if (
-      this.currentUser.photoUrl &&
-      typeof this.currentUser.photoUrl === 'string'
-    ) {
+    if (this.currentUser.photoUrl && typeof this.currentUser.photoUrl === 'string') {
       this.usersService.getUserPhoto(this.currentUser.photoUrl).subscribe({
         next: (blob) => {
           const reader = new FileReader();
@@ -195,19 +188,12 @@ serviceCategories = [
           reader.readAsDataURL(blob);
         },
         error: (error) => {
-          console.error(
-            'Erreur lors du chargement de la photo utilisateur',
-            error
-          );
-          // Image par défaut
+          console.error('Erreur lors du chargement de la photo utilisateur', error);
           this.currentUser!.photoSafeUrl =
-            this.sanitizer.bypassSecurityTrustUrl(
-              'assets/images/default-avatar.png'
-            );
+            this.sanitizer.bypassSecurityTrustUrl('assets/images/default-avatar.png');
         },
       });
     } else {
-      // Si pas de photoUrl, utiliser une image par défaut
       this.currentUser.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
         'assets/images/default-avatar.png'
       );
@@ -216,7 +202,6 @@ serviceCategories = [
 
   /**
    * Retourne le nom complet de l'utilisateur connecté
-   * @returns Le nom complet formaté ou un texte par défaut
    */
   getFullName(): string {
     if (this.currentUser) {
@@ -229,18 +214,14 @@ serviceCategories = [
 
   /**
    * Retourne le rôle de l'utilisateur connecté
-   * @returns Le rôle de l'utilisateur ou un texte par défaut
    */
   getUserRole(): string {
-    // Si pas d'utilisateur connecté
     if (!this.currentUser) return 'Rôle non défini';
 
-    // Si l'utilisateur a des rôles
     if (this.currentUser.roles && this.currentUser.roles.length > 0) {
       return this.mapRoleIdToName(this.currentUser.roles[0]);
     }
 
-    // Sinon, utilise le service d'authentification
     const role = this.authService.getUserRole();
     return role ? this.mapRoleIdToName(role) : 'Rôle non défini';
   }
@@ -252,22 +233,20 @@ serviceCategories = [
       '3': 'Éditeur',
       '4': 'Utilisateur',
     };
-
     return roleMapping[roleId] || 'Administrateur';
   }
+  //#endregion
 
+  //#region GESTION DES CENTRES ET SERVICES
   /**
    * Vérifie si un centre a des paramètres par défaut configurés
-   * @param centreId
+   * @param centreId L'identifiant du centre à vérifier
    */
   private checkDefaultSettings(centreId: string): void {
     this.settingsService.getServices(centreId).subscribe({
       next: (services) => {
-        // Si aucun service n'existe, on considère qu'il n'y a pas de paramètres par défaut
         this.hasDefaultSettings = services.length > 0;
-
         if (!this.hasDefaultSettings) {
-          // Optionnel : proposer automatiquement la création des paramètres par défaut
           this.showDefaultSettingsPrompt(centreId);
         }
       },
@@ -277,17 +256,14 @@ serviceCategories = [
     });
   }
 
-  // 3. NOUVELLE MÉTHODE - Afficher une invite pour créer les paramètres par défaut
   /**
    * Affiche une invite pour créer les paramètres par défaut
-   * @param centreId
+   * @param centreId L'identifiant du centre concerné
    */
   private showDefaultSettingsPrompt(centreId: string): void {
-    // Option 1 : Message d'information avec bouton
     this.showError(`Aucune configuration trouvée pour ce centre. Voulez-vous créer les paramètres par défaut ?`);
   }
 
-  // 4. NOUVELLE MÉTHODE - Créer les paramètres par défaut
   /**
    * Initialise les paramètres par défaut pour le centre sélectionné
    */
@@ -306,8 +282,6 @@ serviceCategories = [
         this.showSuccess('Paramètres par défaut créés avec succès');
         this.hasDefaultSettings = true;
         this.isInitializingSettings = false;
-
-        // Recharger les services après initialisation
         this.loadServices(centreId);
       },
       error: (err) => {
@@ -318,7 +292,9 @@ serviceCategories = [
     });
   }
 
-
+  /**
+   * Charge la liste des centres disponibles
+   */
   loadCentres(): void {
     this.isLoading = true;
     this.centreService.getAllCentres().subscribe({
@@ -328,7 +304,6 @@ serviceCategories = [
         if (centres.length > 0 && centres[0].id) {
           this.serviceForm.patchValue({ centreId: centres[0].id });
           this.loadServices(centres[0].id);
-          // Vérifier les paramètres par défaut pour le premier centre
           this.checkDefaultSettings(centres[0].id);
         }
       },
@@ -339,15 +314,21 @@ serviceCategories = [
     });
   }
 
+  /**
+   * Gère le changement de centre sélectionné
+   */
   onCentreChange(): void {
     const centreId = this.serviceForm.get('centreId')?.value;
     if (centreId) {
       this.loadServices(centreId);
-      // Vérifier les paramètres par défaut lors du changement de centre
       this.checkDefaultSettings(centreId);
     }
   }
 
+  /**
+   * Charge les services pour un centre donné
+   * @param centreId L'identifiant du centre
+   */
   loadServices(centreId: string): void {
     this.isLoading = true;
     this.settingsService.getServices(centreId).subscribe({
@@ -365,6 +346,9 @@ serviceCategories = [
     });
   }
 
+  /**
+   * Soumet le formulaire de service
+   */
   onSubmit(): void {
     if (this.serviceForm.invalid) {
       this.markAllAsTouched();
@@ -375,7 +359,6 @@ serviceCategories = [
     const formValue = this.serviceForm.value;
     const centreId = formValue.centreId;
 
-    // Vérification plus stricte de centreId
     if (!centreId) {
       this.showError('Aucun centre sélectionné');
       this.isLoading = false;
@@ -395,7 +378,6 @@ serviceCategories = [
       iconUrl: ''
     };
 
-    // Gestion plus sécurisée de l'édition
     let observable;
     if (this.isEditing && this.selectedService?.id) {
       observable = this.settingsService.updateService(
@@ -427,6 +409,10 @@ serviceCategories = [
     });
   }
 
+  /**
+   * Modifie un service existant
+   * @param service Le service à modifier
+   */
   editService(service: ServiceSetting): void {
     this.selectedService = service;
     this.isEditing = true;
@@ -441,30 +427,27 @@ serviceCategories = [
       requiresApproval: service.requiresApproval,
     });
 
-    // Recharger les services disponibles (exclure le service en cours d'édition)
     this.availableServices = this.services.filter((s) => s.id !== service.id);
-
-    // Scroll vers le formulaire
-    document
-      .getElementById('service-form')
-      ?.scrollIntoView({ behavior: 'smooth' });
+    document.getElementById('service-form')?.scrollIntoView({ behavior: 'smooth' });
   }
 
+  /**
+   * Annule l'édition en cours
+   */
   cancelEdit(): void {
     this.resetForm();
   }
 
+  /**
+   * Bascule l'état actif/inactif d'un service
+   * @param service Le service à modifier
+   */
   toggleServiceStatus(service: ServiceSetting): void {
     const centreId = this.serviceForm.get('centreId')?.value;
 
-    // Vérification complète des IDs requis
     if (!centreId || !service.id) {
-      if (!centreId) {
-        this.showError('Aucun centre sélectionné');
-      }
-      if (!service.id) {
-        this.showError("La prestation n'a pas d'identifiant");
-      }
+      if (!centreId) this.showError('Aucun centre sélectionné');
+      if (!service.id) this.showError("La prestation n'a pas d'identifiant");
       return;
     }
 
@@ -483,6 +466,10 @@ serviceCategories = [
     });
   }
 
+  /**
+   * Confirme la suppression d'un service
+   * @param service Le service à supprimer
+   */
   confirmDelete(service: ServiceSetting): void {
     this.selectedService = service;
 
@@ -490,14 +477,12 @@ serviceCategories = [
       centered: true,
     });
 
-    // Configuration des inputs
     modalRef.componentInstance.title = 'Supprimer la prestation';
     modalRef.componentInstance.message = `Êtes-vous sûr de vouloir supprimer la prestation "${service.name}" ?`;
     modalRef.componentInstance.details = 'Cette action est irréversible.';
     modalRef.componentInstance.confirmText = 'Supprimer';
     modalRef.componentInstance.cancelText = 'Annuler';
 
-    // Gestion des événements
     modalRef.componentInstance.confirm.subscribe(() => {
       this.deleteService();
       modalRef.close();
@@ -508,8 +493,10 @@ serviceCategories = [
     });
   }
 
+  /**
+   * Supprime le service sélectionné
+   */
   deleteService(): void {
-    // Vérification complète des données requises
     if (!this.selectedService?.id) {
       this.showError('Aucune prestation sélectionnée ou ID manquant');
       return;
@@ -522,22 +509,23 @@ serviceCategories = [
     }
 
     this.isLoading = true;
-    this.settingsService
-      .deleteService(centreId, this.selectedService.id)
-      .subscribe({
-        next: () => {
-          this.showSuccess('Prestation supprimée avec succès');
-          this.loadServices(centreId);
-          this.selectedService = null;
-        },
-        error: (err) => {
-          this.showError('Erreur lors de la suppression de la prestation');
-          console.error('Erreur détaillée:', err);
-          this.isLoading = false;
-        },
-      });
+    this.settingsService.deleteService(centreId, this.selectedService.id).subscribe({
+      next: () => {
+        this.showSuccess('Prestation supprimée avec succès');
+        this.loadServices(centreId);
+        this.selectedService = null;
+      },
+      error: (err) => {
+        this.showError('Erreur lors de la suppression de la prestation');
+        console.error('Erreur détaillée:', err);
+        this.isLoading = false;
+      },
+    });
   }
 
+  /**
+   * Rafraîchit la liste des services
+   */
   refreshServices(): void {
     const centreId = this.serviceForm.get('centreId')?.value;
     if (centreId) {
@@ -545,10 +533,18 @@ serviceCategories = [
     }
   }
 
+  /**
+   * Vérifie si un service est inclus dans le service sélectionné
+   * @param serviceId L'identifiant du service à vérifier
+   */
   isServiceIncluded(serviceId: string): boolean {
     return this.selectedService?.includedServices?.includes(serviceId) || false;
   }
 
+  /**
+   * Bascule l'inclusion d'un service dans le service sélectionné
+   * @param serviceId L'identifiant du service à inclure/exclure
+   */
   toggleIncludedService(serviceId: string): void {
     if (!this.selectedService) {
       this.selectedService = {
@@ -569,52 +565,60 @@ serviceCategories = [
     }
   }
 
+  /**
+   * Récupère les services inclus dans le service sélectionné
+   */
   getIncludedServices(): string[] {
     return this.selectedService?.includedServices || [];
   }
 
+  /**
+   * Retourne le libellé d'une catégorie de service
+   * @param category La catégorie à traduire
+   */
   getCategoryLabel(category: ServiceCategory): string {
     switch (category) {
-      case ServiceCategory.Basic:
-        return 'Basique';
-      case ServiceCategory.Premium:
-        return 'Premium';
-      case ServiceCategory.Interior:
-        return 'Intérieur';
-      case ServiceCategory.Exterior:
-        return 'Extérieur';
-      case ServiceCategory.Special:
-        return 'Spécial';
-      case ServiceCategory.Maintenance:
-        return 'Maintenance';
-      default:
-        return 'Inconnu';
-    }
-  }
-  getCategoryClass(category: ServiceCategory): string {
-    switch (category) {
-      case ServiceCategory.Basic:
-        return 'primary';
-      case ServiceCategory.Premium:
-        return 'warning';
-      case ServiceCategory.Interior:
-        return 'info';
-      case ServiceCategory.Exterior:
-        return 'success';
-      case ServiceCategory.Special:
-        return 'danger';
-      case ServiceCategory.Maintenance:
-        return 'secondary';
-      default:
-        return 'light';
+      case ServiceCategory.Basic: return 'Basique';
+      case ServiceCategory.Premium: return 'Premium';
+      case ServiceCategory.Interior: return 'Intérieur';
+      case ServiceCategory.Exterior: return 'Extérieur';
+      case ServiceCategory.Special: return 'Spécial';
+      case ServiceCategory.Maintenance: return 'Maintenance';
+      default: return 'Inconnu';
     }
   }
 
+  /**
+   * Retourne la classe CSS correspondant à une catégorie de service
+   * @param category La catégorie à mapper
+   */
+  getCategoryClass(category: ServiceCategory): string {
+    switch (category) {
+      case ServiceCategory.Basic: return 'primary';
+      case ServiceCategory.Premium: return 'warning';
+      case ServiceCategory.Interior: return 'info';
+      case ServiceCategory.Exterior: return 'success';
+      case ServiceCategory.Special: return 'danger';
+      case ServiceCategory.Maintenance: return 'secondary';
+      default: return 'light';
+    }
+  }
+  //#endregion
+
+  //#region GESTION DU FORMULAIRE
+  /**
+   * Vérifie si un champ du formulaire contient une erreur
+   * @param field Le nom du champ à vérifier
+   */
   hasFieldError(field: string): boolean {
     const control = this.serviceForm.get(field);
     return !!control && control.invalid && (control.dirty || control.touched);
   }
 
+  /**
+   * Récupère le message d'erreur d'un champ du formulaire
+   * @param field Le nom du champ à vérifier
+   */
   getFieldError(field: string): string {
     const control = this.serviceForm.get(field);
     if (!control || !control.errors) return '';
@@ -622,24 +626,26 @@ serviceCategories = [
     if (control.hasError('required')) {
       return 'Ce champ est obligatoire';
     } else if (control.hasError('maxlength')) {
-      return `Maximum ${
-        control.getError('maxlength').requiredLength
-      } caractères`;
+      return `Maximum ${control.getError('maxlength').requiredLength} caractères`;
     } else if (control.hasError('min')) {
-      return `La valeur doit être supérieure ou égale à ${
-        control.getError('min').min
-      }`;
+      return `La valeur doit être supérieure ou égale à ${control.getError('min').min}`;
     }
 
     return 'Valeur invalide';
   }
 
+  /**
+   * Marque tous les champs du formulaire comme "touchés"
+   */
   markAllAsTouched(): void {
     Object.values(this.serviceForm.controls).forEach((control) => {
       control.markAsTouched();
     });
   }
 
+  /**
+   * Réinitialise le formulaire
+   */
   resetForm(): void {
     this.serviceForm.reset({
       centreId: this.serviceForm.get('centreId')?.value,
@@ -656,22 +662,37 @@ serviceCategories = [
     this.isEditing = false;
     this.availableServices = [...this.services];
   }
+  //#endregion
 
+  //#region GESTION DES MESSAGES
+  /**
+   * Efface les messages d'erreur et de succès
+   */
   clearMessages(): void {
     this.errorMessage = null;
     this.successMessage = null;
   }
 
+  /**
+   * Affiche un message d'erreur
+   * @param message Le message à afficher
+   */
   showError(message: string): void {
     this.errorMessage = message;
     setTimeout(() => this.clearMessages(), 5000);
   }
 
+  /**
+   * Affiche un message de succès
+   * @param message Le message à afficher
+   */
   showSuccess(message: string): void {
     this.successMessage = message;
     setTimeout(() => this.clearMessages(), 5000);
   }
+  //#endregion
 
+  //#region GESTION DE L'AUTHENTIFICATION
   /**
    * Déconnecte l'utilisateur et le redirige vers la page de connexion
    */
@@ -701,4 +722,5 @@ serviceCategories = [
       this.router.navigate(['/auth/login']);
     }
   }
+  //#endregion
 }
