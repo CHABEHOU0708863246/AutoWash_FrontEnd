@@ -6,14 +6,14 @@ WORKDIR /app
 # Copier les fichiers de configuration
 COPY package*.json ./
 
-# Installer les dépendances
-RUN npm ci --only=production
+# Installer TOUTES les dépendances (dev + prod pour le build)
+RUN npm ci
 
 # Copier le code source
 COPY . .
 
 # Construire l'application
-RUN npm run build --prod
+RUN npm run build
 
 # Étape de production avec nginx
 FROM nginx:alpine
