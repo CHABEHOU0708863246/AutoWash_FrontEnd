@@ -56,7 +56,6 @@
               "extractLicenses": true,
               "namedChunks": false,
               "aot": true,
-              "extractCss": true,
               "buildOptimizer": true
             },
             "development": {
@@ -65,7 +64,6 @@
               "sourceMap": true,
               "namedChunks": true,
               "aot": false,
-              "extractCss": false,
               "buildOptimizer": false,
               "fileReplacements": [
                 {

@@ -7,13 +7,13 @@ WORKDIR /app
 COPY package*.json ./
 
 # Installer TOUTES les dépendances (dev + prod pour le build)
-RUN npm ci
+RUN npm ci --only=production=false
 
 # Copier le code source
 COPY . .
 
 # Construire l'application
-RUN npm run build
+RUN npm run build --prod
 
 # Étape de production avec nginx
 FROM nginx:alpine
@@ -23,6 +23,9 @@ COPY --from=build /app/dist/auto-wash-frontend /usr/share/nginx/html
 
 # Copier la configuration nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# Créer un utilisateur non-root pour la sécurité
+RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 
 # Exposer le port 8080 (requis par Cloud Run)
 EXPOSE 8080
