@@ -17,6 +17,7 @@ export class AdminDashboardComponent implements OnInit {
   displayedUsers: Users[] = []; // Liste des utilisateurs affichés sur la page actuelle.
   currentUser: Users | null = null; // Utilisateur actuellement connecté.
   user: Users | null = null; // Informations sur l'utilisateur connecté.
+  isSidebarCollapsed = false;
 
   constructor(
     private sanitizer: DomSanitizer,
@@ -38,7 +39,7 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  /**
+ /**
    * Charge les photos des utilisateurs et les sécurise pour l'affichage.
    * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
    */
@@ -57,6 +58,27 @@ export class AdminDashboardComponent implements OnInit {
       }
     });
   }
+
+  /**
+   * Bascule l'état de la barre latérale entre "collapsée" et
+   * "étendue".
+   * Modifie les classes CSS pour ajuster l'affichage.
+   * Cette méthode est appelée lors du clic sur le bouton de
+   * basculement de la barre latérale.
+   */
+    toggleSidebar() {
+      this.isSidebarCollapsed = !this.isSidebarCollapsed;
+
+      // Ajoute/retire les classes nécessaires
+      const sidebar = document.getElementById('sidebar');
+      const mainContent = document.querySelector('.main-content');
+
+      if (sidebar && mainContent) {
+        sidebar.classList.toggle('collapsed');
+        mainContent.classList.toggle('collapsed');
+      }
+    }
+
 
   /**
    * Récupère tous les utilisateurs et charge leurs photos.

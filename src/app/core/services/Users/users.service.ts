@@ -20,13 +20,14 @@ export class UsersService {
 registerUserWithPhoto(userData: Users, photoFile?: File): Observable<any> {
   const formData = new FormData();
 
-  // Ajouter toutes les propriétés de l'utilisateur dans FormData
+  // Ajouter toutes les propriétés de l'utilisateur
   Object.keys(userData).forEach(key => {
     const value = userData[key as keyof Users];
 
-    // Gestion spéciale pour les tableaux et dates
+    // Ignorer photoFile dans cette boucle
+    if (key === 'photoFile') return;
+
     if (Array.isArray(value)) {
-      // Pour les rôles, on ajoute chaque élément séparément
       if (key === 'roles') {
         value.forEach(role => formData.append('Roles', role));
       }
@@ -37,21 +38,15 @@ registerUserWithPhoto(userData: Users, photoFile?: File): Observable<any> {
     }
   });
 
-  // *** CORRECTION IMPORTANTE: Ajouter explicitement le password ***
+  // Ajouter explicitement le password
   if (userData.password) {
     formData.append('Password', userData.password);
   }
 
-  // Ajouter le fichier photo s'il existe
+  // Ajouter le fichier photo
   if (photoFile) {
     formData.append('PhotoFile', photoFile, photoFile.name);
   }
-
-  // Debug: Afficher le contenu du FormData
-  console.log('FormData contents:');
-  formData.forEach((value, key) => {
-    console.log(`${key}: ${value}`);
-  });
 
   return this.http.post(`${this.baseUrl}`, formData).pipe(
     catchError(this.handleError)

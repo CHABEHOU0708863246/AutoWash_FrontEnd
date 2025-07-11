@@ -26,6 +26,7 @@ import {
 import { SecuritySettings } from '../../models/Settings/SecuritySettings';
 import { VehicleTypeConfiguration } from '../../models/Settings/VehicleTypeConfiguration';
 import { VehicleType } from '../../models/Vehicles/VehicleType';
+import { TimeSlot } from '../../models/Settings/TimeSlot';
 
 @Injectable({
   providedIn: 'root',
@@ -48,380 +49,217 @@ export class SettingsService {
   // ==============================================
 
   /**
-   * Récupérer les paramètres d'horaire d'un centre
-   * @param centreId ID du centre
+   * Crée les horaires d'ouverture d'un centre
+   * @param centreId - ID du centre
+   * @param scheduleSettings - Configuration des horaires
+   * @returns Observable<ScheduleSettings> - Les horaires créés
    */
-  getScheduleSettings(
-    centreId?: string,
-    isAdmin: boolean = false
-  ): Observable<ScheduleSettings> {
-    console.log(
-      '🌐 Service getScheduleSettings appelé avec centreId:',
-      centreId,
-      'isAdmin:',
-      isAdmin
-    );
-
-    // Si c'est un administrateur sans centreId spécifique
-    if (isAdmin && (!centreId || centreId === 'string')) {
-      console.log(
-        '👑 Utilisateur administrateur détecté - retour des paramètres par défaut'
-      );
-      return this.getDefaultScheduleSettings();
-    }
-
-    // Validation stricte du centreId pour les utilisateurs normaux
-    if (!centreId || typeof centreId !== 'string' || centreId.trim() === '') {
-      const error = new Error(
-        'CentreId is required and must be a valid string'
-      );
-      console.error('❌ CentreId invalide:', centreId);
-      return throwError(() => error);
-    }
-
-    // Vérifier que ce n'est pas la string littérale "string"
-    if (centreId === 'string') {
-      const error = new Error('CentreId cannot be the literal string "string"');
-      console.error('❌ CentreId est la string littérale "string"');
-      return throwError(() => error);
-    }
-
-    // Nettoyer le centreId
-    const cleanCentreId = centreId.trim();
-
-    // Construire l'URL
-    const url = `${this.apiUrl}/${cleanCentreId}/schedule`;
-    console.log('🌐 URL construite:', url);
-
-    return this.http.get<ScheduleSettings>(url).pipe(
-      map((response) => {
-        console.log('✅ Réponse reçue:', response);
-        return new ScheduleSettings(response);
-      }),
-      catchError((error: HttpErrorResponse) => {
-        console.error('❌ Erreur HTTP dans getScheduleSettings:', error);
-        console.error('❌ URL utilisée:', url);
-        console.error('❌ CentreId utilisé:', cleanCentreId);
-        return this.handleError(error);
-      })
+  createScheduleSettings(centreId: string, scheduleSettings: ScheduleSettings): Observable<ScheduleSettings> {
+    return this.http.post<ScheduleSettings>(
+      `${this.apiUrl}/centers/${centreId}/schedule`,
+      scheduleSettings
+    ).pipe(
+      catchError(this.handleError)
     );
   }
 
   /**
-   * Retourne les paramètres d'horaire par défaut pour les administrateurs
+   * Récupère les horaires d'ouverture d'un centre
+   * @param centreId - ID du centre
+   * @returns Observable<ScheduleSettings> - Les horaires du centre
    */
-  private getDefaultScheduleSettings(): Observable<ScheduleSettings> {
-    const defaultSettings = new ScheduleSettings({
-      weeklySchedule: new Map([
-        [
-          DayOfWeek.Monday,
-          new DaySchedule({
-            isOpen: true,
-            openTime: '08:00',
-            closeTime: '18:00',
-            breaks: [],
-          }),
-        ],
-        [
-          DayOfWeek.Tuesday,
-          new DaySchedule({
-            isOpen: true,
-            openTime: '08:00',
-            closeTime: '18:00',
-            breaks: [],
-          }),
-        ],
-        [
-          DayOfWeek.Wednesday,
-          new DaySchedule({
-            isOpen: true,
-            openTime: '08:00',
-            closeTime: '18:00',
-            breaks: [],
-          }),
-        ],
-        [
-          DayOfWeek.Thursday,
-          new DaySchedule({
-            isOpen: true,
-            openTime: '08:00',
-            closeTime: '18:00',
-            breaks: [],
-          }),
-        ],
-        [
-          DayOfWeek.Friday,
-          new DaySchedule({
-            isOpen: true,
-            openTime: '08:00',
-            closeTime: '18:00',
-            breaks: [],
-          }),
-        ],
-        [
-          DayOfWeek.Saturday,
-          new DaySchedule({
-            isOpen: false,
-            openTime: '08:00',
-            closeTime: '17:00',
-            breaks: [],
-          }),
-        ],
-        [
-          DayOfWeek.Sunday,
-          new DaySchedule({
-            isOpen: false,
-            openTime: '08:00',
-            closeTime: '17:00',
-            breaks: [],
-          }),
-        ],
-      ]),
-      is24Hours: false,
-      defaultOpenTime: '08:00',
-      defaultCloseTime: '18:00',
-    });
-
-    return of(defaultSettings);
+  getScheduleSettings(centreId: string): Observable<ScheduleSettings> {
+    return this.http.get<ScheduleSettings>(
+      `${this.apiUrl}/centers/${centreId}/schedule`
+    ).pipe(
+      catchError(this.handleError)
+    );
   }
 
   /**
-   * Récupérer les paramètres d'horaire de tous les centres (pour les administrateurs)
+   * Met à jour les horaires d'ouverture d'un centre
+   * @param centreId - ID du centre
+   * @param scheduleSettings - Nouvelle configuration des horaires
+   * @returns Observable<ScheduleSettings> - Les horaires mis à jour
    */
-  getAllCentresScheduleSettings(): Observable<
-    { centreId: string; centreName: string; settings: ScheduleSettings }[]
-  > {
-    const url = `${this.apiUrl}/all-centres/schedule`;
-    return this.http
-      .get<
-        { centreId: string; centreName: string; settings: ScheduleSettings }[]
-      >(url)
-      .pipe(
-        map((response) =>
-          response.map((item) => ({
-            ...item,
-            settings: new ScheduleSettings(item.settings),
-          }))
-        ),
-        catchError(this.handleError)
-      );
+  updateScheduleSettings(centreId: string, scheduleSettings: ScheduleSettings): Observable<ScheduleSettings> {
+    return this.http.put<ScheduleSettings>(
+      `${this.apiUrl}/centers/${centreId}/schedule`,
+      scheduleSettings
+    ).pipe(
+      catchError(this.handleError)
+    );
   }
 
   /**
-   * Mettre à jour les paramètres d'horaire d'un centre spécifique (pour les administrateurs)
-   * @param centreId ID du centre
-   * @param scheduleSettings Nouveaux paramètres d'horaire
+   * Met à jour les horaires d'ouverture d'un centre via DTO
+   * @param centreId - ID du centre
+   * @param scheduleSettingsDto - DTO des nouveaux horaires
+   * @returns Observable<ScheduleSettings> - Les horaires mis à jour
    */
-  updateScheduleSettingsForCentre(
-    centreId: string,
-    scheduleSettings: ScheduleSettings
-  ): Observable<ScheduleSettings> {
-    if (!centreId || centreId === 'string') {
-      const error = new Error(
-        'CentreId is required for updating schedule settings'
-      );
-      return throwError(() => error);
-    }
-
-    return this.http
-      .put<ScheduleSettings>(
-        `${this.apiUrl}/${centreId}/schedule`,
-        scheduleSettings
-      )
-      .pipe(
-        map((response) => new ScheduleSettings(response)),
-        catchError(this.handleError)
-      );
+  updateScheduleSettingsDto(centreId: string, scheduleSettingsDto: any): Observable<ScheduleSettings> {
+    return this.http.put<ScheduleSettings>(
+      `${this.apiUrl}/centers/${centreId}/schedule/dto`,
+      scheduleSettingsDto
+    ).pipe(
+      catchError(this.handleError)
+    );
   }
 
   /**
-   * Mettre à jour les paramètres d'horaire complets d'un centre
-   * @param centreId ID du centre
-   * @param scheduleSettings Nouveaux paramètres d'horaire
+   * Récupère les horaires d'un jour spécifique
+   * @param centreId - ID du centre
+   * @param dayOfWeek - Jour de la semaine
+   * @returns Observable<DaySchedule> - Les horaires du jour spécifié
    */
-  updateScheduleSettings(
-    centreId: string,
-    scheduleSettings: ScheduleSettings
-  ): Observable<ScheduleSettings> {
-    const payload = this.prepareScheduleSettingsForBackend(scheduleSettings);
-    console.log('Payload envoyé:', JSON.stringify(payload, null, 2));
-
-    return this.http
-      .put<ScheduleSettings>(`${this.apiUrl}/${centreId}/schedule`, payload)
-      .pipe(
-        map((response) => new ScheduleSettings(response)),
-        catchError(this.handleError)
-      );
+  getDaySchedule(centreId: string, dayOfWeek: DayOfWeek): Observable<DaySchedule> {
+    return this.http.get<DaySchedule>(
+      `${this.apiUrl}/centers/${centreId}/schedule/${dayOfWeek}`
+    ).pipe(
+      catchError(this.handleError)
+    );
   }
 
   /**
-   * Préparer les données ScheduleSettings pour le backend
+   * Met à jour les horaires d'un jour spécifique
+   * @param centreId - ID du centre
+   * @param dayOfWeek - Jour de la semaine
+   * @param daySchedule - Nouveaux horaires pour ce jour
+   * @returns Observable<DaySchedule> - Les horaires mis à jour
    */
-  private prepareScheduleSettingsForBackend(
-    scheduleSettings: ScheduleSettings
-  ): any {
-    const ensureTimeFormat = (time: string | undefined): string => {
-      if (!time) return '08:00:00'; // Valeur par défaut
+  updateDaySchedule(centreId: string, dayOfWeek: DayOfWeek, daySchedule: DaySchedule): Observable<DaySchedule> {
+    return this.http.put<DaySchedule>(
+      `${this.apiUrl}/centers/${centreId}/schedule/${dayOfWeek}`,
+      daySchedule
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
 
-      // Formatage cohérent pour le backend
-      if (time.includes(':') && time.split(':').length === 2) {
-        return `${time}:00`;
+  /**
+   * Ajoute un jour spécial (exceptionnel)
+   * @param centreId - ID du centre
+   * @param specialSchedule - Configuration du jour spécial
+   * @returns Observable<SpecialSchedule> - Le jour spécial ajouté
+   */
+  addSpecialDay(centreId: string, specialSchedule: SpecialSchedule): Observable<SpecialSchedule> {
+    return this.http.post<SpecialSchedule>(
+      `${this.apiUrl}/centers/${centreId}/schedule/special-days`,
+      specialSchedule
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Supprime un jour spécial
+   * @param centreId - ID du centre
+   * @param date - Date du jour spécial à supprimer
+   * @returns Observable<boolean> - True si suppression réussie
+   */
+  removeSpecialDay(centreId: string, date: Date): Observable<boolean> {
+    return this.http.delete<boolean>(
+      `${this.apiUrl}/centers/${centreId}/schedule/special-days`,
+      { params: { date: date.toISOString() } }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Récupère les jours spéciaux dans une période donnée
+   * @param centreId - ID du centre
+   * @param startDate - Date de début
+   * @param endDate - Date de fin
+   * @returns Observable<SpecialSchedule[]> - Liste des jours spéciaux
+   */
+  getSpecialDays(centreId: string, startDate: Date, endDate: Date): Observable<SpecialSchedule[]> {
+    return this.http.get<SpecialSchedule[]>(
+      `${this.apiUrl}/centers/${centreId}/schedule/special-days`,
+      {
+        params: {
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString()
+        }
       }
-      return time;
-    };
-
-    const weeklyScheduleObj: { [key: string]: any } = {};
-
-    // Initialiser tous les jours de la semaine avec des valeurs par défaut
-    const days = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-    days.forEach((day) => {
-      const daySchedule =
-        scheduleSettings.weeklySchedule.get(day as DayOfWeek) ||
-        new DaySchedule();
-      weeklyScheduleObj[day] = {
-        isOpen: daySchedule.isOpen,
-        openTime: ensureTimeFormat(daySchedule.openTime),
-        closeTime: ensureTimeFormat(daySchedule.closeTime),
-        breaks: daySchedule.breaks.map((b) => ({
-          startTime: ensureTimeFormat(b.startTime),
-          endTime: ensureTimeFormat(b.endTime),
-          description: b.description || '',
-        })),
-      };
-    });
-
-    return {
-      weeklySchedule: weeklyScheduleObj,
-      specialDays: scheduleSettings.specialDays.map((s) => ({
-        date: s.date,
-        isClosed: s.isClosed ?? false,
-        specialOpenTime: s.specialOpenTime
-          ? ensureTimeFormat(s.specialOpenTime)
-          : null,
-        specialCloseTime: s.specialCloseTime
-          ? ensureTimeFormat(s.specialCloseTime)
-          : null,
-        reason: s.reason || '',
-      })),
-      is24Hours: scheduleSettings.is24Hours ?? false,
-      defaultOpenTime: ensureTimeFormat(scheduleSettings.defaultOpenTime),
-      defaultCloseTime: ensureTimeFormat(scheduleSettings.defaultCloseTime),
-    };
-  }
-
-  private formatTimeForBackend(time: string): string {
-    // Convertir "HH:mm" en "HH:mm:00" pour TimeSpan
-    if (time && time.match(/^\d{2}:\d{2}$/)) {
-      return `${time}:00`;
-    }
-    return time || '00:00:00';
+    ).pipe(
+      catchError(this.handleError)
+    );
   }
 
   /**
-   * Mettre à jour l'horaire d'un jour spécifique
-   * @param centreId ID du centre
-   * @param dayOfWeek Jour de la semaine à modifier
-   * @param daySchedule Nouvel horaire pour ce jour
+   * Vérifie si le centre est ouvert à une date/heure donnée
+   * @param centreId - ID du centre
+   * @param dateTime - Date et heure à vérifier
+   * @returns Observable<boolean> - True si le centre est ouvert
    */
-  updateDaySchedule(
+  isCentreOpen(centreId: string, dateTime: Date): Observable<boolean> {
+    return this.http.get<boolean>(
+      `${this.apiUrl}/centers/${centreId}/schedule/is-open`,
+      { params: { dateTime: dateTime.toISOString() } }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Récupère les prochains créneaux disponibles
+   * @param centreId - ID du centre
+   * @param startDate - Date de début de recherche
+   * @param durationMinutes - Durée du créneau recherché (en minutes)
+   * @param numberOfSlots - Nombre de créneaux à retourner (défaut: 10)
+   * @returns Observable<TimeSlot[]> - Liste des créneaux disponibles
+   */
+  getNextAvailableTimeSlots(
     centreId: string,
-    dayOfWeek: DayOfWeek,
-    daySchedule: DaySchedule
-  ): Observable<boolean> {
-    return this.http
-      .put<{ success: boolean }>(
-        `${this.apiUrl}/${centreId}/schedule/days/${dayOfWeek}`,
-        daySchedule
-      )
-      .pipe(
-        map((response) => response.success),
-        catchError(this.handleError)
-      );
+    startDate: Date,
+    durationMinutes: number,
+    numberOfSlots: number = 10
+  ): Observable<TimeSlot[]> {
+    return this.http.get<TimeSlot[]>(
+      `${this.apiUrl}/centers/${centreId}/schedule/available-slots`,
+      {
+        params: {
+          startDate: startDate.toISOString(),
+          durationMinutes: durationMinutes.toString(),
+          numberOfSlots: numberOfSlots.toString()
+        }
+      }
+    ).pipe(
+      catchError(this.handleError)
+    );
   }
 
   /**
-   * Ajouter un jour spécial à l'horaire
-   * @param centreId ID du centre
-   * @param specialSchedule Configuration du jour spécial
+   * Réinitialise les horaires du centre aux valeurs par défaut
+   * @param centreId - ID du centre
+   * @returns Observable<ScheduleSettings> - Les horaires par défaut
    */
-  addSpecialSchedule(
-    centreId: string,
-    specialSchedule: SpecialSchedule
-  ): Observable<boolean> {
-    return this.http
-      .post<{ success: boolean }>(
-        `${this.apiUrl}/${centreId}/schedule/special-days`,
-        specialSchedule
-      )
-      .pipe(
-        map((response) => response.success),
-        catchError(this.handleError)
-      );
+  resetScheduleToDefault(centreId: string): Observable<ScheduleSettings> {
+    return this.http.post<ScheduleSettings>(
+      `${this.apiUrl}/centers/${centreId}/schedule/reset`,
+      null
+    ).pipe(
+      catchError(this.handleError)
+    );
   }
 
   /**
-   * Supprimer un jour spécial de l'horaire
-   * @param centreId ID du centre
-   * @param date Date du jour spécial à supprimer
+   * Copie les horaires d'un centre vers un autre
+   * @param sourceCentreId - ID du centre source
+   * @param targetCentreId - ID du centre cible
+   * @returns Observable<ScheduleSettings> - Les horaires copiés
    */
-  removeSpecialSchedule(centreId: string, date: Date): Observable<boolean> {
-    return this.http
-      .delete<{ success: boolean }>(
-        `${this.apiUrl}/${centreId}/schedule/special-days`,
-        { params: { date: date.toISOString() } }
-      )
-      .pipe(
-        map((response) => response.success),
-        catchError(this.handleError)
-      );
+  copyScheduleSettings(sourceCentreId: string, targetCentreId: string): Observable<ScheduleSettings> {
+    return this.http.post<ScheduleSettings>(
+      `${this.apiUrl}/centers/${sourceCentreId}/schedule/copy-to/${targetCentreId}`,
+      null
+    ).pipe(
+      catchError(this.handleError)
+    );
   }
 
-  /**
-   * Récupérer les jours spéciaux dans une période donnée
-   * @param centreId ID du centre
-   * @param startDate Date de début (optionnelle)
-   * @param endDate Date de fin (optionnelle)
-   */
-  getSpecialSchedules(
-    centreId: string,
-    startDate?: Date,
-    endDate?: Date
-  ): Observable<SpecialSchedule[]> {
-    let params = {};
-    if (startDate) params = { ...params, startDate: startDate.toISOString() };
-    if (endDate) params = { ...params, endDate: endDate.toISOString() };
 
-    return this.http
-      .get<SpecialSchedule[]>(
-        `${this.apiUrl}/${centreId}/schedule/special-days`,
-        { params }
-      )
-      .pipe(
-        map((response) => response.map((s) => new SpecialSchedule(s))),
-        catchError(this.handleError)
-      );
-  }
-
-  /**
-   * Vérifier si le centre est ouvert à une date/heure donnée
-   * @param centreId ID du centre
-   * @param dateTime Date et heure à vérifier
-   */
-  isOpen(centreId: string, dateTime: Date): Observable<boolean> {
-    return this.http
-      .get<boolean>(`${this.apiUrl}/${centreId}/schedule/is-open`, {
-        params: { dateTime: dateTime.toISOString() },
-      })
-      .pipe(catchError(this.handleError));
-  }
 
   // 1. Récupérer les paramètres d'un centre
   getSettings(centreId: string): Observable<ApplicationSettings> {

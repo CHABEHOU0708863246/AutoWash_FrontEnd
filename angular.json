@@ -29,8 +29,7 @@
             "assets": [
               {
                 "glob": "**/*",
-                "input": "public",
-                "output": "/assets/"
+                "input": "public"
               }
             ],
             "styles": [
@@ -53,15 +52,15 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "20kB",
-                  "maximumError": "30kB"
+                  "maximumWarning": "2kB",
+                  "maximumError": "4kB"
                 }
               ],
               "outputHashing": "all"
             },
             "development": {
-              "optimization": true,
-              "extractLicenses": true,
+              "optimization": false,
+              "extractLicenses": false,
               "sourceMap": true,
               "fileReplacements": [
                 {

@@ -85,7 +85,8 @@ export class UsersCreateComponent implements OnInit {
       residence: ['', Validators.required],
       postalAddress: ['', Validators.required],
       centreId: [''],
-      photoUrl: ['']
+      photoUrl: [''],
+      photoFile: [null]
     });
 
     this.selectedPhoto = null;
@@ -120,26 +121,26 @@ export class UsersCreateComponent implements OnInit {
 
   //#region Gestion des photos
   onPhotoSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
+  const input = event.target as HTMLInputElement;
 
-    if (!input.files || input.files.length === 0) return;
+  if (!input.files || input.files.length === 0) return;
 
-    const file = input.files[0];
+  const file = input.files[0];
 
-    if (!file.type.match(/image\/(jpeg|png|gif|jpg)/)) {
-      this.showPhotoError('Format incorrect', 'Veuillez sélectionner une image (JPEG, PNG, GIF)');
-      input.value = '';
-      return;
-    }
-
-    if (file.size > 2 * 1024 * 1024) {
-      this.showPhotoError('Fichier trop volumineux', 'La taille de l\'image ne doit pas dépasser 2MB');
-      input.value = '';
-      return;
-    }
-
-    this.previewPhoto(file, input);
+  if (!file.type.match(/image\/(jpeg|png|gif|jpg)/)) {
+    this.showPhotoError('Format incorrect', 'Veuillez sélectionner une image (JPEG, PNG, GIF)');
+    input.value = '';
+    return;
   }
+
+  if (file.size > 2 * 1024 * 1024) {
+    this.showPhotoError('Fichier trop volumineux', 'La taille de l\'image ne doit pas dépasser 2MB');
+    input.value = '';
+    return;
+  }
+
+  this.previewPhoto(file, input);
+}
 
   private showPhotoError(title: string, text: string): void {
     Swal.fire({
@@ -150,23 +151,27 @@ export class UsersCreateComponent implements OnInit {
     });
   }
 
-  private previewPhoto(file: File, input: HTMLInputElement): void {
-    const reader = new FileReader();
+  previewPhoto(file: File, input: HTMLInputElement): void {
+  const reader = new FileReader();
 
-    reader.onload = (e: ProgressEvent<FileReader>) => {
-      this.selectedPhoto = e.target?.result as string;
-      this.userForm.patchValue({ photoUrl: file });
-      this.userForm.get('photoUrl')?.updateValueAndValidity();
-    };
+  reader.onload = (e: ProgressEvent<FileReader>) => {
+    this.selectedPhoto = e.target?.result as string;
+    // CORRECTION : Stocker le fichier dans une propriété séparée
+    this.userForm.patchValue({
+      photoFile: file,  // Pour le fichier physique
+      photoUrl: ''      // Réinitialiser photoUrl
+    });
+    this.userForm.get('photoFile')?.updateValueAndValidity();
+  };
 
-    reader.onerror = () => {
-      console.error('Erreur de lecture du fichier');
-      this.showPhotoError('Erreur', 'Impossible de lire le fichier sélectionné');
-      input.value = '';
-    };
+  reader.onerror = () => {
+    console.error('Erreur de lecture du fichier');
+    this.showPhotoError('Erreur', 'Impossible de lire le fichier sélectionné');
+    input.value = '';
+  };
 
-    reader.readAsDataURL(file);
-  }
+  reader.readAsDataURL(file);
+}
 
 
   /**
@@ -231,70 +236,84 @@ export class UsersCreateComponent implements OnInit {
     }
   }
 
-  private processUserCreation(): void {
-    const formData = this.userForm.value;
-    const user = new Users(
-      '',
-      formData.firstName,
-      formData.lastName,
-      formData.email,
-      formData.phoneNumber,
-      formData.isEnabled,
-      formData.roles,
-      formData.workingHours,
-      formData.isPartTime,
-      new Date(formData.hireDate),
-      formData.gender,
-      formData.contractType,
-      formData.numberOfChildren,
-      formData.maritalStatus,
-      formData.residence,
-      formData.postalAddress,
-      formData.centreId,
-      '',
-      formData.password,
-      formData.confirmPassword
-    );
+  processUserCreation(): void {
+  const formData = this.userForm.value;
+  const user = new Users(
+    '',
+    formData.firstName,
+    formData.lastName,
+    formData.email,
+    formData.phoneNumber,
+    formData.isEnabled,
+    formData.roles,
+    formData.workingHours,
+    formData.isPartTime,
+    new Date(formData.hireDate),
+    formData.gender,
+    formData.contractType,
+    formData.numberOfChildren,
+    formData.maritalStatus,
+    formData.residence,
+    formData.postalAddress,
+    formData.centreId,
+    '', // photoUrl sera définie par le backend
+    formData.photoFile, // Le fichier photo
+    '', // photoUrl vide initialement
+    formData.password,
+    formData.confirmPassword
+  );
 
-    if (this.selectedPhoto) {
-      this.registerUserWithPhoto(user);
-    } else {
-      this.registerWithoutPhoto(user);
-    }
+  if (this.selectedPhoto) {
+    this.registerUserWithPhoto(user);
+  } else {
+    this.registerWithoutPhoto(user);
   }
+}
 
-  private registerUserWithPhoto(user: Users): void {
-    const fileInput = document.getElementById('photo-upload') as HTMLInputElement;
-    if (fileInput?.files?.[0]) {
-      const photoFile = fileInput.files[0];
+  registerUserWithPhoto(user: Users): void {
+  const fileInput = document.getElementById('photo-upload') as HTMLInputElement;
+  if (fileInput?.files?.[0]) {
+    const photoFile = fileInput.files[0];
 
-      this.usersService.registerUserWithPhoto(user, photoFile).subscribe(
-        (response) => {
-          console.log("Utilisateur créé avec succès", response);
-          this.handleSuccess();
-        },
-        (error) => {
-          console.error("Erreur lors de la création de l'utilisateur", error);
-          this.handleError();
-        }
-      );
-    } else {
-      this.registerWithoutPhoto(user);
-    }
-  }
-
-  private registerWithoutPhoto(user: Users): void {
-    this.usersService.registerUser(user).subscribe(
-      (response) => {
+    this.usersService.registerUserWithPhoto(user, photoFile).subscribe({
+      next: (response) => {
         console.log("Utilisateur créé avec succès", response);
         this.handleSuccess();
+        // CORRECTION : Actualiser la liste des utilisateurs après création
+        this.refreshUsersList();
       },
-      (error) => {
+      error: (error) => {
         console.error("Erreur lors de la création de l'utilisateur", error);
         this.handleError();
       }
-    );
+    });
+  } else {
+    this.registerWithoutPhoto(user);
   }
+}
+
+refreshUsersList(): void {
+  this.getUsers();
+  // Attendre que les données soient chargées avant de charger les photos
+  setTimeout(() => {
+    this.loadUserPhotos();
+  }, 500);
+}
+
+  registerWithoutPhoto(user: Users): void {
+  this.usersService.registerUser(user).subscribe({
+    next: (response) => {
+      console.log("Utilisateur créé avec succès", response);
+      this.handleSuccess();
+      // CORRECTION : Actualiser la liste des utilisateurs après création
+      this.refreshUsersList();
+    },
+    error: (error) => {
+      console.error("Erreur lors de la création de l'utilisateur", error);
+      this.handleError();
+    }
+  });
+}
   //#endregion
 
   //#region Gestion de l'utilisateur courant

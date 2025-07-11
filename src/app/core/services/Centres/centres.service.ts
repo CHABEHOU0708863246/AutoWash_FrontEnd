@@ -201,7 +201,7 @@ export class CentresService {
       return throwError(() => new Error('Le type de fichier est requis'));
     }
 
-    const allowedTypes = ['CSV', 'PDF', 'EXCEL'];
+    const allowedTypes = ['CSV', 'PDF', 'EXCEL', 'XLSX'];
     if (!allowedTypes.includes(fileType.toUpperCase())) {
       return throwError(() => new Error(`Type de fichier non supporté: ${fileType}`));
     }

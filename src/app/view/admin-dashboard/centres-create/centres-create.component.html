@@ -274,21 +274,17 @@
                 </div>
               </div>
 
-              <!-- Gérant du centre  -->
+              <!-- Gérant du centre (optionnel) -->
               <div class="form-group custom-select">
-                <label class="form-label">Gérant <span class="required">*</span></label>
+                <label class="form-label">Gérant</label>
                 <select class="form-control" formControlName="ownerId" (change)="onManagerChange($event)"
                   [compareWith]="compareManagers">
-                  <option value="">Sélectionnez un gérant (obligatoire)</option>
+                  <option [ngValue]="null">Aucun gérant (optionnel)</option>
                   <option *ngFor="let manager of managers" [value]="manager.id">
                     {{ manager.firstName || '' }} {{ manager.lastName || manager.email }}
                   </option>
                 </select>
                 <i class="fas fa-chevron-down select-icon"></i>
-                <div class="form-error"
-                  *ngIf="centreForm.get('ownerId')?.invalid && centreForm.get('ownerId')?.touched">
-                  Le gérant est obligatoire
-                </div>
               </div>
             </div>
           </div>

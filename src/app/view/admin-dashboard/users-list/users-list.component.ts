@@ -51,7 +51,17 @@ export class UsersListComponent {
   ngOnInit(): void {
     this.getUsers();
     this.loadCurrentUser();
-
+    this.authService.loadCurrentUserProfile().subscribe({
+      next: (user) => {
+        if (user) {
+          this.currentUser = user;
+          this.loadCurrentUserPhoto();
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement du profil utilisateur', error);
+      }
+    });
     this.authService.currentUser$.subscribe(user => {
       if (user && user !== this.currentUser) {
         this.currentUser = user;
@@ -211,24 +221,24 @@ export class UsersListComponent {
    * Filtre les utilisateurs selon le terme de recherche
    */
   filterUsers(): void {
-    if (this.searchTerm) {
-      this.filteredUsers = this.users.filter(
-        (user) =>
-          (user.firstName?.toLowerCase() ?? '').includes(
-            this.searchTerm.toLowerCase()
-          ) ||
-          user.lastName
-            ?.toLowerCase()
-            .includes(this.searchTerm.toLowerCase()) ||
-          user.email?.toLowerCase().includes(this.searchTerm.toLowerCase())
-      );
-    } else {
-      this.filteredUsers = this.users;
-    }
-    this.totalItems = this.filteredUsers.length;
-    this.calculateTotalPages();
-    this.updateDisplayedUsers();
+  if (this.searchTerm) {
+    this.filteredUsers = this.users.filter(
+      (user) =>
+        (user.firstName?.toLowerCase() ?? '').includes(
+          this.searchTerm.toLowerCase()
+        ) ||
+        user.lastName
+          ?.toLowerCase()
+          .includes(this.searchTerm.toLowerCase()) ||
+        user.email?.toLowerCase().includes(this.searchTerm.toLowerCase())
+    );
+  } else {
+    this.filteredUsers = this.users;
   }
+  this.totalItems = this.filteredUsers.length;
+  this.calculateTotalPages();
+  this.updateDisplayedUsers(); // Cette méthode chargera maintenant automatiquement les photos
+}
 
   /**
    * Applique le filtre de pagination
@@ -256,13 +266,15 @@ export class UsersListComponent {
    * Met à jour la liste des utilisateurs affichés
    */
   updateDisplayedUsers(): void {
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex = Math.min(
-      startIndex + this.itemsPerPage,
-      this.filteredUsers.length
-    );
-    this.displayedUsers = this.filteredUsers.slice(startIndex, endIndex);
-  }
+  const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+  const endIndex = Math.min(
+    startIndex + this.itemsPerPage,
+    this.filteredUsers.length
+  );
+  this.displayedUsers = this.filteredUsers.slice(startIndex, endIndex);
+  // Ajoutez cette ligne pour charger les photos à chaque mise à jour
+  this.loadUserPhotos();
+}
 
   /**
    * Page précédente

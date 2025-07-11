@@ -271,22 +271,26 @@ export class CentresCreateComponent {
   /**
    * Prépare les données du centre pour l'API
    */
-  private prepareCentreData(formValue: any): any {
+  prepareCentreData(formValue: any): any {
     const centreData: any = {
       name: formValue.name.trim(),
       location: formValue.location.trim(),
-      isActive: Boolean(formValue.isActive),
-      ownerId: formValue.ownerId || null,
-      ownerName: null
+      isActive: Boolean(formValue.isActive)
     };
 
-    if (formValue.ownerId) {
+    // N'ajoutez les champs owner que si un gérant est sélectionné
+    if (formValue.ownerId && formValue.ownerId !== 'null' && formValue.ownerId !== '') {
       const selectedManager = this.managers.find(m => m.id === formValue.ownerId.toString());
       if (selectedManager) {
+        centreData.ownerId = formValue.ownerId;
         centreData.ownerName = `${selectedManager.firstName} ${selectedManager.lastName}`.trim();
       }
     }
-
+    // Si le gérant n'est pas sélectionné, on laisse ownerId et ownerName non définis
+    else {
+      centreData.ownerId = null;
+      centreData.ownerName = '';
+    }
     return centreData;
   }
 
@@ -321,16 +325,12 @@ export class CentresCreateComponent {
    */
   onManagerChange(event: Event): void {
     const selectElement = event.target as HTMLSelectElement;
-    const selectedValue = selectElement.value;
+    const selectedValue = selectElement.value === 'null' ? null : selectElement.value;
 
     this.centreForm.patchValue({
-      ownerId: selectedValue,
+        ownerId: selectedValue
     });
-
-    if (selectedValue && selectedValue !== '') {
-      this.updateOwnerName(selectedValue);
-    }
-  }
+}
 
   /**
    * Met à jour le nom du propriétaire dans le formulaire

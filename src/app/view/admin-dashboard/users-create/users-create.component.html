@@ -313,8 +313,8 @@
                   <label class="form-label">Genre <span class="required">*</span></label>
                   <select class="form-control" formControlName="gender">
                     <option value="" selected disabled>Sélectionnez un genre</option>
-                    <option value="homme">Homme</option>
-                    <option value="femme">Femme</option>
+                    <option value="Homme">Homme</option>
+                    <option value="Femme">Femme</option>
                   </select>
                   <i class="fas fa-chevron-down select-icon"></i>
                   <div class="form-error" *ngIf="userForm.get('gender')?.invalid && userForm.get('gender')?.touched">
@@ -327,10 +327,10 @@
                   <label class="form-label">État civil <span class="required">*</span></label>
                   <select class="form-control" formControlName="maritalStatus">
                     <option value="" selected disabled>Sélectionnez un état civil</option>
-                    <option value="celibataire">Célibataire</option>
-                    <option value="marie">Marié(e)</option>
-                    <option value="divorce">Divorcé(e)</option>
-                    <option value="veuf">Veuf/Veuve</option>
+                    <option value="Celibataire">Célibataire</option>
+                    <option value="Marie">Marié(e)</option>
+                    <option value="Divorce">Divorcé(e)</option>
+                    <option value="Veuf">Veuf/Veuve</option>
                   </select>
                   <i class="fas fa-chevron-down select-icon"></i>
                   <div class="form-error"
@@ -396,26 +396,26 @@
                       <select class="form-control" formControlName="contractType">
                         <option value="" selected disabled>Sélectionnez un type de contrat</option>
                         <!-- Contrats standards -->
-                        <option value="cdi">CDI (Contrat à Durée Indéterminée)</option>
-                        <option value="cdd">CDD (Contrat à Durée Déterminée)</option>
-                        <option value="ctt">CTT (Contrat de Travail Temporaire)</option>
-                        <option value="interim">Intérim</option>
+                        <option value="CDI">CDI (Contrat à Durée Indéterminée)</option>
+                        <option value="CDD">CDD (Contrat à Durée Déterminée)</option>
+                        <option value="CTT">CTT (Contrat de Travail Temporaire)</option>
+                        <option value="INTERIM">Intérim</option>
 
                         <!-- Contrats pour jeunes/temporaires -->
-                        <option value="apprentissage">Contrat d'apprentissage</option>
-                        <option value="professionnalisation">Contrat de professionnalisation</option>
-                        <option value="stage">Stage</option>
-                        <option value="etudiant">Contrat étudiant</option>
+                        <option value="APPRENTISSAGE">Contrat d'apprentissage</option>
+                        <option value="PROFESSIONNALISATION">Contrat de professionnalisation</option>
+                        <option value="STAGE">Stage</option>
+                        <option value="ETUDIANT">Contrat étudiant</option>
 
                         <!-- Autres contrats spéciaux -->
-                        <option value="saisonnier">Contrat saisonnier</option>
-                        <option value="temps_partiel">Temps partiel</option>
-                        <option value="temps_plein">Temps plein</option>
-                        <option value="alternance">Alternance</option>
+                        <option value="SAISONNIER">Contrat saisonnier</option>
+                        <option value="TEMPS PARTIEL">Temps partiel</option>
+                        <option value="TEMPS PLEIN">Temps plein</option>
+                        <option value="ALTERNANCE">Alternance</option>
 
                         <!-- Pour travailleurs indépendants -->
-                        <option value="autoentrepreneur">Auto-entrepreneur</option>
-                        <option value="prestation">Contrat de prestation</option>
+                        <option value="AUTOENTREPRENEUR">Auto-entrepreneur</option>
+                        <option value="PRESTATION">Contrat de prestation</option>
                       </select>
                   <i class="fas fa-chevron-down select-icon"></i>
                   <div class="form-error"

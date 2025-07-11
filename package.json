@@ -5,6 +5,9 @@
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
+    "build:ssr": "ng build --configuration=production",
+    "serve:ssr": "node dist/auto-wash-frontend/server/server.js",
+    "prerender": "ng run AutoWash_Frontend:prerender",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:AutoWash_Frontend": "node dist/auto-wash-frontend/server/server.mjs"
