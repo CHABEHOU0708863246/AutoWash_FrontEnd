@@ -201,8 +201,12 @@
               véhicules</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/settings-pricing']"><i class="fas fa-tags"></i>
               Tarification</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-notifications']"><i class="fas fa-bell"></i>
+              Notifications</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/settings-system']"><i class="fas fa-sliders-h"></i>
               Système</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-templates']"><i class="fas fa-file-alt"></i>
+              Modèles de paramètres</a></li>
         </ul>
       </div>
     </div>
@@ -245,30 +249,17 @@
         <h1>Paramètres des Prestations</h1>
         <p class="subtitle">Gérez les services proposés par votre centre</p>
       </div>
-
-      <div *ngIf="!hasDefaultSettings && !isLoading">
-      <button
-        type="button"
-        class="btn btn-outline-primary"
-        [disabled]="isInitializingSettings || !serviceForm.get('centreId')?.value"
-        (click)="initializeDefaultSettings()">
-        <i class="fas fa-spinner fa-spin" *ngIf="isInitializingSettings"></i>
-        <i class="fas fa-magic" *ngIf="!isInitializingSettings"></i>
-        Créer les paramètres par défaut
-      </button>
-    </div>
-
       <!-- Messages d'erreur et de succès -->
       <div class="messages" *ngIf="errorMessage || successMessage">
         <div class="alert alert-danger" *ngIf="errorMessage" role="alert">
           <i class="fas fa-exclamation-triangle"></i>
           {{ errorMessage }}
-          <button type="button" class="btn-close" (click)="clearMessages()">×</button>
+          <button type="button" class="btn-close">×</button>
         </div>
         <div class="alert alert-success" *ngIf="successMessage" role="alert">
           <i class="fas fa-check-circle"></i>
           {{ successMessage }}
-          <button type="button" class="btn-close" (click)="clearMessages()">×</button>
+          <button type="button" class="btn-close">×</button>
         </div>
       </div>
 
@@ -277,7 +268,7 @@
         <div class="card">
           <div class="card-header">
             <h3>{{ isEditing ? 'Modifier la prestation' : 'Nouvelle prestation' }}</h3>
-            <button *ngIf="isEditing" type="button" class="btn btn-secondary btn-sm" (click)="cancelEdit()">
+            <button *ngIf="isEditing" type="button" class="btn btn-secondary btn-sm">
               <i class="fas fa-times"></i> Annuler
             </button>
           </div>
@@ -285,17 +276,17 @@
           <div class="card-body">
             <form [formGroup]="serviceForm" (ngSubmit)="onSubmit()">
               <!-- Nouveau selectbox pour le centre -->
-              <div class="form-group">
+              <div class="form-group" *ngIf="!currentUser?.centreId">
                 <label for="centreId">Centre *</label>
-                <select id="centreId" class="form-control" [class.is-invalid]="hasFieldError('centreId')"
-                  formControlName="centreId" (change)="onCentreChange()">
-                  <option value="" disabled>Sélectionner un centre</option>
-                  <option *ngFor="let centre of centres" [value]="centre.id">
-                    {{ centre.name }}
-                  </option>
+                <!-- Dans votre formulaire -->
+                <select formControlName="centreId" class="form-control"
+                  (change)="onCentreChange($any($event.target).value)">
+                  <option value="">Sélectionnez un centre</option>
+                  <option *ngFor="let centre of centres" [value]="centre.id">{{ centre.name }}</option>
                 </select>
-                <div class="invalid-feedback" *ngIf="hasFieldError('centreId')">
-                  {{ getFieldError('centreId') }}
+                <div *ngIf="serviceForm.get('centreId')?.invalid && serviceForm.get('centreId')?.touched"
+                  class="invalid-feedback">
+                  Veuillez sélectionner un centre
                 </div>
               </div>
 
@@ -303,25 +294,27 @@
                 <!-- Nom de la prestation -->
                 <div class="form-group col-md-6">
                   <label for="name">Nom de la prestation *</label>
-                  <input id="name" type="text" class="form-control" [class.is-invalid]="hasFieldError('name')"
-                    formControlName="name" placeholder="Ex: Lavage extérieur complet">
-                  <div class="invalid-feedback" *ngIf="hasFieldError('name')">
-                    {{ getFieldError('name') }}
+                  <input id="name" type="text" class="form-control" formControlName="name"
+                    placeholder="Ex: Lavage extérieur complet">
+                  <div *ngIf="serviceForm.get('name')?.invalid && serviceForm.get('name')?.touched"
+                    class="invalid-feedback">
+                    <div *ngIf="serviceForm.get('name')?.errors?.['required']">Le nom est requis</div>
+                    <div *ngIf="serviceForm.get('name')?.errors?.['maxlength']">Maximum 100 caractères</div>
                   </div>
                 </div>
 
                 <!-- Catégorie -->
                 <div class="form-group col-md-6">
                   <label for="category">Catégorie *</label>
-                  <select id="category" class="form-control" [class.is-invalid]="hasFieldError('category')"
-                    formControlName="category">
+                  <select id="category" class="form-control" formControlName="category">
                     <option value="" disabled>Sélectionner une catégorie</option>
-                    <option *ngFor="let category of serviceCategories" [value]="category.value">
-                      {{ category.label }}
+                    <option *ngFor="let category of serviceCategories" [value]="category">
+                      {{ category }}
                     </option>
                   </select>
-                  <div class="invalid-feedback" *ngIf="hasFieldError('category')">
-                    {{ getFieldError('category') }}
+                  <div *ngIf="serviceForm.get('category')?.invalid && serviceForm.get('category')?.touched"
+                    class="invalid-feedback">
+                    Veuillez sélectionner une catégorie
                   </div>
                 </div>
               </div>
@@ -331,30 +324,51 @@
                 <label for="description">Description</label>
                 <textarea id="description" class="form-control" formControlName="description" rows="3"
                   placeholder="Description détaillée de la prestation..."></textarea>
+                <div *ngIf="serviceForm.get('description')?.invalid && serviceForm.get('description')?.touched"
+                  class="invalid-feedback">
+                  Maximum 500 caractères
+                </div>
               </div>
 
               <div class="form-row">
                 <!-- Durée estimée -->
-                <div class="form-group">
-                  <label for="duration">Durée estimée</label>
+                <div class="form-group col-md-9">
+                  <label for="duration">Durée estimée (minutes) *</label>
                   <div class="input-group stylish-input">
-                    <input id="duration" type="number" class="form-control"
-                      [class.is-invalid]="hasFieldError('duration')" formControlName="duration" min="1"
+                    <input id="duration" type="number" class="form-control" formControlName="duration" min="1"
                       placeholder="30">
-                    <span class="input-group-text">min</span>
-                  </div>
-                  <div class="invalid-feedback" *ngIf="hasFieldError('duration')">
-                    {{ getFieldError('duration') }}
+                    <div *ngIf="serviceForm.get('duration')?.invalid && serviceForm.get('duration')?.touched"
+                      class="invalid-feedback">
+                      <div *ngIf="serviceForm.get('duration')?.errors?.['required']">La durée est requise</div>
+                      <div *ngIf="serviceForm.get('duration')?.errors?.['min']">Minimum 1 minute</div>
+                    </div>
                   </div>
                 </div>
 
                 <!-- Ordre d'affichage -->
-                <div class="form-group">
-                  <label for="sortOrder">Ordre d'affichage</label>
-                  <input id="sortOrder" type="number" class="form-control stylish-input"
-                    [class.is-invalid]="hasFieldError('sortOrder')" formControlName="sortOrder" min="0" placeholder="0">
-                  <div class="invalid-feedback" *ngIf="hasFieldError('sortOrder')">
-                    {{ getFieldError('sortOrder') }}
+                <div class="form-group col-md-9">
+                  <label for="sortOrder">Ordre d'affichage *</label>
+                  <input id="sortOrder" type="number" class="form-control stylish-input" formControlName="sortOrder"
+                    min="0" placeholder="0">
+                  <div *ngIf="serviceForm.get('sortOrder')?.invalid && serviceForm.get('sortOrder')?.touched"
+                    class="invalid-feedback">
+                    <div *ngIf="serviceForm.get('sortOrder')?.errors?.['required']">L'ordre est requis</div>
+                    <div *ngIf="serviceForm.get('sortOrder')?.errors?.['min']">Minimum 0</div>
+                  </div>
+                </div>
+
+                <!-- Prix de base -->
+                <div class="form-group col-md-9">
+                  <label for="basePrice">Prix de base (FCFA) *</label>
+                  <div class="input-group">
+                    <input id="basePrice" type="number" class="form-control" formControlName="basePrice" min="0"
+                      step="0.01">
+                    <span class="input-group-text">FCFA</span>
+                  </div>
+                  <div *ngIf="serviceForm.get('basePrice')?.invalid && serviceForm.get('basePrice')?.touched"
+                    class="invalid-feedback">
+                    <div *ngIf="serviceForm.get('basePrice')?.errors?.['required']">Le prix est requis</div>
+                    <div *ngIf="serviceForm.get('basePrice')?.errors?.['min']">Minimum 0€</div>
                   </div>
                 </div>
               </div>
@@ -363,22 +377,19 @@
               <div class="form-group">
                 <label>Services inclus</label>
                 <div class="included-services-container">
-                  <div *ngFor="let service of availableServices" class="form-check form-check-inline">
-                    <!-- Ajoutez *ngIf pour vérifier service.id -->
-                    <ng-container *ngIf="service.id">
-                      <input class="form-check-input" type="checkbox" [id]="'service-'+service.id" [value]="service.id"
-                        [checked]="isServiceIncluded(service.id)" (change)="toggleIncludedService(service.id)">
-                      <label class="form-check-label" [for]="'service-'+service.id">
-                        {{ service.name }}
-                      </label>
-                    </ng-container>
+                  <div class="form-check form-check-inline" *ngFor="let service of baseServices; let i = index">
+                    <input class="form-check-input" type="checkbox"
+                      [formControl]="$any(includedServicesFormArray.at(i))" [id]="'service-' + i">
+                    <label class="form-check-label" [for]="'service-' + i">
+                      {{ service }}
+                    </label>
                   </div>
                 </div>
               </div>
 
               <div class="form-row">
                 <!-- Statut actif -->
-                <div class="form-group">
+                <div class="form-group col-md-4">
                   <div class="form-check form-switch stylish-switch">
                     <input class="form-check-input" type="checkbox" id="isActive" formControlName="isActive">
                     <label class="form-check-label" for="isActive">
@@ -388,12 +399,23 @@
                 </div>
 
                 <!-- Approbation requise -->
-                <div class="form-group">
+                <div class="form-group col-md-4">
                   <div class="form-check form-switch stylish-switch">
                     <input class="form-check-input" type="checkbox" id="requiresApproval"
                       formControlName="requiresApproval">
                     <label class="form-check-label" for="requiresApproval">
                       <i class="fas fa-user-check"></i> Approbation requise
+                    </label>
+                  </div>
+                </div>
+
+                <!-- Disponible en ligne -->
+                <div class="form-group col-md-4">
+                  <div class="form-check form-switch stylish-switch">
+                    <input class="form-check-input" type="checkbox" id="isAvailableOnline"
+                      formControlName="isAvailableOnline">
+                    <label class="form-check-label" for="isAvailableOnline">
+                      <i class="fas fa-globe"></i> Disponible en ligne
                     </label>
                   </div>
                 </div>
@@ -412,34 +434,57 @@
       </div>
 
       <!-- Liste des prestations -->
-      <div class="services-section">
+      <div class="services-section mt-4">
         <div class="card">
           <div class="card-header d-flex justify-content-between align-items-center">
             <h3>Prestations existantes</h3>
             <div>
-              <span class="badge badge-info mr-2">{{ services.length }} prestation(s)</span>
-              <button class="btn btn-sm btn-outline-secondary" (click)="refreshServices()">
-                <i class="fas fa-sync-alt"></i> Actualiser
-              </button>
+              <span class="badge badge-info mr-2">{{ filteredServices.length }} prestation(s)</span>
+                <button
+                  class="btn btn-sm btn-outline-secondary"
+                  (click)="loadServices()"
+                  [disabled]="!currentUser || !currentUser.centreId">
+                  <i class="fas fa-sync-alt"></i> Actualiser
+                </button>
             </div>
           </div>
 
           <div class="card-body">
             <!-- État de chargement -->
-            <div *ngIf="isLoading && services.length === 0" class="loading-state">
-              <i class="fas fa-spinner fa-spin"></i>
-              Chargement des prestations...
+            <div *ngIf="isLoading" class="loading-state text-center py-4">
+              <i class="fas fa-spinner fa-spin fa-2x"></i>
+              <p>Chargement des prestations...</p>
             </div>
 
             <!-- État vide -->
-            <div *ngIf="!isLoading && services.length === 0" class="empty-state">
-              <i class="fas fa-concierge-bell"></i>
+            <div *ngIf="!isLoading && filteredServices.length === 0" class="empty-state text-center py-4">
+              <i class="fas fa-concierge-bell fa-3x mb-3"></i>
               <h4>Aucune prestation configurée</h4>
               <p>Commencez par créer votre première prestation de service.</p>
             </div>
 
             <!-- Tableau des prestations -->
-            <div *ngIf="services.length > 0">
+            <div *ngIf="!isLoading && filteredServices.length > 0">
+              <div class="mb-3">
+                <div class="row">
+                  <div class="col-md-6">
+                    <div class="input-group">
+                      <input type="text" class="form-control" placeholder="Rechercher..."
+                        (input)="searchServices($any($event.target).value)">
+                      <button class="btn btn-outline-secondary" type="button">
+                        <i class="fas fa-search"></i>
+                      </button>
+                    </div>
+                  </div>
+                  <div class="col-md-6">
+                    <select class="form-control" (change)="filterByCategory($any($event.target).value)">
+                      <option value="all">Toutes les catégories</option>
+                      <option *ngFor="let category of serviceCategories" [value]="category">{{ category }}</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
               <div class="table-responsive">
                 <table class="table table-hover">
                   <thead>
@@ -447,36 +492,42 @@
                       <th>Nom</th>
                       <th>Catégorie</th>
                       <th>Durée</th>
+                      <th>Prix</th>
                       <th>Statut</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr *ngFor="let service of services">
+                    <tr *ngFor="let service of filteredServices">
                       <td>
                         <strong>{{ service.name }}</strong>
-                        <small *ngIf="service.description" class="d-block text-muted">{{ service.description }}</small>
+                        <small *ngIf="service.description" class="d-block text-muted">{{ service.description}}</small>
                       </td>
                       <td>
-                        <span class="badge" [ngClass]="'badge-' + getCategoryClass(service.category)">
-                          {{ getCategoryLabel(service.category) }}
+                        <span class="badge bg-secondary">
+                          {{ service.category }}
                         </span>
                       </td>
-                      <td>{{ service.estimatedDurationMinutes }} min</td>
+                      <td>{{ service.duration }} min</td>
+                      <td>{{ service.basePrice }} FCFA</td>
                       <td>
-                        <span class="badge" [ngClass]="service.isActive ? 'badge-success' : 'badge-secondary'">
+                        <span class="badge" [ngClass]="service.isActive ? 'bg-success' : 'bg-danger'">
                           {{ service.isActive ? 'Actif' : 'Inactif' }}
                         </span>
                       </td>
                       <td>
                         <div class="btn-group btn-group-sm">
-                          <button class="btn btn-outline-primary" (click)="editService(service)">
+                          <button class="btn btn-outline-primary" (click)="populateForm(service)">
                             <i class="fas fa-edit"></i>
                           </button>
-                          <button class="btn" [class.btn-outline-success]="!service.isActive"
-                            [class.btn-outline-warning]="service.isActive" (click)="toggleServiceStatus(service)">
-                            <i class="fas" [class.fa-play]="!service.isActive" [class.fa-pause]="service.isActive"></i>
+                          <button class="btn btn-outline-danger" (click)="deleteService(service.id || '')">
+                            <i class="fas fa-trash"></i>
                           </button>
+                          <!-- <button class="btn"
+                            [ngClass]="service.isActive ? 'btn-outline-warning' : 'btn-outline-success'"
+                            (click)="toggleServiceStatus(service)">
+                            <i class="fas" [ngClass]="service.isActive ? 'fa-toggle-off' : 'fa-toggle-on'"></i>
+                          </button> -->
                         </div>
                       </td>
                     </tr>
@@ -501,12 +552,12 @@
             </button>
           </div>
           <div class="modal-body">
-            Êtes-vous sûr de vouloir supprimer la prestation "{{ selectedService?.name }}" ? Cette action est
+            Êtes-vous sûr de vouloir supprimer la prestation ? Cette action est
             irréversible.
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Annuler</button>
-            <button type="button" class="btn btn-danger" (click)="deleteService()">Supprimer</button>
+            <button type="button" class="btn btn-danger">Supprimer</button>
           </div>
         </div>
       </div>

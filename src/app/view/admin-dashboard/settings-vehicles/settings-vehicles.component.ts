@@ -1,7 +1,6 @@
 import { Component, OnInit, TemplateRef } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../../core/services/Auth/auth.service';
-import { SettingsService } from '../../../core/services/Settings/settings.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgbModal, NgbModalRef } from '@ng-bootstrap/ng-bootstrap';
@@ -79,14 +78,12 @@ getSizeLabel(size: VehicleSize): string {
     private sanitizer: DomSanitizer,
     private usersService: UsersService,
     private router: Router,
-    private settingsService: SettingsService,
     private authService: AuthService,
     private modalService: NgbModal
   ) {}
 
   ngOnInit(): void {
     this.loadCurrentUser();
-    this.loadVehicleTypes();
     this.getUsers();
 
     const userSub = this.authService.currentUser$.subscribe((user) => {
@@ -107,28 +104,7 @@ getSizeLabel(size: VehicleSize): string {
     }
   }
 
-  /**
-   * Charge la liste des types de véhicules
-   */
-  loadVehicleTypes(): void {
-    this.isLoading = true;
-    this.errorMessage = null;
 
-    this.subscriptions.add(
-      this.settingsService.getAllVehicleTypes().subscribe({
-        next: (types) => {
-          this.vehicleTypes = types;
-          this.filteredVehicleTypes = [...types];
-          this.isLoading = false;
-        },
-        error: (error) => {
-          this.errorMessage = 'Erreur lors du chargement des types de véhicules';
-          console.error(error);
-          this.isLoading = false;
-        }
-      })
-    );
-  }
 
   /**
    * Filtre les types de véhicules selon la recherche
@@ -218,150 +194,6 @@ getSizeLabel(size: VehicleSize): string {
     this.vehicleTypeForm.iconUrl = icon;
   }
 
-  /**
-   * Sauvegarde un type de véhicule (ajout ou modification)
-   */
-  saveVehicleType(): void {
-    // Validation des champs obligatoires
-    if (!this.vehicleTypeForm.label?.trim() || this.vehicleTypeForm.size === undefined) {
-      this.errorMessage = 'Les champs obligatoires doivent être remplis';
-      return;
-    }
-
-    this.isLoading = true;
-    this.errorMessage = null;
-
-    if (this.isEditMode && this.currentVehicleTypeId) {
-      // Mode modification
-      const vehicleTypeData = new VehicleType({
-        id: this.currentVehicleTypeId,
-        label: this.vehicleTypeForm.label.trim(),
-        description: this.vehicleTypeForm.description?.trim() || '',
-        size: this.vehicleTypeForm.size,
-        defaultSizeMultiplier: Number(this.vehicleTypeForm.defaultSizeMultiplier) || 1,
-        defaultSortOrder: Number(this.vehicleTypeForm.defaultSortOrder) || 0,
-        iconUrl: this.vehicleTypeForm.iconUrl?.trim() || '',
-        isActive: this.vehicleTypeForm.isActive ?? true,
-        isGlobalType: this.vehicleTypeForm.isGlobalType ?? true,
-        createdAt: this.vehicleTypeForm.createdAt || new Date(),
-        updatedAt: new Date()
-      });
-
-      this.subscriptions.add(
-        this.settingsService.updateVehicleType(this.currentVehicleTypeId, vehicleTypeData).subscribe({
-          next: (result) => {
-            console.log('Type de véhicule modifié avec succès:', result);
-            this.loadVehicleTypes();
-            this.modalRef?.close();
-            this.isLoading = false;
-            this.resetForm();
-          },
-          error: (error) => {
-            this.errorMessage = 'Erreur lors de la modification du type de véhicule';
-            console.error('Erreur modification:', error);
-            this.isLoading = false;
-          }
-        })
-      );
-    } else {
-      // Mode création
-      const vehicleTypeData = new VehicleType({
-        id: this.generateGuid(),
-        label: this.vehicleTypeForm.label.trim(),
-        description: this.vehicleTypeForm.description?.trim() || '',
-        size: this.vehicleTypeForm.size,
-        defaultSizeMultiplier: Number(this.vehicleTypeForm.defaultSizeMultiplier) || 1,
-        defaultSortOrder: Number(this.vehicleTypeForm.defaultSortOrder) || 0,
-        iconUrl: this.vehicleTypeForm.iconUrl?.trim() || '',
-        isActive: this.vehicleTypeForm.isActive ?? true,
-        isGlobalType: this.vehicleTypeForm.isGlobalType ?? true
-      });
-
-      this.subscriptions.add(
-        this.settingsService.createVehicleType(vehicleTypeData).subscribe({
-          next: (result) => {
-            console.log('Type de véhicule créé avec succès:', result);
-            this.loadVehicleTypes();
-            this.modalRef?.close();
-            this.isLoading = false;
-            this.resetForm();
-          },
-          error: (error) => {
-            this.errorMessage = 'Erreur lors de la création du type de véhicule';
-            console.error('Erreur création:', error);
-            this.isLoading = false;
-          }
-        })
-      );
-    }
-  }
-
-  /**
-   * Génère un GUID unique
-   */
-  generateGuid(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
-  }
-
-  /**
-   * Active/désactive un type de véhicule
-   */
-  toggleVehicleTypeStatus(vehicleType: VehicleType): void {
-    if (!vehicleType.id) return;
-
-    const newStatus = !vehicleType.isActive;
-
-    const updatedType = new VehicleType({
-      id: vehicleType.id,
-      label: vehicleType.label,
-      description: vehicleType.description,
-      size: vehicleType.size,
-      iconUrl: vehicleType.iconUrl,
-      defaultSizeMultiplier: vehicleType.defaultSizeMultiplier,
-      defaultSortOrder: vehicleType.defaultSortOrder,
-      isActive: newStatus,
-      isGlobalType: vehicleType.isGlobalType,
-      createdAt: vehicleType.createdAt,
-      updatedAt: new Date()
-    });
-
-    this.subscriptions.add(
-      this.settingsService.updateVehicleType(vehicleType.id, updatedType).subscribe({
-        next: () => {
-          this.loadVehicleTypes();
-        },
-        error: (error) => {
-          this.errorMessage = 'Erreur lors de la modification du statut';
-          console.error('Erreur toggle status:', error);
-        }
-      })
-    );
-  }
-
-  /**
-   * Supprime un type de véhicule
-   */
-  deleteVehicleType(vehicleTypeId: string): void {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer ce type de véhicule ?')) {
-      return;
-    }
-
-    this.subscriptions.add(
-      this.settingsService.deleteVehicleType(vehicleTypeId).subscribe({
-        next: () => {
-          this.loadVehicleTypes();
-        },
-        error: (error) => {
-          this.errorMessage = 'Erreur lors de la suppression du type de véhicule';
-          console.error(error);
-        }
-      })
-    );
-  }
 
   // Autres méthodes (loadUserPhotos, getUsers, etc.) restent inchangées...
   loadUserPhotos(): void {

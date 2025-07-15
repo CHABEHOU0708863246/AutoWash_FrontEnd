@@ -201,8 +201,12 @@
               véhicules</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/settings-pricing']"><i class="fas fa-tags"></i>
               Tarification</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-notifications']"><i class="fas fa-bell"></i>
+              Notifications</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/settings-system']"><i class="fas fa-sliders-h"></i>
               Système</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-templates']"><i class="fas fa-file-alt"></i>
+              Modèles de paramètres</a></li>
         </ul>
       </div>
     </div>
@@ -242,301 +246,301 @@
 
     <div class="page-content">
       <div class="blank-page">
-          <!-- Formulaire de création d'utilisateur -->
-          <form class="form-wrapper" [formGroup]="userForm" (ngSubmit)="onSubmit()">
-            <!-- Section Informations personnelles -->
-            <div class="form-section">
-              <div class="section-title">
-                <h2><i class="fas fa-user"></i> Informations personnelles</h2>
+        <!-- Formulaire de création d'utilisateur -->
+        <form class="form-wrapper" [formGroup]="userForm" (ngSubmit)="onSubmit()">
+          <!-- Section Informations personnelles -->
+          <div class="form-section">
+            <div class="section-title">
+              <h2><i class="fas fa-user"></i> Informations personnelles</h2>
+            </div>
+
+            <div class="form-grid">
+              <!-- Photo de profil -->
+              <div class="form-group photo-upload">
+                <label class="form-label">Photo de profil</label>
+                <div class="photo-preview">
+                  <i class="fas fa-user" *ngIf="!selectedPhoto"></i>
+                  <img id="preview-image" [src]="selectedPhoto || ''" alt="Preview" *ngIf="selectedPhoto">
+                </div>
+                <label class="photo-upload-btn">
+                  <i class="fas fa-camera"></i> Choisir une photo
+                  <input type="file" id="photo-upload" accept="image/*" style="display: none;"
+                    (change)="onPhotoSelected($event)">
+                </label>
               </div>
 
-              <div class="form-grid">
-                <!-- Photo de profil -->
-                <div class="form-group photo-upload">
-                  <label class="form-label">Photo de profil</label>
-                  <div class="photo-preview">
-                    <i class="fas fa-user" *ngIf="!selectedPhoto"></i>
-                    <img id="preview-image" [src]="selectedPhoto || ''" alt="Preview" *ngIf="selectedPhoto">
-                  </div>
-                  <label class="photo-upload-btn">
-                    <i class="fas fa-camera"></i> Choisir une photo
-                    <input type="file" id="photo-upload" accept="image/*" style="display: none;"
-                      (change)="onPhotoSelected($event)">
+              <!-- Nom -->
+              <div class="form-group">
+                <label class="form-label">Nom <span class="required">*</span></label>
+                <input type="text" class="form-control" placeholder="Entrez le nom" formControlName="lastName">
+                <i class="fas fa-user form-icon"></i>
+                <div class="form-error" *ngIf="userForm.get('lastName')?.invalid && userForm.get('lastName')?.touched">
+                  Le nom est obligatoire
+                </div>
+              </div>
+
+              <!-- Prénom -->
+              <div class="form-group">
+                <label class="form-label">Prénom <span class="required">*</span></label>
+                <input type="text" class="form-control" placeholder="Entrez le prénom" formControlName="firstName">
+                <i class="fas fa-user form-icon"></i>
+                <div class="form-error"
+                  *ngIf="userForm.get('firstName')?.invalid && userForm.get('firstName')?.touched">
+                  Le prénom est obligatoire
+                </div>
+              </div>
+
+              <!-- Email -->
+              <div class="form-group">
+                <label class="form-label">Email <span class="required">*</span></label>
+                <input type="email" class="form-control" placeholder="example@autowash.com" formControlName="email">
+                <i class="fas fa-envelope form-icon"></i>
+                <div class="form-help">Cet email sera utilisé pour la connexion et la récupération de mot de passe</div>
+                <div class="form-error" *ngIf="userForm.get('email')?.invalid && userForm.get('email')?.touched">
+                  Veuillez saisir une adresse email valide
+                </div>
+              </div>
+
+              <!-- Téléphone -->
+              <div class="form-group">
+                <label class="form-label">Téléphone <span class="required">*</span></label>
+                <input type="tel" class="form-control" placeholder="+225 00 00 00 00 00" formControlName="phoneNumber">
+                <i class="fas fa-phone form-icon"></i>
+                <div class="form-error"
+                  *ngIf="userForm.get('phoneNumber')?.invalid && userForm.get('phoneNumber')?.touched">
+                  Le numéro de téléphone est obligatoire
+                </div>
+              </div>
+
+              <!-- Genre -->
+              <div class="form-group custom-select">
+                <label class="form-label">Genre <span class="required">*</span></label>
+                <select class="form-control" formControlName="gender">
+                  <option value="" selected disabled>Sélectionnez un genre</option>
+                  <option value="Homme">Homme</option>
+                  <option value="Femme">Femme</option>
+                </select>
+                <i class="fas fa-chevron-down select-icon"></i>
+                <div class="form-error" *ngIf="userForm.get('gender')?.invalid && userForm.get('gender')?.touched">
+                  Le genre est obligatoire
+                </div>
+              </div>
+
+              <!-- État civil -->
+              <div class="form-group custom-select">
+                <label class="form-label">État civil <span class="required">*</span></label>
+                <select class="form-control" formControlName="maritalStatus">
+                  <option value="" selected disabled>Sélectionnez un état civil</option>
+                  <option value="Celibataire">Célibataire</option>
+                  <option value="Marie">Marié(e)</option>
+                  <option value="Divorce">Divorcé(e)</option>
+                  <option value="Veuf">Veuf/Veuve</option>
+                </select>
+                <i class="fas fa-chevron-down select-icon"></i>
+                <div class="form-error"
+                  *ngIf="userForm.get('maritalStatus')?.invalid && userForm.get('maritalStatus')?.touched">
+                  L'état civil est obligatoire
+                </div>
+              </div>
+
+              <!-- Nombre d'enfants -->
+              <div class="form-group">
+                <label class="form-label">Nombre d'enfants</label>
+                <input type="number" class="form-control" placeholder="0" formControlName="numberOfChildren" min="0">
+                <i class="fas fa-child form-icon"></i>
+                <div class="form-error" *ngIf="userForm.get('numberOfChildren')?.invalid">
+                  Veuillez saisir un nombre valide (0 ou plus)
+                </div>
+              </div>
+
+              <!-- Résidence -->
+              <div class="form-group">
+                <label class="form-label">Résidence <span class="required">*</span></label>
+                <input type="text" class="form-control" placeholder="Lieu de résidence" formControlName="residence">
+                <i class="fas fa-home form-icon"></i>
+                <div class="form-error"
+                  *ngIf="userForm.get('residence')?.invalid && userForm.get('residence')?.touched">
+                  La résidence est obligatoire
+                </div>
+              </div>
+
+              <!-- Adresse postale -->
+              <div class="form-group">
+                <label class="form-label">Adresse postale <span class="required">*</span></label>
+                <input type="text" class="form-control" placeholder="Adresse postale" formControlName="postalAddress">
+                <i class="fas fa-map-marker-alt form-icon"></i>
+                <div class="form-error"
+                  *ngIf="userForm.get('postalAddress')?.invalid && userForm.get('postalAddress')?.touched">
+                  L'adresse postale est obligatoire
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section Informations professionnelles -->
+          <div class="form-section">
+            <div class="section-title">
+              <h2><i class="fas fa-briefcase"></i> Informations professionnelles</h2>
+            </div>
+
+            <div class="form-grid">
+              <!-- Date d'embauche -->
+              <div class="form-group">
+                <label class="form-label">Date d'embauche <span class="required">*</span></label>
+                <input type="date" class="form-control" formControlName="hireDate">
+                <i class="fas fa-calendar-alt form-icon"></i>
+                <div class="form-error" *ngIf="userForm.get('hireDate')?.invalid && userForm.get('hireDate')?.touched">
+                  La date d'embauche est obligatoire
+                </div>
+              </div>
+
+              <!-- Type de contrat -->
+              <div class="form-group custom-select">
+                <label class="form-label">Type de contrat <span class="required">*</span></label>
+                <select class="form-control" formControlName="contractType">
+                  <option value="" selected disabled>Sélectionnez un type de contrat</option>
+                  <!-- Contrats standards -->
+                  <option value="CDI">CDI (Contrat à Durée Indéterminée)</option>
+                  <option value="CDD">CDD (Contrat à Durée Déterminée)</option>
+                  <option value="CTT">CTT (Contrat de Travail Temporaire)</option>
+                  <option value="INTERIM">Intérim</option>
+
+                  <!-- Contrats pour jeunes/temporaires -->
+                  <option value="APPRENTISSAGE">Contrat d'apprentissage</option>
+                  <option value="PROFESSIONNALISATION">Contrat de professionnalisation</option>
+                  <option value="STAGE">Stage</option>
+                  <option value="ETUDIANT">Contrat étudiant</option>
+
+                  <!-- Autres contrats spéciaux -->
+                  <option value="SAISONNIER">Contrat saisonnier</option>
+                  <option value="TEMPS PARTIEL">Temps partiel</option>
+                  <option value="TEMPS PLEIN">Temps plein</option>
+                  <option value="ALTERNANCE">Alternance</option>
+
+                  <!-- Pour travailleurs indépendants -->
+                  <option value="AUTOENTREPRENEUR">Auto-entrepreneur</option>
+                  <option value="PRESTATION">Contrat de prestation</option>
+                </select>
+                <i class="fas fa-chevron-down select-icon"></i>
+                <div class="form-error"
+                  *ngIf="userForm.get('contractType')?.invalid && userForm.get('contractType')?.touched">
+                  Le type de contrat est obligatoire
+                </div>
+              </div>
+
+              <!-- Heures de travail -->
+              <div class="form-group">
+                <label class="form-label">Heures de travail hebdomadaire <span class="required">*</span></label>
+                <input type="number" class="form-control" placeholder="40" formControlName="workingHours" min="0">
+                <i class="fas fa-clock form-icon"></i>
+              </div>
+
+              <!-- Temps partiel -->
+              <div class="form-group">
+                <label class="form-label">Temps partiel</label>
+                <div class="form-check-wrapper">
+                  <label class="toggle-switch">
+                    <input type="checkbox" formControlName="isPartTime">
+                    <span class="toggle-slider"></span>
                   </label>
+                  <span class="permission-text">Employé à temps partiel</span>
                 </div>
+              </div>
 
-                <!-- Nom -->
-                <div class="form-group">
-                  <label class="form-label">Nom <span class="required">*</span></label>
-                  <input type="text" class="form-control" placeholder="Entrez le nom" formControlName="lastName">
-                  <i class="fas fa-user form-icon"></i>
-                  <div class="form-error" *ngIf="userForm.get('lastName')?.invalid && userForm.get('lastName')?.touched">
-                    Le nom est obligatoire
-                  </div>
+              <!-- Centre assigné - MODIFICATION: Conditionnel basé sur le rôle washer -->
+              <div class="form-group custom-select" *ngIf="isWasherRoleSelected()">
+                <label class="form-label">Centre assigné <span class="required">*</span></label>
+                <select class="form-control" formControlName="centreId">
+                  <option value="" selected disabled>Sélectionnez un centre</option>
+                  <!-- Utilisation de la liste centres avec *ngFor -->
+                  <option *ngFor="let centre of centres" [value]="centre.id">
+                    {{ centre.name }}
+                  </option>
+                  <!-- Message affiché si aucun centre n'est disponible -->
+                  <option value="" disabled *ngIf="centres.length === 0">
+                    Aucun centre disponible
+                  </option>
+                </select>
+                <i class="fas fa-chevron-down select-icon"></i>
+                <!-- Indicateur de chargement -->
+                <div class="form-help" *ngIf="centres.length === 0">
+                  <i class="fas fa-spinner fa-spin"></i> Chargement des centres...
                 </div>
-
-                <!-- Prénom -->
-                <div class="form-group">
-                  <label class="form-label">Prénom <span class="required">*</span></label>
-                  <input type="text" class="form-control" placeholder="Entrez le prénom" formControlName="firstName">
-                  <i class="fas fa-user form-icon"></i>
-                  <div class="form-error"
-                    *ngIf="userForm.get('firstName')?.invalid && userForm.get('firstName')?.touched">
-                    Le prénom est obligatoire
-                  </div>
-                </div>
-
-                <!-- Email -->
-                <div class="form-group">
-                  <label class="form-label">Email <span class="required">*</span></label>
-                  <input type="email" class="form-control" placeholder="example@autowash.com" formControlName="email">
-                  <i class="fas fa-envelope form-icon"></i>
-                  <div class="form-help">Cet email sera utilisé pour la connexion et la récupération de mot de passe</div>
-                  <div class="form-error" *ngIf="userForm.get('email')?.invalid && userForm.get('email')?.touched">
-                    Veuillez saisir une adresse email valide
-                  </div>
-                </div>
-
-                <!-- Téléphone -->
-                <div class="form-group">
-                  <label class="form-label">Téléphone <span class="required">*</span></label>
-                  <input type="tel" class="form-control" placeholder="+225 00 00 00 00 00" formControlName="phoneNumber">
-                  <i class="fas fa-phone form-icon"></i>
-                  <div class="form-error"
-                    *ngIf="userForm.get('phoneNumber')?.invalid && userForm.get('phoneNumber')?.touched">
-                    Le numéro de téléphone est obligatoire
-                  </div>
-                </div>
-
-                <!-- Genre -->
-                <div class="form-group custom-select">
-                  <label class="form-label">Genre <span class="required">*</span></label>
-                  <select class="form-control" formControlName="gender">
-                    <option value="" selected disabled>Sélectionnez un genre</option>
-                    <option value="Homme">Homme</option>
-                    <option value="Femme">Femme</option>
-                  </select>
-                  <i class="fas fa-chevron-down select-icon"></i>
-                  <div class="form-error" *ngIf="userForm.get('gender')?.invalid && userForm.get('gender')?.touched">
-                    Le genre est obligatoire
-                  </div>
-                </div>
-
-                <!-- État civil -->
-                <div class="form-group custom-select">
-                  <label class="form-label">État civil <span class="required">*</span></label>
-                  <select class="form-control" formControlName="maritalStatus">
-                    <option value="" selected disabled>Sélectionnez un état civil</option>
-                    <option value="Celibataire">Célibataire</option>
-                    <option value="Marie">Marié(e)</option>
-                    <option value="Divorce">Divorcé(e)</option>
-                    <option value="Veuf">Veuf/Veuve</option>
-                  </select>
-                  <i class="fas fa-chevron-down select-icon"></i>
-                  <div class="form-error"
-                    *ngIf="userForm.get('maritalStatus')?.invalid && userForm.get('maritalStatus')?.touched">
-                    L'état civil est obligatoire
-                  </div>
-                </div>
-
-                <!-- Nombre d'enfants -->
-                <div class="form-group">
-                  <label class="form-label">Nombre d'enfants</label>
-                  <input type="number" class="form-control" placeholder="0" formControlName="numberOfChildren" min="0">
-                  <i class="fas fa-child form-icon"></i>
-                  <div class="form-error" *ngIf="userForm.get('numberOfChildren')?.invalid">
-                    Veuillez saisir un nombre valide (0 ou plus)
-                  </div>
-                </div>
-
-                <!-- Résidence -->
-                <div class="form-group">
-                  <label class="form-label">Résidence <span class="required">*</span></label>
-                  <input type="text" class="form-control" placeholder="Lieu de résidence" formControlName="residence">
-                  <i class="fas fa-home form-icon"></i>
-                  <div class="form-error"
-                    *ngIf="userForm.get('residence')?.invalid && userForm.get('residence')?.touched">
-                    La résidence est obligatoire
-                  </div>
-                </div>
-
-                <!-- Adresse postale -->
-                <div class="form-group">
-                  <label class="form-label">Adresse postale <span class="required">*</span></label>
-                  <input type="text" class="form-control" placeholder="Adresse postale" formControlName="postalAddress">
-                  <i class="fas fa-map-marker-alt form-icon"></i>
-                  <div class="form-error"
-                    *ngIf="userForm.get('postalAddress')?.invalid && userForm.get('postalAddress')?.touched">
-                    L'adresse postale est obligatoire
-                  </div>
+                <!-- Message d'erreur pour le centre -->
+                <div class="form-error" *ngIf="userForm.get('centreId')?.invalid && userForm.get('centreId')?.touched">
+                  Le centre est obligatoire pour les Washers
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- Section Informations professionnelles -->
-            <div class="form-section">
-              <div class="section-title">
-                <h2><i class="fas fa-briefcase"></i> Informations professionnelles</h2>
-              </div>
-
-              <div class="form-grid">
-                <!-- Date d'embauche -->
-                <div class="form-group">
-                  <label class="form-label">Date d'embauche <span class="required">*</span></label>
-                  <input type="date" class="form-control" formControlName="hireDate">
-                  <i class="fas fa-calendar-alt form-icon"></i>
-                  <div class="form-error" *ngIf="userForm.get('hireDate')?.invalid && userForm.get('hireDate')?.touched">
-                    La date d'embauche est obligatoire
-                  </div>
-                </div>
-
-                <!-- Type de contrat -->
-                <div class="form-group custom-select">
-                  <label class="form-label">Type de contrat <span class="required">*</span></label>
-                      <select class="form-control" formControlName="contractType">
-                        <option value="" selected disabled>Sélectionnez un type de contrat</option>
-                        <!-- Contrats standards -->
-                        <option value="CDI">CDI (Contrat à Durée Indéterminée)</option>
-                        <option value="CDD">CDD (Contrat à Durée Déterminée)</option>
-                        <option value="CTT">CTT (Contrat de Travail Temporaire)</option>
-                        <option value="INTERIM">Intérim</option>
-
-                        <!-- Contrats pour jeunes/temporaires -->
-                        <option value="APPRENTISSAGE">Contrat d'apprentissage</option>
-                        <option value="PROFESSIONNALISATION">Contrat de professionnalisation</option>
-                        <option value="STAGE">Stage</option>
-                        <option value="ETUDIANT">Contrat étudiant</option>
-
-                        <!-- Autres contrats spéciaux -->
-                        <option value="SAISONNIER">Contrat saisonnier</option>
-                        <option value="TEMPS PARTIEL">Temps partiel</option>
-                        <option value="TEMPS PLEIN">Temps plein</option>
-                        <option value="ALTERNANCE">Alternance</option>
-
-                        <!-- Pour travailleurs indépendants -->
-                        <option value="AUTOENTREPRENEUR">Auto-entrepreneur</option>
-                        <option value="PRESTATION">Contrat de prestation</option>
-                      </select>
-                  <i class="fas fa-chevron-down select-icon"></i>
-                  <div class="form-error"
-                    *ngIf="userForm.get('contractType')?.invalid && userForm.get('contractType')?.touched">
-                    Le type de contrat est obligatoire
-                  </div>
-                </div>
-
-                <!-- Heures de travail -->
-                <div class="form-group">
-                  <label class="form-label">Heures de travail hebdomadaire <span class="required">*</span></label>
-                  <input type="number" class="form-control" placeholder="40" formControlName="workingHours" min="0">
-                  <i class="fas fa-clock form-icon"></i>
-                </div>
-
-                <!-- Temps partiel -->
-                <div class="form-group">
-                  <label class="form-label">Temps partiel</label>
-                  <div class="form-check-wrapper">
-                    <label class="toggle-switch">
-                      <input type="checkbox" formControlName="isPartTime">
-                      <span class="toggle-slider"></span>
-                    </label>
-                    <span class="permission-text">Employé à temps partiel</span>
-                  </div>
-                </div>
-
-                <!-- Centre assigné - MODIFICATION: Conditionnel basé sur le rôle washer -->
-                <div class="form-group custom-select" *ngIf="isWasherRoleSelected()">
-                  <label class="form-label">Centre assigné <span class="required">*</span></label>
-                  <select class="form-control" formControlName="centreId">
-                    <option value="" selected disabled>Sélectionnez un centre</option>
-                    <!-- Utilisation de la liste centres avec *ngFor -->
-                    <option *ngFor="let centre of centres" [value]="centre.id">
-                      {{ centre.name }}
-                    </option>
-                    <!-- Message affiché si aucun centre n'est disponible -->
-                    <option value="" disabled *ngIf="centres.length === 0">
-                      Aucun centre disponible
-                    </option>
-                  </select>
-                  <i class="fas fa-chevron-down select-icon"></i>
-                  <!-- Indicateur de chargement -->
-                  <div class="form-help" *ngIf="centres.length === 0">
-                    <i class="fas fa-spinner fa-spin"></i> Chargement des centres...
-                  </div>
-                  <!-- Message d'erreur pour le centre -->
-                  <div class="form-error" *ngIf="userForm.get('centreId')?.invalid && userForm.get('centreId')?.touched">
-                    Le centre est obligatoire pour les Washers
-                  </div>
-                </div>
-              </div>
+          <!-- Section Informations de compte -->
+          <div class="form-section">
+            <div class="section-title">
+              <h2><i class="fas fa-lock"></i> Informations de compte</h2>
             </div>
 
-            <!-- Section Informations de compte -->
-            <div class="form-section">
-              <div class="section-title">
-                <h2><i class="fas fa-lock"></i> Informations de compte</h2>
-              </div>
-
-              <div class="form-grid">
-                <!-- Mot de passe -->
-                <div class="form-group">
-                  <label class="form-label">Mot de passe <span class="required">*</span></label>
-                  <input type="password" class="form-control" placeholder="Mot de passe" formControlName="password">
-                  <i class="fas fa-key form-icon"></i>
-                  <div class="form-help">8 caractères minimum avec au moins 1 majuscule, 1 minuscule et 1 chiffre</div>
-                  <div class="form-error" *ngIf="userForm.get('password')?.invalid && userForm.get('password')?.touched">
-                    Le mot de passe doit contenir au moins 6 caractères
-                  </div>
-                </div>
-
-                <!-- Confirmation de mot de passe -->
-                <div class="form-group">
-                  <label class="form-label">Confirmer le mot de passe <span class="required">*</span></label>
-                  <input type="password" class="form-control" placeholder="Confirmez le mot de passe"
-                    formControlName="confirmPassword">
-                  <i class="fas fa-key form-icon"></i>
-                  <div class="form-error"
-                    *ngIf="userForm.get('confirmPassword')?.value !== userForm.get('password')?.value && userForm.get('confirmPassword')?.touched">
-                    Les mots de passe ne correspondent pas
-                  </div>
-                </div>
-
-                <!-- Rôle de l'utilisateur - MODIFICATION: Ajout de l'événement change -->
-                <div class="form-group custom-select">
-                  <label class="form-label">Rôle <span class="required">*</span></label>
-                  <select class="form-control" (change)="onRoleChange($event)" multiple>
-                    <option *ngFor="let role of availableRoles" [value]="role">{{ role | titlecase }}</option>
-                  </select>
-                  <i class="fas fa-chevron-down select-icon"></i>
-                  <div class="form-error" *ngIf="userForm.get('roles')?.invalid && userForm.get('roles')?.touched">
-                    Veuillez sélectionner au moins un rôle
-                  </div>
-                </div>
-
-                <!-- Statut du compte -->
-                <div class="form-group">
-                  <label class="form-label">Statut du compte</label>
-                  <div class="form-check-wrapper">
-                    <label class="toggle-switch">
-                      <input type="checkbox" formControlName="isEnabled" checked>
-                      <span class="toggle-slider"></span>
-                    </label>
-                    <span class="permission-text">Compte actif</span>
-                  </div>
-                  <div class="form-help">Les utilisateurs inactifs ne pourront pas se connecter</div>
+            <div class="form-grid">
+              <!-- Mot de passe -->
+              <div class="form-group">
+                <label class="form-label">Mot de passe <span class="required">*</span></label>
+                <input type="password" class="form-control" placeholder="Mot de passe" formControlName="password">
+                <i class="fas fa-key form-icon"></i>
+                <div class="form-help">8 caractères minimum avec au moins 1 majuscule, 1 minuscule et 1 chiffre</div>
+                <div class="form-error" *ngIf="userForm.get('password')?.invalid && userForm.get('password')?.touched">
+                  Le mot de passe doit contenir au moins 6 caractères
                 </div>
               </div>
-            </div>
 
-            <!-- Boutons d'action -->
-            <div class="form-actions">
-              <button type="button" class="btn btn-secondary" (click)="onReset()">
-                <i class="fas fa-undo"></i> Réinitialiser
-              </button>
-              <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid">
-                <i class="fas fa-save"></i> Enregistrer
-              </button>
+              <!-- Confirmation de mot de passe -->
+              <div class="form-group">
+                <label class="form-label">Confirmer le mot de passe <span class="required">*</span></label>
+                <input type="password" class="form-control" placeholder="Confirmez le mot de passe"
+                  formControlName="confirmPassword">
+                <i class="fas fa-key form-icon"></i>
+                <div class="form-error"
+                  *ngIf="userForm.get('confirmPassword')?.value !== userForm.get('password')?.value && userForm.get('confirmPassword')?.touched">
+                  Les mots de passe ne correspondent pas
+                </div>
+              </div>
+
+              <!-- Rôle de l'utilisateur - MODIFICATION: Ajout de l'événement change -->
+              <div class="form-group custom-select">
+                <label class="form-label">Rôle <span class="required">*</span></label>
+                <select class="form-control" (change)="onRoleChange($event)" multiple>
+                  <option *ngFor="let role of availableRoles" [value]="role">{{ role | titlecase }}</option>
+                </select>
+                <i class="fas fa-chevron-down select-icon"></i>
+                <div class="form-error" *ngIf="userForm.get('roles')?.invalid && userForm.get('roles')?.touched">
+                  Veuillez sélectionner au moins un rôle
+                </div>
+              </div>
+
+              <!-- Statut du compte -->
+              <div class="form-group">
+                <label class="form-label">Statut du compte</label>
+                <div class="form-check-wrapper">
+                  <label class="toggle-switch">
+                    <input type="checkbox" formControlName="isEnabled" checked>
+                    <span class="toggle-slider"></span>
+                  </label>
+                  <span class="permission-text">Compte actif</span>
+                </div>
+                <div class="form-help">Les utilisateurs inactifs ne pourront pas se connecter</div>
+              </div>
             </div>
-          </form>
+          </div>
+
+          <!-- Boutons d'action -->
+          <div class="form-actions">
+            <button type="button" class="btn btn-secondary" (click)="onReset()">
+              <i class="fas fa-undo"></i> Réinitialiser
+            </button>
+            <button type="submit" class="btn btn-primary" [disabled]="userForm.invalid">
+              <i class="fas fa-save"></i> Enregistrer
+            </button>
+          </div>
+        </form>
       </div>
     </div>
 

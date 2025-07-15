@@ -5,20 +5,18 @@ import { UsersService } from '../../../core/services/Users/users.service';
 import {
   FormGroup,
   FormBuilder,
-  Validators,
   FormsModule,
   ReactiveFormsModule,
-  AbstractControl,
-  ValidationErrors,
 } from '@angular/forms';
-import { DaySchedule } from '../../../core/models/Settings/DaySchedule';
-import { CommonModule, Time } from '@angular/common';
-import { DayOfWeek } from '../../../core/models/Settings/DayOfWeek';
-import { ScheduleSettings } from '../../../core/models/Settings/ScheduleSettings';
-import { SettingsService } from '../../../core/services/Settings/settings.service';
+import { CommonModule } from '@angular/common';
 import { CentresService } from '../../../core/services/Centres/centres.service';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Users } from '../../../core/models/Users/Users';
+import {
+  DayOfWeek,
+  ScheduleSettings,
+} from '../../../core/models/Settings/ScheduleSettings';
+import { ScheduleSettingsService } from '../../../core/services/ScheduleSettings/schedule-settings.service';
 
 @Component({
   selector: 'app-settings-schedule',
@@ -30,12 +28,10 @@ export class SettingsScheduleComponent implements OnInit {
   //#region Propriétés du composant
   scheduleForm!: FormGroup;
   showPreview: boolean = false;
-  weekDays: DaySchedule[] = [];
   isLoading: boolean = false;
   errorMessage: string | null = null;
   successMessage: string | null = null;
-  currentSchedule?: ScheduleSettings;
-
+  currentSettings: ScheduleSettings | null = null;
 
   users: Users[] = [];
   displayedUsers: Users[] = [];
@@ -46,8 +42,19 @@ export class SettingsScheduleComponent implements OnInit {
   isAdmin: boolean = false;
   selectedCentreId: string = '';
   availableCentres: any[] = [];
-  showCentreSelector: boolean = false;
+  showCentreSelector: boolean = true;
   loadCurrentUserAndCentre: any;
+
+  // Options pour les jours de la semaine
+  daysOfWeek = [
+    { id: DayOfWeek.Monday, name: 'Lundi', controlName: 'monday' },
+    { id: DayOfWeek.Tuesday, name: 'Mardi', controlName: 'tuesday' },
+    { id: DayOfWeek.Wednesday, name: 'Mercredi', controlName: 'wednesday' },
+    { id: DayOfWeek.Thursday, name: 'Jeudi', controlName: 'thursday' },
+    { id: DayOfWeek.Friday, name: 'Vendredi', controlName: 'friday' },
+    { id: DayOfWeek.Saturday, name: 'Samedi', controlName: 'saturday' },
+    { id: DayOfWeek.Sunday, name: 'Dimanche', controlName: 'sunday' },
+  ];
   //#endregion
 
   //#region Constructeur et Initialisation
@@ -56,9 +63,9 @@ export class SettingsScheduleComponent implements OnInit {
     private formBuilder: FormBuilder,
     private router: Router,
     private usersService: UsersService,
-    private settingsService: SettingsService,
     private centresService: CentresService,
-    private authService: AuthService
+    private authService: AuthService,
+    private scheduleSettingsService: ScheduleSettingsService
   ) {}
 
   ngOnInit(): void {
@@ -66,98 +73,277 @@ export class SettingsScheduleComponent implements OnInit {
     this.loadUserData();
     this.getUsers();
     this.loadCurrentUser();
+    // S'abonner aux changements de l'utilisateur connecté
+    this.authService.currentUser$.subscribe((user) => {
+      if (user && user !== this.currentUser) {
+        this.currentUser = user;
+        this.loadCurrentUserPhoto();
+      }
+    });
   }
 
+  /**
+   * Initialise le formulaire de paramètres d'horaire
+   */
   initForm(): void {
     this.scheduleForm = this.formBuilder.group({
       // Configuration des jours
       mondayEnabled: [true],
-      mondayStart: ['08:00', [Validators.required, this.timeValidator]],
-      mondayEnd: [
-        '18:00',
-        [
-          Validators.required,
-          this.timeValidator,
-          this.endTimeValidator('mondayStart'),
-        ],
-      ],
+      mondayStart: ['08:00'],
+      mondayEnd: ['18:00'],
 
       tuesdayEnabled: [true],
-      tuesdayStart: ['08:00', [Validators.required, this.timeValidator]],
-      tuesdayEnd: [
-        '18:00',
-        [
-          Validators.required,
-          this.timeValidator,
-          this.endTimeValidator('tuesdayStart'),
-        ],
-      ],
+      tuesdayStart: ['08:00'],
+      tuesdayEnd: ['18:00'],
 
       wednesdayEnabled: [true],
-      wednesdayStart: ['08:00', [Validators.required, this.timeValidator]],
-      wednesdayEnd: [
-        '18:00',
-        [
-          Validators.required,
-          this.timeValidator,
-          this.endTimeValidator('wednesdayStart'),
-        ],
-      ],
+      wednesdayStart: ['08:00'],
+      wednesdayEnd: ['18:00'],
 
       thursdayEnabled: [true],
-      thursdayStart: ['08:00', [Validators.required, this.timeValidator]],
-      thursdayEnd: [
-        '18:00',
-        [
-          Validators.required,
-          this.timeValidator,
-          this.endTimeValidator('thursdayStart'),
-        ],
-      ],
+      thursdayStart: ['08:00'],
+      thursdayEnd: ['18:00'],
 
       fridayEnabled: [true],
-      fridayStart: ['08:00', [Validators.required, this.timeValidator]],
-      fridayEnd: [
-        '18:00',
-        [
-          Validators.required,
-          this.timeValidator,
-          this.endTimeValidator('fridayStart'),
-        ],
-      ],
+      fridayStart: ['08:00'],
+      fridayEnd: ['18:00'],
 
       saturdayEnabled: [false],
-      saturdayStart: ['09:00', [Validators.required, this.timeValidator]],
-      saturdayEnd: [
-        '17:00',
-        [
-          Validators.required,
-          this.timeValidator,
-          this.endTimeValidator('saturdayStart'),
-        ],
-      ],
+      saturdayStart: ['10:00'],
+      saturdayEnd: ['16:00'],
 
       sundayEnabled: [false],
-      sundayStart: ['09:00', [Validators.required, this.timeValidator]],
-      sundayEnd: [
-        '17:00',
-        [
-          Validators.required,
-          this.timeValidator,
-          this.endTimeValidator('sundayStart'),
-        ],
-      ],
+      sundayStart: [''],
+      sundayEnd: [''],
 
       // Paramètres généraux
-      timezone: ['Europe/Paris', Validators.required],
-      defaultBreakDuration: [30, [Validators.min(0), Validators.max(480)]],
-      overtimeThreshold: [40, [Validators.min(1), Validators.max(80)]],
-      notificationsEnabled: [true],
-      arrivalTolerance: [15, [Validators.min(0), Validators.max(60)]],
-      weekStartDay: ['monday'],
-      is24Hours: [false],
+      maxConcurrentWashes: [3],
+      defaultWashDurationMinutes: [30],
+      breakBetweenWashesMinutes: [5],
+      allowOvertimeWork: [true],
+      isWeekendWorkAllowed: [false],
+
+      // Pause déjeuner
+      lunchBreakStart: ['12:00'],
+      lunchBreakEnd: ['13:30'],
     });
   }
+
+  /**
+   * Met à jour le formulaire avec les paramètres existants
+   * @param settings Les paramètres d'horaire
+   */
+  updateFormWithSettings(settings: ScheduleSettings): void {
+    // Convertir les jours ouvrables en format de formulaire
+    const workingDays = settings.workingDays || [];
+
+    this.scheduleForm.patchValue({
+      mondayEnabled: workingDays.includes(DayOfWeek.Monday),
+      mondayStart: this.formatTime(settings.openingTime),
+      mondayEnd: this.formatTime(settings.closingTime),
+
+      tuesdayEnabled: workingDays.includes(DayOfWeek.Tuesday),
+      tuesdayStart: this.formatTime(settings.openingTime),
+      tuesdayEnd: this.formatTime(settings.closingTime),
+
+      wednesdayEnabled: workingDays.includes(DayOfWeek.Wednesday),
+      wednesdayStart: this.formatTime(settings.openingTime),
+      wednesdayEnd: this.formatTime(settings.closingTime),
+
+      thursdayEnabled: workingDays.includes(DayOfWeek.Thursday),
+      thursdayStart: this.formatTime(settings.openingTime),
+      thursdayEnd: this.formatTime(settings.closingTime),
+
+      fridayEnabled: workingDays.includes(DayOfWeek.Friday),
+      fridayStart: this.formatTime(settings.openingTime),
+      fridayEnd: this.formatTime(settings.closingTime),
+
+      saturdayEnabled: workingDays.includes(DayOfWeek.Saturday),
+      saturdayStart: this.formatTime(settings.openingTime),
+      saturdayEnd: this.formatTime(settings.closingTime),
+
+      sundayEnabled: workingDays.includes(DayOfWeek.Sunday),
+      sundayStart: this.formatTime(settings.openingTime),
+      sundayEnd: this.formatTime(settings.closingTime),
+
+      maxConcurrentWashes: settings.maxConcurrentWashes,
+      defaultWashDurationMinutes: settings.defaultWashDurationMinutes,
+      breakBetweenWashesMinutes: settings.breakBetweenWashesMinutes,
+      allowOvertimeWork: settings.allowOvertimeWork,
+      isWeekendWorkAllowed: settings.isWeekendWorkAllowed,
+      lunchBreakStart: this.formatTime(settings.lunchBreakStart),
+      lunchBreakEnd: this.formatTime(settings.lunchBreakEnd),
+    });
+  }
+
+  formatTime(timeString: string | undefined): string {
+    if (!timeString) return '';
+    const [hours, minutes] = timeString.split(':');
+    return `${hours}:${minutes}`;
+  }
+
+  onSubmit(): void {
+    console.log('Form status:', this.scheduleForm.status);
+    console.log('Form errors:', this.scheduleForm.errors);
+    console.log('Centre ID:', this.centreId);
+    console.log('Selected Centre ID:', this.selectedCentreId);
+
+    // Validation
+    if (this.scheduleForm.invalid) {
+      this.errorMessage = 'Veuillez corriger les erreurs du formulaire';
+      return;
+    }
+
+    if (!this.centreId) {
+      this.errorMessage = 'Veuillez sélectionner un centre';
+      return;
+    }
+
+    this.isLoading = true;
+    this.errorMessage = null;
+    this.successMessage = null;
+
+    const formValue = this.scheduleForm.value;
+
+    // Convertir les jours sélectionnés en tableau DayOfWeek
+    const workingDays: DayOfWeek[] = [];
+    this.daysOfWeek.forEach((day) => {
+      if (formValue[day.controlName + 'Enabled']) {
+        workingDays.push(day.id);
+      }
+    });
+
+    // Prendre les heures du premier jour activé comme heures générales
+    let openingTime = '08:00:00';
+    let closingTime = '18:00:00';
+
+    const firstActiveDay = this.daysOfWeek.find(
+      (day) => formValue[day.controlName + 'Enabled']
+    );
+    if (firstActiveDay) {
+      openingTime = formValue[firstActiveDay.controlName + 'Start'] + ':00';
+      closingTime = formValue[firstActiveDay.controlName + 'End'] + ':00';
+    }
+
+    // Créer l'objet settings
+    const settings: ScheduleSettings = {
+      id: this.currentSettings?.id || undefined,
+      centreId: this.centreId,
+      openingTime,
+      closingTime,
+      workingDays,
+      maxConcurrentWashes: formValue.maxConcurrentWashes || 3,
+      defaultWashDurationMinutes: formValue.defaultWashDurationMinutes || 30,
+      breakBetweenWashesMinutes: formValue.breakBetweenWashesMinutes || 5,
+      allowOvertimeWork: formValue.allowOvertimeWork || false,
+      isWeekendWorkAllowed: formValue.isWeekendWorkAllowed || false,
+      lunchBreakStart: formValue.lunchBreakStart
+        ? formValue.lunchBreakStart + ':00'
+        : undefined,
+      lunchBreakEnd: formValue.lunchBreakEnd
+        ? formValue.lunchBreakEnd + ':00'
+        : undefined,
+      createdAt: this.currentSettings?.createdAt || new Date(),
+      updatedAt: new Date(),
+      updatedBy: this.currentUser?.id || 'admin',
+    };
+
+    console.log('Settings à enregistrer:', settings);
+
+    const saveOperation = this.currentSettings
+      ? this.scheduleSettingsService.updateScheduleSettings(
+          settings,
+          this.currentUser?.id || 'admin'
+        )
+      : this.scheduleSettingsService.createScheduleSettings(settings);
+
+    saveOperation.subscribe({
+      next: (response) => {
+        this.isLoading = false;
+        console.log('Réponse sauvegarde:', response);
+
+        if (response.success) {
+          this.successMessage = 'Paramètres enregistrés avec succès';
+          this.currentSettings = response.data;
+          setTimeout(() => (this.successMessage = null), 5000);
+        } else {
+          this.errorMessage =
+            response.message || 'Erreur lors de la sauvegarde';
+        }
+      },
+      error: (error) => {
+        this.isLoading = false;
+        console.error('Erreur sauvegarde:', error);
+        this.errorMessage = 'Erreur lors de la sauvegarde des paramètres';
+        setTimeout(() => (this.errorMessage = null), 5000);
+      },
+    });
+  }
+
+  onReset(): void {
+    if (this.currentSettings) {
+      this.updateFormWithSettings(this.currentSettings);
+    } else {
+      this.scheduleForm.reset();
+      this.initForm();
+    }
+  }
+
+  togglePreview(): void {
+    this.showPreview = !this.showPreview;
+  }
+
+  //#region Méthodes de gestion des paramètres
+
+  /**
+   * Vérifie si un créneau horaire est disponible
+   * @param dateTime La date et heure à vérifier
+   */
+  checkTimeSlotAvailability(dateTime: Date): void {
+    if (!this.centreId) return;
+
+    this.scheduleSettingsService
+      .isTimeSlotAvailable(this.centreId, dateTime)
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            const message = response.data
+              ? 'Créneau disponible'
+              : 'Créneau non disponible';
+            this.successMessage = message;
+            setTimeout(() => (this.successMessage = null), 3000);
+          }
+        },
+        error: (error) => {
+          console.error('Erreur de vérification', error);
+          this.errorMessage = 'Erreur lors de la vérification';
+          setTimeout(() => (this.errorMessage = null), 5000);
+        },
+      });
+  }
+
+  /**
+   * Récupère les créneaux disponibles pour une date donnée
+   * @param date La date à vérifier
+   */
+  getAvailableSlots(date: Date): void {
+    if (!this.centreId) return;
+
+    this.scheduleSettingsService
+      .getAvailableTimeSlots(this.centreId, date)
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            console.log('Créneaux disponibles:', response.data);
+            // Traiter les créneaux disponibles ici
+          }
+        },
+        error: (error) => {
+          console.error('Erreur de récupération', error);
+        },
+      });
+  }
+  //#endregion
 
   /**
    * Charge les données utilisateur et initialise le composant
@@ -168,7 +354,6 @@ export class SettingsScheduleComponent implements OnInit {
         if (user) {
           this.currentUser = user;
           this.checkUserRole(user);
-          this.handleUserBasedOnRole(user);
         }
       },
       error: (err) => {
@@ -188,7 +373,6 @@ export class SettingsScheduleComponent implements OnInit {
         this.loadCurrentUserPhoto();
         this.user = user;
         this.checkUserRole(user);
-        this.handleUserBasedOnRole(user);
       }
     });
   }
@@ -213,24 +397,21 @@ export class SettingsScheduleComponent implements OnInit {
   /**
    * Charge l'utilisateur actuellement connecté
    */
-loadCurrentUser(): void {
-  this.authService.currentUser$.subscribe({
-    next: (user) => {
-      if (user) {
-        this.currentUser = user;
-        this.user = user;
-        this.checkUserRole(user);
-        this.handleUserBasedOnRole(user);
-        // Charger les paramètres après avoir déterminé le rôle et le centre
-        this.loadScheduleSettings();
-      }
-    },
-    error: (err) => {
-      console.error('❌ Erreur lors du chargement utilisateur:', err);
-      this.errorMessage = 'Erreur lors du chargement des données utilisateur';
-    }
-  });
-}
+  loadCurrentUser(): void {
+    this.authService.currentUser$.subscribe({
+      next: (user) => {
+        if (user) {
+          this.currentUser = user;
+          this.user = user;
+          this.checkUserRole(user);
+        }
+      },
+      error: (err) => {
+        console.error('❌ Erreur lors du chargement utilisateur:', err);
+        this.errorMessage = 'Erreur lors du chargement des données utilisateur';
+      },
+    });
+  }
 
   /**
    * Méthode de secours pour charger l'utilisateur via UsersService
@@ -274,11 +455,18 @@ loadCurrentUser(): void {
             'Erreur lors du chargement de la photo utilisateur',
             error
           );
-          this.setDefaultUserPhoto();
+          // Image par défaut
+          this.currentUser!.photoSafeUrl =
+            this.sanitizer.bypassSecurityTrustUrl(
+              'assets/images/default-avatar.png'
+            );
         },
       });
     } else {
-      this.setDefaultUserPhoto();
+      // Si pas de photoUrl, utiliser une image par défaut
+      this.currentUser.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
+        'assets/images/default-avatar.png'
+      );
     }
   }
 
@@ -317,446 +505,99 @@ loadCurrentUser(): void {
    * @param user L'utilisateur à vérifier
    */
   checkUserRole(user: Users): void {
-    this.isAdmin =
-      user.roles?.some(
-        (role) =>
-          role.toLowerCase().includes('admin') ||
-          role.toLowerCase().includes('administrator')
-      ) || false;
+    // Récupérer les noms des rôles depuis l'API ou le localStorage
+    // au lieu de comparer directement les IDs
+    this.isAdmin = this.checkIfUserIsAdmin(user.roles);
+
+    console.log('User roles:', user.roles);
+    console.log('Is admin:', this.isAdmin);
+
+    if (this.isAdmin) {
+      this.showCentreSelector = true;
+      this.loadCentres();
+    } else {
+      this.centreId = user.centreId || '';
+      this.selectedCentreId = user.centreId || '';
+      this.showCentreSelector = false;
+
+      if (this.centreId) {
+        this.loadScheduleSettings();
+      }
+    }
   }
 
-  /**
- * Méthode appelée lors du changement de centre (pour les admins)
- */
-onCentreChange(): void {
-  this.centreId = this.selectedCentreId;
-  this.loadScheduleSettings();
-}
-
-  /**
-   * Gère le comportement en fonction du rôle de l'utilisateur
-   * @param user L'utilisateur connecté
-   */
-  handleUserBasedOnRole(user: Users): void {
-  if (this.isAdmin) {
-    this.handleAdminUser();
-  } else if (user.centreId) {
-    this.centreId = user.centreId;
-    this.showCentreSelector = false; // Pas de sélecteur pour les utilisateurs normaux
-  } else {
-    this.handleUserWithoutCentre();
-  }
-}
-
-  /**
-   * Gère le cas d'un utilisateur administrateur
-   */
-  handleAdminUser(): void {
-    console.log('👑 Utilisateur administrateur détecté');
-    this.showCentreSelector = true;
-    this.loadAvailableCentres();
+  private checkIfUserIsAdmin(roleIds: string[]): boolean {
+    // ID du rôle admin dans votre base de données
+    const ADMIN_ROLE_ID = '6857b69ad24152b1c4b778e9';
+    return roleIds?.includes(ADMIN_ROLE_ID) || false;
   }
 
-  /**
-   * Gère le cas d'un utilisateur sans centre assigné
-   */
-  handleUserWithoutCentre(): void {
-    console.warn('⚠️ Utilisateur sans centre assigné');
-  }
-
-  /**
-   * Charge la liste des centres disponibles
-   */
-  loadAvailableCentres(): void {
+  loadCentres(): void {
     this.centresService.getAllCentres().subscribe({
       next: (centres) => {
         this.availableCentres = centres;
-        console.log('🏢 Centres disponibles:', centres);
+        this.showCentreSelector = this.isAdmin && centres.length > 0;
+
+        // Si admin avec un seul centre, le sélectionner automatiquement
+        if (this.isAdmin && centres.length === 1) {
+          this.selectedCentreId = centres[0].id || '';
+          this.centreId = centres[0].id || '';
+          this.loadScheduleSettings(); // Charger les paramètres existants
+        }
+
+        // Si pas admin, utiliser le centre de l'utilisateur
+        if (!this.isAdmin && this.currentUser?.centreId) {
+          this.selectedCentreId = this.currentUser.centreId;
+          this.centreId = this.currentUser.centreId;
+          this.loadScheduleSettings();
+        }
       },
-      error: (err) => {
-        console.error('❌ Erreur chargement centres:', err);
+      error: (error) => {
+        console.error('Erreur chargement centres', error);
+        this.errorMessage = 'Erreur lors du chargement des centres';
       },
     });
   }
 
-  /**
-   * Événement déclenché lors de la sélection d'un centre (pour les administrateurs)
-   * @param centreId L'ID du centre sélectionné
-   */
-  onCentreSelect(centreId: string): void {
-  if (this.isAdmin && centreId) {
-    console.log('🏢 Centre sélectionné:', centreId);
-    this.centreId = centreId;
-    this.selectedCentreId = centreId;
-    // Charger les paramètres pour ce centre
-    this.loadScheduleSettings();
+  onCentreChange(): void {
+    if (this.selectedCentreId) {
+      this.centreId = this.selectedCentreId;
+      this.loadScheduleSettings(); // Charger les paramètres du centre sélectionné
+    }
   }
-}
-  //#endregion
 
-  //#region Gestion des horaires
   /**
-   * Charge les horaires du centre
+   * * Charge les paramètres d'horaire pour le centre sélectionné
+   * @param centreId Identifiant du centre
    */
   loadScheduleSettings(): void {
     if (!this.centreId) return;
 
     this.isLoading = true;
-    this.settingsService.getScheduleSettings(this.centreId).subscribe({
-      next: (schedule) => {
-        this.currentSchedule = schedule;
-        this.populateFormWithSchedule(schedule);
+
+    // Utiliser getScheduleSettings au lieu de getScheduleSettingsByCentreId
+    this.scheduleSettingsService.getScheduleSettings(this.centreId).subscribe({
+      next: (response) => {
         this.isLoading = false;
+        if (response.success && response.data) {
+          this.currentSettings = response.data;
+          this.updateFormWithSettings(response.data);
+        } else {
+          // Aucun paramètre existant, utiliser les valeurs par défaut
+          this.currentSettings = null;
+          this.initForm();
+        }
       },
-      error: (err) => {
-        console.error('Erreur lors du chargement des horaires', err);
-        this.errorMessage = 'Erreur lors du chargement des horaires';
+      error: (error) => {
         this.isLoading = false;
+        console.error('Erreur chargement paramètres:', error);
+        // Pas d'erreur affichée, utiliser les valeurs par défaut
+        this.currentSettings = null;
+        this.initForm();
       },
     });
   }
 
-  /**
-   * Remplit le formulaire avec les horaires existants
-   * @param schedule Les horaires à afficher
-   */
-  private populateFormWithSchedule(schedule: ScheduleSettings): void {
-    const weeklySchedule = schedule.weeklySchedule;
-
-    // Seuls les champs existants dans ScheduleSettings sont utilisés
-    this.scheduleForm.patchValue({
-      is24Hours: schedule.is24Hours,
-      // Les autres champs sont initialisés avec des valeurs par défaut
-      timezone: 'Europe/Paris', // Valeur par défaut
-      defaultBreakDuration: 30, // Valeur par défaut
-      overtimeThreshold: 40, // Valeur par défaut
-      notificationsEnabled: true, // Valeur par défaut
-      arrivalTolerance: 15, // Valeur par défaut
-      weekStartDay: 'monday', // Valeur par défaut
-    });
-
-    // Remplissage des jours de la semaine
-    const days = [
-      { day: DayOfWeek.Monday, prefix: 'monday' },
-      { day: DayOfWeek.Tuesday, prefix: 'tuesday' },
-      { day: DayOfWeek.Wednesday, prefix: 'wednesday' },
-      { day: DayOfWeek.Thursday, prefix: 'thursday' },
-      { day: DayOfWeek.Friday, prefix: 'friday' },
-      { day: DayOfWeek.Saturday, prefix: 'saturday' },
-      { day: DayOfWeek.Sunday, prefix: 'sunday' },
-    ];
-
-    days.forEach(({ day, prefix }) => {
-      const daySchedule = weeklySchedule.get(day); // Utilisation de .get() pour accéder à la valeur
-      if (daySchedule) {
-        this.scheduleForm.patchValue({
-          [`${prefix}Enabled`]: daySchedule.isOpen,
-          [`${prefix}Start`]: this.formatTime(daySchedule.openTime),
-          [`${prefix}End`]: this.formatTime(daySchedule.closeTime),
-        });
-      }
-    });
-  }
-
-  /**
- * Applique uniquement les jours ouvrables (lundi à vendredi)
- */
-applyWeekdaysOnly(): void {
-  const weekdays = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
-  const weekends = ['saturday', 'sunday'];
-
-  weekdays.forEach((day) => {
-    this.scheduleForm.patchValue({
-      [`${day}Enabled`]: true,
-      [`${day}Start`]: '09:00',
-      [`${day}End`]: '17:00',
-    });
-  });
-
-  weekends.forEach((day) => {
-    this.scheduleForm.patchValue({
-      [`${day}Enabled`]: false,
-      [`${day}Start`]: '09:00',
-      [`${day}End`]: '17:00',
-    });
-  });
-
-  this.successMessage = 'Horaires des jours ouvrables appliqués';
-  setTimeout(() => (this.successMessage = null), 3000);
-}
-
-  /**
-   * Enregistre les horaires
-   */
-  saveSchedule(): void {
-    if (this.scheduleForm.invalid || !this.centreId) {
-      return;
-    }
-
-    this.isLoading = true;
-    const formValue = this.scheduleForm.value;
-    const scheduleSettings = this.convertFormToScheduleSettings(formValue);
-
-    this.settingsService
-      .updateScheduleSettings(this.centreId, scheduleSettings)
-      .subscribe({
-        next: (updatedSchedule) => {
-          this.currentSchedule = updatedSchedule;
-          this.successMessage = 'Horaires enregistrés avec succès';
-          this.isLoading = false;
-          setTimeout(() => (this.successMessage = null), 3000);
-        },
-        error: (err) => {
-          console.error('Erreur lors de la sauvegarde des horaires', err);
-          this.errorMessage = 'Erreur lors de la sauvegarde des horaires';
-          this.isLoading = false;
-        },
-      });
-  }
-
-  /**
-   * Convertit les valeurs du formulaire en objet ScheduleSettings
-   * @param formValue Les valeurs du formulaire
-   * @returns Un objet ScheduleSettings
-   */
-  private convertFormToScheduleSettings(formValue: any): ScheduleSettings {
-    const schedule = new ScheduleSettings({
-      is24Hours: formValue.is24Hours,
-      // Seuls les champs pertinents pour le backend sont inclus
-      weeklySchedule: this.buildWeeklySchedule(formValue),
-      specialDays: this.currentSchedule?.specialDays || [],
-      defaultOpenTime: '08:00',
-      defaultCloseTime: '18:00',
-    });
-
-    return schedule;
-  }
-
-  private buildWeeklySchedule(formValue: any): Map<DayOfWeek, DaySchedule> {
-    const weeklySchedule = new Map<DayOfWeek, DaySchedule>();
-    const days = [
-      { day: DayOfWeek.Monday, prefix: 'monday' },
-      { day: DayOfWeek.Tuesday, prefix: 'tuesday' },
-      { day: DayOfWeek.Wednesday, prefix: 'wednesday' },
-      { day: DayOfWeek.Thursday, prefix: 'thursday' },
-      { day: DayOfWeek.Friday, prefix: 'friday' },
-      { day: DayOfWeek.Saturday, prefix: 'saturday' },
-      { day: DayOfWeek.Sunday, prefix: 'sunday' },
-    ];
-
-    days.forEach(({ day, prefix }) => {
-      weeklySchedule.set(
-        day,
-        new DaySchedule({
-          isOpen: formValue[`${prefix}Enabled`],
-          openTime: formValue[`${prefix}Start`] || '08:00',
-          closeTime: formValue[`${prefix}End`] || '18:00',
-          breaks: [],
-        })
-      );
-    });
-
-    return weeklySchedule;
-  }
-
-  /**
-   * Réinitialise les horaires aux valeurs par défaut
-   */
-  resetToDefault(): void {
-    if (!this.centreId) return;
-
-    if (
-      confirm(
-        'Êtes-vous sûr de vouloir réinitialiser les horaires aux valeurs par défaut ?'
-      )
-    ) {
-      this.isLoading = true;
-      this.settingsService.resetScheduleToDefault(this.centreId).subscribe({
-        next: (defaultSchedule) => {
-          this.currentSchedule = defaultSchedule;
-          this.populateFormWithSchedule(defaultSchedule);
-          this.successMessage = 'Horaires réinitialisés avec succès';
-          this.isLoading = false;
-          setTimeout(() => (this.successMessage = null), 3000);
-        },
-        error: (err) => {
-          console.error('Erreur lors de la réinitialisation', err);
-          this.errorMessage = 'Erreur lors de la réinitialisation';
-          this.isLoading = false;
-        },
-      });
-    }
-  }
-
-  /**
-   * Copie les horaires du lundi sur tous les jours
-   */
-  copyMondayToAllDays(): void {
-    const mondayValues = {
-      enabled: this.scheduleForm.get('mondayEnabled')?.value,
-      start: this.scheduleForm.get('mondayStart')?.value,
-      end: this.scheduleForm.get('mondayEnd')?.value,
-    };
-
-    const days = [
-      'tuesday',
-      'wednesday',
-      'thursday',
-      'friday',
-      'saturday',
-      'sunday',
-    ];
-    days.forEach((day) => {
-      this.scheduleForm.patchValue({
-        [`${day}Enabled`]: mondayValues.enabled,
-        [`${day}Start`]: mondayValues.start,
-        [`${day}End`]: mondayValues.end,
-      });
-    });
-
-    this.successMessage = 'Horaires du lundi copiés sur tous les jours';
-    setTimeout(() => (this.successMessage = null), 3000);
-  }
-
-  /**
-   * Applique des horaires standards (9h-17h) sur tous les jours
-   */
-  applyStandardHours(): void {
-    const days = [
-      'monday',
-      'tuesday',
-      'wednesday',
-      'thursday',
-      'friday',
-      'saturday',
-      'sunday',
-    ];
-    days.forEach((day) => {
-      this.scheduleForm.patchValue({
-        [`${day}Enabled`]: day !== 'saturday' && day !== 'sunday',
-        [`${day}Start`]: '09:00',
-        [`${day}End`]: '17:00',
-      });
-    });
-
-    this.successMessage = 'Horaires standards appliqués';
-    setTimeout(() => (this.successMessage = null), 3000);
-  }
-  //#endregion
-
-  //#region Aperçu des Horaires
-  /**
-   * Affiche un aperçu des horaires configurés
-   */
-  previewSchedule(): void {
-    if (this.scheduleForm.invalid) {
-      this.errorMessage =
-        'Veuillez corriger les erreurs dans le formulaire avant de prévisualiser';
-      return;
-    }
-
-    this.weekDays = this.buildWeekDaysPreview();
-    this.showPreview = true;
-  }
-
-  /**
-   * Ferme l'aperçu des horaires
-   */
-  closePreview(): void {
-    this.showPreview = false;
-  }
-
-  /**
-   * Construit un aperçu des jours de la semaine
-   * @returns Un tableau de DaySchedule
-   */
-  private buildWeekDaysPreview(): DaySchedule[] {
-    const formValue = this.scheduleForm.value;
-    const days = [
-      'monday',
-      'tuesday',
-      'wednesday',
-      'thursday',
-      'friday',
-      'saturday',
-      'sunday',
-    ];
-
-    return days.map(
-      (day) =>
-        ({
-          isOpen: formValue[`${day}Enabled`],
-          openTime: formValue[`${day}Start`] || '08:00',
-          closeTime: formValue[`${day}End`] || '18:00',
-          breaks: [],
-        } as DaySchedule)
-    );
-  }
-
-  /**
-   * Retourne le nom du jour en français
-   * @param daySchedule Le jour à nommer
-   * @returns Le nom du jour
-   */
-  getDayName(daySchedule: DaySchedule): string {
-    const index = this.weekDays.indexOf(daySchedule);
-    const dayNames = [
-      'Lundi',
-      'Mardi',
-      'Mercredi',
-      'Jeudi',
-      'Vendredi',
-      'Samedi',
-      'Dimanche',
-    ];
-    return dayNames[index] || '';
-  }
-
-  /**
-   * Formate une heure au format HH:mm
-   * @param time L'heure à formater
-   * @returns L'heure formatée
-   */
-  private formatTime(time: string | Time): string {
-    if (typeof time === 'string') {
-      return time;
-    }
-    return `${time.hours.toString().padStart(2, '0')}:${time.minutes
-      .toString()
-      .padStart(2, '0')}`;
-  }
-
-  /**
-   * Validateur pour les champs heure
-   */
-  private timeValidator(control: AbstractControl): ValidationErrors | null {
-    const value = control.value;
-    if (!value) return null;
-
-    const regex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
-    return regex.test(value) ? null : { invalidTime: true };
-  }
-
-  /**
-   * Validateur pour vérifier que l'heure de fin est après l'heure de début
-   * @param startTimeControlName Le nom du contrôle de l'heure de début
-   */
-  private endTimeValidator(startTimeControlName: string) {
-    return (control: AbstractControl): ValidationErrors | null => {
-      const startTimeControl = control.parent?.get(startTimeControlName);
-      if (!startTimeControl) return null;
-
-      const startTime = startTimeControl.value;
-      const endTime = control.value;
-
-      if (!startTime || !endTime) return null;
-
-      const startDate = new Date(`1970-01-01T${startTime}:00`);
-      const endDate = new Date(`1970-01-01T${endTime}:00`);
-
-      return endDate > startDate ? null : { invalidTimeRange: true };
-    };
-  }
   //#endregion
 
   //#region Utilitaires

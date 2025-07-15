@@ -25,10 +25,10 @@
       </div>
     </div>
     <div class="nav-menu">
-      <!-- Dashboard -->
+      <!-- Tableau de bord -->
       <div class="dropdown dropdown-hover">
-        <a class="nav-item active" data-mdb-dropdown-init>
-          <i class="fas fa-tachometer-alt" [routerLink]="['/manager/dashboard']"></i>
+        <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/manager/dashboard']">
+          <i class="fas fa-tachometer-alt"></i>
           <span>Tableau de bord</span>
         </a>
       </div>
@@ -41,8 +41,8 @@
           <i class="fas fa-chevron-right dropdown-arrow"></i>
         </button>
         <ul class="dropdown-menu dropdown-menu-hover">
-          <li><a class="dropdown-item" [routerLink]="['/manager/washers-list']"><i class="fas fa-list"></i> Liste</a>
-          </li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/washers-list']"><i class="fas fa-list"></i> Liste des
+              laveurs</a></li>
           <li><a class="dropdown-item" [routerLink]="['/manager/washers-schedule']"><i class="fas fa-calendar-alt"></i>
               Planning</a></li>
           <li><a class="dropdown-item" [routerLink]="['/manager/washers-attendance']"><i class="fas fa-user-clock"></i>
@@ -58,10 +58,10 @@
           <i class="fas fa-chevron-right dropdown-arrow"></i>
         </button>
         <ul class="dropdown-menu dropdown-menu-hover">
-          <li><a class="dropdown-item" [routerLink]="['/manager/wash-today']"><i class="fas fa-list"></i>
-              Aujourd'hui</a></li>
-          <li><a class="dropdown-item" [routerLink]="['/manager/wash-new']"><i class="fas fa-plus-circle"></i>
-              Nouveau</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/wash-today']"><i class="fas fa-list"></i> Sessions du
+              jour</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/wash-new']"><i class="fas fa-plus-circle"></i> Nouveau
+              lavage</a></li>
           <li><a class="dropdown-item" [routerLink]="['/manager/wash-queue']"><i class="fas fa-clock"></i> File
               d'attente</a></li>
         </ul>
@@ -78,26 +78,28 @@
           <li><a class="dropdown-item" [routerLink]="['/manager/payments-washers']"><i
                 class="fas fa-hand-holding-usd"></i> Paiements laveurs</a></li>
           <li><a class="dropdown-item" [routerLink]="['/manager/payments-customers']"><i
-                class="fas fa-cash-register"></i> Caisse</a></li>
+                class="fas fa-cash-register"></i> Paiements clients</a></li>
           <li><a class="dropdown-item" [routerLink]="['/manager/payments-daily']"><i class="fas fa-file-invoice"></i>
-              Journalier</a></li>
+              Rapport journalier</a></li>
         </ul>
       </div>
 
       <!-- Stocks -->
       <div class="dropdown dropdown-hover">
         <button class="nav-item" data-mdb-dropdown-init>
-          <i class="fas fa-money-bill-wave"></i>
-          <span>Stock</span>
+          <i class="fas fa-box-open"></i>
+          <span>Stocks</span>
           <i class="fas fa-chevron-right dropdown-arrow"></i>
         </button>
         <ul class="dropdown-menu dropdown-menu-hover">
-          <li><a class="dropdown-item" [routerLink]="['/manager/stocks-products']"><i
-                class="fas fa-box"></i> Produits</a></li>
-          <li><a class="dropdown-item" [routerLink]="['/manager/stocks-supplies']"><i
-                class="fas fa-tools"></i> Fournitures</a></li>
-          <li><a class="dropdown-item" [routerLink]="['/manager/stocks-equipment']"><i
-                class="fas fa-cogs"></i> Équipements</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/stocks-products']"><i class="fas fa-box"></i>
+              Produits</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/stocks-supplies']"><i class="fas fa-tools"></i>
+              Fournitures</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/stocks-equipment']"><i class="fas fa-cogs"></i>
+              Équipements</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/stocks-alerts']"><i
+                class="fas fa-exclamation-triangle"></i> Alertes</a></li>
         </ul>
       </div>
 
@@ -109,12 +111,31 @@
           <i class="fas fa-chevron-right dropdown-arrow"></i>
         </button>
         <ul class="dropdown-menu dropdown-menu-hover">
-          <li><a class="dropdown-item" [routerLink]="['/manager/reports-sales']"><i
-                class="fas fa-chart-bar"></i> Ventes</a></li>
-          <li><a class="dropdown-item" [routerLink]="['/manager/reports-revenue']"><i
-                class="fas fa-chart-pie"></i> Revenus</a></li>
-          <li><a class="dropdown-item" [routerLink]="['/manager/reports-customers']"><i
-                class="fas fa-users"></i> Clients</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/reports-sales']"><i class="fas fa-chart-bar"></i>
+              Ventes</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/reports-revenue']"><i class="fas fa-chart-pie"></i>
+              Revenus</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/reports-customers']"><i class="fas fa-users"></i>
+              Clients</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/reports-attendance']"><i class="fas fa-user-clock"></i>
+              Présences</a></li>
+        </ul>
+      </div>
+
+      <!-- Paramètres -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-cogs"></i>
+          <span>Paramètres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/manager/settings-schedule']"><i class="fas fa-clock"></i>
+              Horaires</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/settings-notifications']"><i class="fas fa-bell"></i>
+              Notifications</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/settings-pricing']"><i class="fas fa-tags"></i>
+              Tarification</a></li>
         </ul>
       </div>
     </div>
@@ -146,7 +167,7 @@
             <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Mon profil</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
-            <li><a class="dropdown-item" (click)="logout()" ><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
+            <li><a class="dropdown-item" (click)="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
           </ul>
         </div>
       </div>

@@ -1,89 +1,68 @@
-// ScheduleSettings.ts - Version corrigée
-
-import { DayOfWeek } from "./DayOfWeek";
-import { DaySchedule } from "./DaySchedule";
-import { SpecialSchedule } from "./SpecialSchedule";
-
 export class ScheduleSettings {
-  weeklySchedule: Map<DayOfWeek, DaySchedule>;
-  specialDays: SpecialSchedule[];
-  is24Hours: boolean;
-  defaultOpenTime: string; // Format "HH:mm"
-  defaultCloseTime: string; // Format "HH:mm"
+  id?: string;
+  centreId: string;
+  openingTime: string; // Format "HH:mm:ss"
+  closingTime: string; // Format "HH:mm:ss"
+  workingDays: DayOfWeek[];
+  maxConcurrentWashes: number;
+  defaultWashDurationMinutes: number;
+  breakBetweenWashesMinutes: number;
+  allowOvertimeWork: boolean;
+  lunchBreakStart?: string; // Format "HH:mm:ss"
+  lunchBreakEnd?: string; // Format "HH:mm:ss"
+  isWeekendWorkAllowed: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  updatedBy?: string;
 
-  constructor(init?: Partial<ScheduleSettings>) {
-    this.weeklySchedule = new Map<DayOfWeek, DaySchedule>();
-    if (init?.weeklySchedule) {
-      // Gérer les cas où weeklySchedule est un objet ou un Map
-      if (init.weeklySchedule instanceof Map) {
-        this.weeklySchedule = new Map(init.weeklySchedule);
-      } else {
-        Object.entries(init.weeklySchedule).forEach(([key, value]) => {
-          this.weeklySchedule.set(key as DayOfWeek, new DaySchedule(value as Partial<DaySchedule>));
-
-        });
-      }
-    } else {
-      // Initialisation par défaut
-      Object.values(DayOfWeek).forEach(day => {
-        this.weeklySchedule.set(day, new DaySchedule());
-      });
-    }
-
-    this.specialDays = init?.specialDays?.map(s => new SpecialSchedule(s)) || [];
-    this.is24Hours = init?.is24Hours || false;
-    this.defaultOpenTime = init?.defaultOpenTime || "07:00";
-    this.defaultCloseTime = init?.defaultCloseTime || "19:00";
+  constructor(
+    centreId: string = '',
+    openingTime: string = '08:00:00',
+    closingTime: string = '18:00:00',
+    workingDays: DayOfWeek[] = [
+      DayOfWeek.Monday,
+      DayOfWeek.Tuesday,
+      DayOfWeek.Wednesday,
+      DayOfWeek.Thursday,
+      DayOfWeek.Friday,
+      DayOfWeek.Saturday
+    ],
+    maxConcurrentWashes: number = 3,
+    defaultWashDurationMinutes: number = 30,
+    breakBetweenWashesMinutes: number = 5,
+    allowOvertimeWork: boolean = true,
+    isWeekendWorkAllowed: boolean = true,
+    id?: string,
+    lunchBreakStart?: string,
+    lunchBreakEnd?: string,
+    createdAt: Date = new Date(),
+    updatedAt: Date = new Date(),
+    updatedBy?: string
+  ) {
+    this.id = id;
+    this.centreId = centreId;
+    this.openingTime = openingTime;
+    this.closingTime = closingTime;
+    this.workingDays = workingDays;
+    this.maxConcurrentWashes = maxConcurrentWashes;
+    this.defaultWashDurationMinutes = defaultWashDurationMinutes;
+    this.breakBetweenWashesMinutes = breakBetweenWashesMinutes;
+    this.allowOvertimeWork = allowOvertimeWork;
+    this.isWeekendWorkAllowed = isWeekendWorkAllowed;
+    this.lunchBreakStart = lunchBreakStart;
+    this.lunchBreakEnd = lunchBreakEnd;
+    this.createdAt = createdAt;
+    this.updatedAt = updatedAt;
+    this.updatedBy = updatedBy;
   }
+}
 
-  /**
-   * Convertir en TimeSpan format pour le backend C#
-   */
-  private convertToTimeSpan(time: string): string {
-    if (!time || !time.includes(':')) {
-      return "00:00:00";
-    }
-    return `${time}:00`; // Convertir "HH:mm" en "HH:mm:ss"
-  }
-
-  /**
-   * Convertir la Map en objet pour la sérialisation JSON
-   */
-  toJSON(): any {
-    // Convertir la Map en objet simple
-    const weeklyScheduleObj: { [key: string]: any } = {};
-    this.weeklySchedule.forEach((schedule, day) => {
-      weeklyScheduleObj[day] = {
-        isOpen: schedule.isOpen,
-        openTime: this.convertToTimeSpan(schedule.openTime),
-        closeTime: this.convertToTimeSpan(schedule.closeTime),
-        breaks: schedule.breaks.map(b => ({
-          startTime: this.convertToTimeSpan(b.startTime),
-          endTime: this.convertToTimeSpan(b.endTime),
-          description: b.description
-        }))
-      };
-    });
-
-    return {
-      weeklySchedule: weeklyScheduleObj,
-      specialDays: this.specialDays.map(s => ({
-        date: s.date.toISOString().split('T')[0], // Format YYYY-MM-DD
-        isClosed: s.isClosed,
-        specialOpenTime: s.specialOpenTime ? this.convertToTimeSpan(s.specialOpenTime) : undefined,
-        specialCloseTime: s.specialCloseTime ? this.convertToTimeSpan(s.specialCloseTime) : undefined,
-        reason: s.reason || "Jour férié"
-      })),
-      is24Hours: this.is24Hours,
-      defaultOpenTime: this.convertToTimeSpan(this.defaultOpenTime),
-      defaultCloseTime: this.convertToTimeSpan(this.defaultCloseTime)
-    };
-  }
-
-  /**
-   * Méthode pour créer un objet compatible avec le backend
-   */
-  toBackendFormat(): any {
-    return this.toJSON();
-  }
+export enum DayOfWeek {
+  Sunday = 0,
+  Monday = 1,
+  Tuesday = 2,
+  Wednesday = 3,
+  Thursday = 4,
+  Friday = 5,
+  Saturday = 6
 }

@@ -201,8 +201,12 @@
               véhicules</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/settings-pricing']"><i class="fas fa-tags"></i>
               Tarification</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-notifications']"><i class="fas fa-bell"></i>
+              Notifications</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/settings-system']"><i class="fas fa-sliders-h"></i>
               Système</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-templates']"><i class="fas fa-file-alt"></i>
+              Modèles de paramètres</a></li>
         </ul>
       </div>
     </div>
@@ -285,86 +289,85 @@
             </div>
 
             <!-- Tableau -->
-<div class="table-responsive" *ngIf="!isLoading || vehicleTypes.length > 0">
-  <table class="table table-hover align-middle">
-    <thead class="table-light">
-      <tr>
-        <th width="50px"></th>
-        <th>Nom</th>
-        <th>Catégorie</th>
-        <th>Multiplicateur</th>
-        <th>Statut</th>
-        <th>Ordre</th>
-        <th width="120px">Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let vehicleType of filteredVehicleTypes">
-        <td>
-          <div class="vehicle-icon bg-light rounded-circle p-2" style="width: 40px; height: 40px;">
-            <i [class]="vehicleType.iconUrl || 'fas fa-car'" class="text-primary"></i>
-          </div>
-        </td>
-        <td>
-          <strong class="d-block">{{ vehicleType.label }}</strong>
-          <small class="text-muted">{{ vehicleType.description || 'Aucune description' }}</small>
-        </td>
-        <td>
-          <span class="badge rounded-pill py-2 px-3 d-inline-flex align-items-center" [ngClass]="{
+            <div class="table-responsive" *ngIf="!isLoading || vehicleTypes.length > 0">
+              <table class="table table-hover align-middle">
+                <thead class="table-light">
+                  <tr>
+                    <th width="50px"></th>
+                    <th>Nom</th>
+                    <th>Catégorie</th>
+                    <th>Multiplicateur</th>
+                    <th>Statut</th>
+                    <th>Ordre</th>
+                    <th width="120px">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let vehicleType of filteredVehicleTypes">
+                    <td>
+                      <div class="vehicle-icon bg-light rounded-circle p-2" style="width: 40px; height: 40px;">
+                        <i [class]="vehicleType.iconUrl || 'fas fa-car'" class="text-primary"></i>
+                      </div>
+                    </td>
+                    <td>
+                      <strong class="d-block">{{ vehicleType.label }}</strong>
+                      <small class="text-muted">{{ vehicleType.description || 'Aucune description' }}</small>
+                    </td>
+                    <td>
+                      <span class="badge rounded-pill py-2 px-3 d-inline-flex align-items-center" [ngClass]="{
             'bg-info-light text-info': vehicleType.size === VehicleSize.Small,
             'bg-primary-light text-primary': vehicleType.size === VehicleSize.Medium,
             'bg-warning-light text-warning': vehicleType.size === VehicleSize.Large,
             'bg-danger-light text-danger': vehicleType.size === VehicleSize.XLarge
           }">
-            <i [class]="getSizeIcon(vehicleType.size)" class="me-2"></i>
-            {{ getSizeLabel(vehicleType.size) }}
-          </span>
-        </td>
-        <td>
-          <span class="badge bg-light text-dark rounded-pill py-2 px-3">
-            {{ vehicleType.defaultSizeMultiplier }}x
-          </span>
-        </td>
-        <td>
-          <span class="badge rounded-pill py-2 px-3" [ngClass]="vehicleType.isActive ? 'bg-success-light text-success' : 'bg-secondary-light text-secondary'">
-            <i [class]="vehicleType.isActive ? 'fas fa-check-circle me-1' : 'fas fa-times-circle me-1'"></i>
-            {{ vehicleType.isActive ? 'Actif' : 'Inactif' }}
-          </span>
-        </td>
-        <td>
-          <span class="badge bg-light text-dark rounded-circle" style="width: 28px; height: 28px; line-height: 28px;">
-            {{ vehicleType.defaultSortOrder }}
-          </span>
-        </td>
-        <td>
-          <div class="d-flex">
-            <button class="btn btn-sm btn-outline-primary rounded-circle me-2"
-                    style="width: 32px; height: 32px;"
-                    (click)="openEditModal(vehicleModal, vehicleType)"
-                    title="Modifier">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button class="btn btn-sm rounded-circle"
-                    style="width: 32px; height: 32px;"
-                    [ngClass]="vehicleType.isActive ? 'btn-outline-danger' : 'btn-outline-success'"
-                    (click)="toggleVehicleTypeStatus(vehicleType)"
-                    [title]="vehicleType.isActive ? 'Désactiver' : 'Activer'">
-              <i [class]="vehicleType.isActive ? 'fas fa-toggle-off' : 'fas fa-toggle-on'"></i>
-            </button>
-          </div>
-        </td>
-      </tr>
-      <tr *ngIf="filteredVehicleTypes.length === 0 && !isLoading">
-        <td colspan="7" class="text-center py-4">
-          <div class="d-flex flex-column align-items-center">
-            <i class="fas fa-car-side text-muted mb-2" style="font-size: 2rem;"></i>
-            <span class="text-muted">Aucun type de véhicule trouvé</span>
-          </div>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+                        <i [class]="getSizeIcon(vehicleType.size)" class="me-2"></i>
+                        {{ getSizeLabel(vehicleType.size) }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge bg-light text-dark rounded-pill py-2 px-3">
+                        {{ vehicleType.defaultSizeMultiplier }}x
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge rounded-pill py-2 px-3"
+                        [ngClass]="vehicleType.isActive ? 'bg-success-light text-success' : 'bg-secondary-light text-secondary'">
+                        <i [class]="vehicleType.isActive ? 'fas fa-check-circle me-1' : 'fas fa-times-circle me-1'"></i>
+                        {{ vehicleType.isActive ? 'Actif' : 'Inactif' }}
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge bg-light text-dark rounded-circle"
+                        style="width: 28px; height: 28px; line-height: 28px;">
+                        {{ vehicleType.defaultSortOrder }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="d-flex">
+                        <button class="btn btn-sm btn-outline-primary rounded-circle me-2"
+                          style="width: 32px; height: 32px;" (click)="openEditModal(vehicleModal, vehicleType)"
+                          title="Modifier">
+                          <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm rounded-circle" style="width: 32px; height: 32px;"
+                          [ngClass]="vehicleType.isActive ? 'btn-outline-danger' : 'btn-outline-success'"
+                          [title]="vehicleType.isActive ? 'Désactiver' : 'Activer'">
+                          <i [class]="vehicleType.isActive ? 'fas fa-toggle-off' : 'fas fa-toggle-on'"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr *ngIf="filteredVehicleTypes.length === 0 && !isLoading">
+                    <td colspan="7" class="text-center py-4">
+                      <div class="d-flex flex-column align-items-center">
+                        <i class="fas fa-car-side text-muted mb-2" style="font-size: 2rem;"></i>
+                        <span class="text-muted">Aucun type de véhicule trouvé</span>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -376,7 +379,7 @@
         <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
       </div>
       <div class="modal-body">
-        <form (ngSubmit)="saveVehicleType()" #vehicleForm="ngForm">
+        <form #vehicleForm="ngForm">
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="vehicleLabel" class="form-label">Libellé*</label>
@@ -466,7 +469,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Annuler</button>
-        <button type="button" class="btn btn-primary" (click)="saveVehicleType()" [disabled]="isLoading">
+        <button type="button" class="btn btn-primary" [disabled]="isLoading">
           <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-1"></span>
           {{ isEditMode ? 'Mettre à jour' : 'Enregistrer' }}
         </button>
