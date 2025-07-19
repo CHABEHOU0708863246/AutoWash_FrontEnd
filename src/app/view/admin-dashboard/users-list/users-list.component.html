@@ -16,8 +16,8 @@
         class="user-avatar">
       <div class="user-info">
         <h4>
-          {{ getFullName() }}
-          <span class="status-indicator"></span>
+          <h4>{{ getFullName() }}</h4>
+          <p>{{ getUserRole() }}</p>
         </h4>
       </div>
     </div>
@@ -196,8 +196,6 @@
               Prestations</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/settings-vehicles']"><i class="fas fa-car"></i> Types de
               véhicules</a></li>
-          <li><a class="dropdown-item" [routerLink]="['/admin/settings-pricing']"><i class="fas fa-tags"></i>
-              Tarification</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/settings-notifications']"><i class="fas fa-bell"></i>
               Notifications</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/settings-system']"><i class="fas fa-sliders-h"></i>

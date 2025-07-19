@@ -86,15 +86,32 @@ export class UsersListComponent {
   }
 
   /**
-   * Récupère le rôle de l'utilisateur connecté
+   * Retourne le rôle de l'utilisateur connecté
+   * @returns Le rôle de l'utilisateur ou un texte par défaut
    */
   getUserRole(): string {
-    if (this.currentUser?.roles && this.currentUser.roles.length > 0) {
-      return this.currentUser.roles[0];
+    // Si pas d'utilisateur connecté
+    if (!this.currentUser) return 'Rôle non défini';
+
+    // Si l'utilisateur a des rôles
+    if (this.currentUser.roles && this.currentUser.roles.length > 0) {
+      return this.mapRoleIdToName(this.currentUser.roles[0]);
     }
 
+    // Sinon, utilise le service d'authentification
     const role = this.authService.getUserRole();
-    return role || 'Rôle non défini';
+    return role ? this.mapRoleIdToName(role) : 'Rôle non défini';
+  }
+
+  private mapRoleIdToName(roleId: string): string {
+    const roleMapping: { [key: string]: string } = {
+      '1': 'Administrateur',
+      '2': 'Manager',
+      '3': 'Éditeur',
+      '4': 'Utilisateur',
+    };
+
+    return roleMapping[roleId] || 'Administrateur';
   }
 
   /**
