@@ -252,12 +252,47 @@
             <h1 class="h3 mb-0 text-gray-800">Types de véhicules</h1>
             <p class="mb-0">Configurez les différents types de véhicules acceptés dans vos centres</p>
           </div>
-          <!-- Bouton pour ajouter un nouveau type de véhicule -->
-          <button class="btn btn-primary" (click)="openAddModal(vehicleModal)">
-            <i class="fas fa-plus me-2"></i> Ajouter un type
-          </button>
+        </div>
+        <!-- Section sélection du centre -->
+        <div *ngIf="showCentreSelector" class="card shadow mb-4">
+          <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Sélection du centre</h6>
+          </div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">Centre <span class="text-danger">*</span></label>
+              <select class="form-control" [(ngModel)]="selectedCentreId" (ngModelChange)="onCentreChange()"
+                [ngModelOptions]="{standalone: true}">
+                <option value="" disabled>Sélectionnez un centre</option>
+                <option *ngFor="let centre of availableCentres" [value]="centre.id">
+                  {{ centre.name }}
+                </option>
+              </select>
+
+              <div class="alert alert-warning mt-2" *ngIf="availableCentres.length > 0 && !selectedCentreId">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                Veuillez sélectionner un centre pour gérer ses types de véhicules
+              </div>
+            </div>
+          </div>
         </div>
 
+        <!-- Message si aucun centre sélectionné -->
+        <div *ngIf="!centreId && showCentreSelector" class="alert alert-warning d-flex align-items-center">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          Veuillez sélectionner un centre pour gérer les types de véhicules.
+        </div>
+
+        <!-- Bouton d'ajout (à modifier dans votre template existant) -->
+        <div class="d-flex justify-content-between align-items-center mb-3" *ngIf="centreId">
+          <h4 class="mb-0">Types de véhicules</h4>
+          <div class="d-flex gap-2">
+            <button class="btn btn-success" (click)="openAddModal(vehicleModal)" [disabled]="!centreId">
+              <i class="fas fa-plus me-1"></i>
+              Ajouter un type
+            </button>
+          </div>
+        </div>
         <!-- Carte principale -->
         <div class="card shadow mb-4">
           <div class="card-header py-3 d-flex justify-content-between align-items-center">
@@ -285,11 +320,21 @@
               <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Chargement...</span>
               </div>
-              <p class="mt-2">Chargement des types de véhicules...</p>
+              <p class="mt-2">
+                Chargement des types de véhicules
+                <span *ngIf="selectedCentreId">pour le centre sélectionné</span>
+                ...
+              </p>
+            </div>
+
+            <div class="alert alert-info text-center py-4" *ngIf="!centreId && !isLoading && showCentreSelector">
+              <i class="fas fa-info-circle me-2"></i>
+              Veuillez sélectionner un centre pour afficher les types de véhicules
             </div>
 
             <!-- Tableau -->
-            <div class="table-responsive" *ngIf="!isLoading || vehicleTypes.length > 0">
+            <div class="table-responsive"
+              *ngIf="!isLoading && centreId && (vehicleTypes.length > 0 || filteredVehicleTypes.length >= 0)">
               <table class="table table-hover align-middle">
                 <thead class="table-light">
                   <tr>
@@ -303,7 +348,8 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let vehicleType of filteredVehicleTypes">
+                  <tr *ngFor="let vehicleType of filteredVehicleTypes; trackBy: trackVehicleTypeById">
+                    <!-- Contenu des lignes inchangé -->
                     <td>
                       <div class="vehicle-icon bg-light rounded-circle p-2" style="width: 40px; height: 40px;">
                         <i [class]="vehicleType.iconUrl || 'fas fa-car'" class="text-primary"></i>
@@ -315,11 +361,11 @@
                     </td>
                     <td>
                       <span class="badge rounded-pill py-2 px-3 d-inline-flex align-items-center" [ngClass]="{
-            'bg-info-light text-info': vehicleType.size === VehicleSize.Small,
-            'bg-primary-light text-primary': vehicleType.size === VehicleSize.Medium,
-            'bg-warning-light text-warning': vehicleType.size === VehicleSize.Large,
-            'bg-danger-light text-danger': vehicleType.size === VehicleSize.XLarge
-          }">
+                                                    'bg-info-light text-info': vehicleType.size === VehicleSize.Small,
+                                                    'bg-primary-light text-primary': vehicleType.size === VehicleSize.Medium,
+                                                    'bg-warning-light text-warning': vehicleType.size === VehicleSize.Large,
+                                                    'bg-danger-light text-danger': vehicleType.size === VehicleSize.XLarge
+                                                  }">
                         <i [class]="getSizeIcon(vehicleType.size)" class="me-2"></i>
                         {{ getSizeLabel(vehicleType.size) }}
                       </span>
@@ -337,44 +383,52 @@
                       </span>
                     </td>
                     <td>
-                      <span class="badge bg-light text-dark rounded-circle"
-                        style="width: 28px; height: 28px; line-height: 28px;">
+                      <span class="badge bg-light text-dark rounded-circle" style="width: 28px; height: 28px; line-height: 28px;">
                         {{ vehicleType.defaultSortOrder }}
                       </span>
                     </td>
                     <td>
                       <div class="d-flex">
-                        <button class="btn btn-sm btn-outline-primary rounded-circle me-2"
-                          style="width: 32px; height: 32px;" (click)="openEditModal(vehicleModal, vehicleType)"
-                          title="Modifier">
+                        <button class="btn btn-sm btn-outline-primary rounded-circle me-2" style="width: 32px; height: 32px;"
+                          (click)="openEditModal(vehicleModal, vehicleType)" title="Modifier">
                           <i class="fas fa-edit"></i>
                         </button>
                         <button class="btn btn-sm rounded-circle" style="width: 32px; height: 32px;"
                           [ngClass]="vehicleType.isActive ? 'btn-outline-danger' : 'btn-outline-success'"
-                          [title]="vehicleType.isActive ? 'Désactiver' : 'Activer'">
+                          [title]="vehicleType.isActive ? 'Désactiver' : 'Activer'" (click)="toggleVehicleTypeStatus(vehicleType)">
                           <i [class]="vehicleType.isActive ? 'fas fa-toggle-off' : 'fas fa-toggle-on'"></i>
                         </button>
                       </div>
                     </td>
                   </tr>
-                  <tr *ngIf="filteredVehicleTypes.length === 0 && !isLoading">
+
+                  <!-- Message si aucun résultat -->
+                  <tr *ngIf="filteredVehicleTypes.length === 0 && !isLoading && centreId">
                     <td colspan="7" class="text-center py-4">
                       <div class="d-flex flex-column align-items-center">
                         <i class="fas fa-car-side text-muted mb-2" style="font-size: 2rem;"></i>
-                        <span class="text-muted">Aucun type de véhicule trouvé</span>
+                        <span class="text-muted">
+                          <span *ngIf="searchQuery">Aucun résultat pour "{{ searchQuery }}"</span>
+                          <span *ngIf="!searchQuery">Aucun type de véhicule configuré pour ce centre</span>
+                        </span>
+                        <button *ngIf="!searchQuery && isAdmin" class="btn btn-outline-primary btn-sm mt-2"
+                          (click)="initializeDefaultVehicleTypes()">
+                          <i class="fas fa-plus me-1"></i>
+                          Créer les types par défaut
+                        </button>
                       </div>
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
-          </div>
+            </div>
         </div>
       </div>
     </div>
 
     <ng-template #vehicleModal let-modal>
-      <div class="modal-header">
+      <div class="modal-header" style="z-index: 1050;">
         <h5 class="modal-title">{{ isEditMode ? 'Modifier' : 'Ajouter' }} un type de véhicule</h5>
         <button type="button" class="btn-close" (click)="modal.dismiss()"></button>
       </div>
@@ -457,11 +511,11 @@
                 </label>
               </div>
               <div class="form-check form-switch mt-2">
-                <input class="form-check-input" type="checkbox" id="vehicleGlobalType"
-                  [(ngModel)]="vehicleTypeForm.isGlobalType" name="isGlobalType">
+                <!-- <input class="form-check-input" type="checkbox" id="vehicleGlobalType"
+                  [(ngModel)]="vehicleTypeForm.GlobalType" name="isGlobalType">
                 <label class="form-check-label" for="vehicleGlobalType">
                   {{ vehicleTypeForm.isGlobalType ? 'Type global' : 'Type spécifique' }}
-                </label>
+                </label> -->
               </div>
             </div>
           </div>
@@ -469,7 +523,8 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Annuler</button>
-        <button type="button" class="btn btn-primary" [disabled]="isLoading">
+        <button type="button" class="btn btn-primary" [disabled]="isLoading || !vehicleForm.valid"
+          (click)="saveVehicleType()">
           <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-1"></span>
           {{ isEditMode ? 'Mettre à jour' : 'Enregistrer' }}
         </button>

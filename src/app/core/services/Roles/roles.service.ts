@@ -1,6 +1,6 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Subject, Observable, catchError, tap, throwError } from 'rxjs';
+import { Subject, Observable, catchError, tap, throwError, firstValueFrom } from 'rxjs';
 import { Roles } from '../../models/Roles/Roles';
 
 @Injectable({
@@ -10,8 +10,127 @@ export class RolesService {
 
   private apiUrl = 'https://localhost:7139/api/Roles';
   private roleUpdatedSubject = new Subject<void>();
+  private rolesCache: Roles[] = [];
+  private cacheExpiry: number = 0;
+  private readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
   constructor(private http: HttpClient) { }
+
+  /**
+   * Cache les rôles pour éviter les appels répétés
+   * Version corrigée avec firstValueFrom
+   */
+  async loadRoles(): Promise<void> {
+    const now = Date.now();
+
+    if (this.rolesCache.length === 0 || now > this.cacheExpiry) {
+      try {
+        // Utilisation de firstValueFrom au lieu de toPromise()
+        this.rolesCache = await firstValueFrom(this.getRoles());
+        this.cacheExpiry = now + this.CACHE_DURATION;
+      } catch (error) {
+        console.error('Erreur lors du chargement des rôles:', error);
+        // En cas d'erreur, on garde le cache existant s'il y en a un
+        if (this.rolesCache.length === 0) {
+          this.rolesCache = []; // S'assurer que c'est un tableau vide
+        }
+        throw error;
+      }
+    }
+  }
+
+  /**
+   * Méthode pour vérifier si un utilisateur est admin par code
+   */
+  async isUserAdmin(userRoleIds: string[]): Promise<boolean> {
+    if (!userRoleIds || userRoleIds.length === 0) {
+      return false;
+    }
+
+    try {
+      await this.loadRoles();
+
+      const adminRole = this.rolesCache.find(role =>
+        role.code?.toLowerCase() === 'admin' ||
+        role.roleName?.toLowerCase() === 'admin'
+      );
+
+      return adminRole ? userRoleIds.includes(adminRole.id) : false;
+    } catch (error) {
+      console.error('Erreur lors de la vérification du rôle admin:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Méthode générique pour vérifier n'importe quel rôle
+   */
+  async hasRole(userRoleIds: string[], roleCode: string): Promise<boolean> {
+    if (!userRoleIds || userRoleIds.length === 0 || !roleCode) {
+      return false;
+    }
+
+    try {
+      await this.loadRoles();
+
+      const role = this.rolesCache.find(r =>
+        r.code?.toLowerCase() === roleCode.toLowerCase()
+      );
+
+      return role ? userRoleIds.includes(role.id) : false;
+    } catch (error) {
+      console.error(`Erreur lors de la vérification du rôle ${roleCode}:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * Obtenir les noms des rôles à partir des IDs
+   */
+  async getRoleNames(roleIds: string[]): Promise<string[]> {
+    if (!roleIds || roleIds.length === 0) {
+      return [];
+    }
+
+    try {
+      await this.loadRoles();
+
+      return this.rolesCache
+        .filter(role => roleIds.includes(role.id))
+        .map(role => role.roleName || role.code || 'Unknown');
+    } catch (error) {
+      console.error('Erreur lors de la récupération des noms de rôles:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Obtenir un rôle par son code
+   */
+  async getRoleByCode(code: string): Promise<Roles | null> {
+    if (!code) {
+      return null;
+    }
+
+    try {
+      await this.loadRoles();
+
+      return this.rolesCache.find(role =>
+        role.code?.toLowerCase() === code.toLowerCase()
+      ) || null;
+    } catch (error) {
+      console.error(`Erreur lors de la recherche du rôle ${code}:`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Vider le cache (utile après modification des rôles)
+   */
+  clearCache(): void {
+    this.rolesCache = [];
+    this.cacheExpiry = 0;
+  }
 
   /**
    * 1. Récupère tous les rôles.

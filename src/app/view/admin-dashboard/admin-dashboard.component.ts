@@ -234,9 +234,6 @@ export class AdminDashboardComponent implements OnInit {
       try {
         // Log l'état du localStorage avant la déconnexion (pour debug)
         console.log('État du localStorage avant déconnexion:', {
-          token: !!this.authService.getToken(),
-          userRole: localStorage.getItem('userRole'),
-          profile: localStorage.getItem('currentUserProfile'),
         });
 
         // Appel au service de déconnexion
@@ -244,9 +241,7 @@ export class AdminDashboardComponent implements OnInit {
 
         // Vérifie que le localStorage a bien été vidé
         console.log('État du localStorage après déconnexion:', {
-          token: !!this.authService.getToken(),
-          userRole: localStorage.getItem('userRole'),
-          profile: localStorage.getItem('currentUserProfile'),
+
         });
 
         // Redirige vers la page de login seulement après confirmation que tout est bien déconnecté

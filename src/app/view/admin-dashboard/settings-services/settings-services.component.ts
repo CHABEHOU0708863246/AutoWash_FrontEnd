@@ -15,26 +15,34 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { Users } from '../../../core/models/Users/Users';
 import { UsersService } from '../../../core/services/Users/users.service';
 import {
-  SettingsService,
+  ServiceSettings,
   ServiceCategories,
   BaseServices,
-} from '../../../core/models/Settings/SettingsService';
+} from '../../../core/models/Settings/ServiceSettings';
 import { ServiceSettingsService } from '../../../core/services/ServiceSettings/service-settings.service';
 import { CentresService } from '../../../core/services/Centres/centres.service';
 import { ToastService } from '../../../core/services/Toast/toast.service';
+import { ConfirmDialogComponent } from '../../../core/components/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-settings-services',
-  imports: [RouterLink, CommonModule, ReactiveFormsModule],
+  imports: [
+    RouterLink,
+    CommonModule,
+    ReactiveFormsModule,
+    ConfirmDialogComponent,
+  ],
   templateUrl: './settings-services.component.html',
   styleUrl: './settings-services.component.scss',
 })
 export class SettingsServicesComponent implements OnInit {
   //#region PROPRIÉTÉS
+  showConfirmDialog = false;
+  currentServiceId: string | null = null;
   serviceForm: FormGroup;
   centres: Centres[] = [];
-  services: SettingsService[] = [];
-  filteredServices: SettingsService[] = [];
+  services: ServiceSettings[] = [];
+  filteredServices: ServiceSettings[] = [];
   isEditing = false;
   isLoading = false;
   errorMessage: string | null = null;
@@ -122,6 +130,10 @@ export class SettingsServicesComponent implements OnInit {
   //#endregion
 
   //#region CHARGEMENT DES DONNÉES
+  /**
+   * Charge tous les centres disponibles et les stocke dans la propriété `centres`.
+   * Affiche un message d'erreur en cas d'échec du chargement.
+   */
   loadCentres(): void {
     this.isLoading = true;
     this.centresService.getAllCentres().subscribe({
@@ -137,35 +149,44 @@ export class SettingsServicesComponent implements OnInit {
     });
   }
 
-loadServices(): void {
+  /**
+   * Charge les services associés au centre de l'utilisateur actuel.
+   * Affiche un message d'erreur si aucun centre n'est associé ou si l'ID du centre est invalide.
+   */
+  loadServices(): void {
     this.isLoading = true;
     const centreId = this.currentUser?.centreId;
 
     if (!centreId) {
-        this.toastr.showError('Aucun centre associé à cet utilisateur');
-        this.isLoading = false;
-        return;
+      this.toastr.showError('Aucun centre associé à cet utilisateur');
+      this.isLoading = false;
+      return;
     }
 
     if (!this.isValidObjectId(centreId)) {
-        this.toastr.showError('ID du centre invalide');
-        this.isLoading = false;
-        return;
+      this.toastr.showError('ID du centre invalide');
+      this.isLoading = false;
+      return;
     }
 
     this.serviceSettingsService.getServicesByCentre(centreId).subscribe({
-        next: (response) => {
-            this.services = response.data || [];
-            this.filteredServices = [...this.services];
-            this.isLoading = false;
-        },
-        error: (error) => {
-            this.toastr.showError('Erreur lors du chargement des services');
-            this.isLoading = false;
-        },
+      next: (response) => {
+        this.services = response.data || [];
+        this.filteredServices = [...this.services];
+        this.isLoading = false;
+      },
+      error: (error) => {
+        this.toastr.showError('Erreur lors du chargement des services');
+        this.isLoading = false;
+      },
     });
-}
+  }
 
+  /**
+   * Récupère les services associés à un centre spécifique.
+   * Affiche un message d'erreur si l'ID du centre est invalide ou si la récupération échoue.
+   * @param centreId L'ID du centre pour lequel récupérer les services.
+   */
   getServicesByCentre(centreId: string): void {
     if (!centreId || !this.isValidObjectId(centreId)) return;
 
@@ -215,12 +236,22 @@ loadServices(): void {
     }
   }
 
-  private isValidObjectId(id: string): boolean {
+  /**
+   * Vérifie si l'ID est un ObjectId valide de MongoDB.
+   * @param id L'ID à valider.
+   * @returns true si l'ID est valide, sinon false.
+   */
+  isValidObjectId(id: string): boolean {
     // Check if it's exactly 24 characters and contains only hex characters
     const objectIdRegex = /^[0-9a-fA-F]{24}$/;
     return objectIdRegex.test(id);
   }
 
+  /**
+   * Prépare les données du formulaire pour l'envoi.
+   * Valide le centreId et construit l'objet à envoyer.
+   * @returns L'objet contenant les données du service.
+   */
   prepareFormData(): any {
     const formValue = this.serviceForm.value;
     const selectedServices = this.baseServices
@@ -243,6 +274,10 @@ loadServices(): void {
     };
   }
 
+  /**
+   * Marque tous les contrôles du formulaire comme touchés pour afficher les erreurs de validation.
+   * @param formGroup Le FormGroup ou FormArray à traiter.
+   */
   markFormGroupTouched(formGroup: FormGroup | FormArray): void {
     Object.values(formGroup.controls).forEach((control) => {
       control.markAsTouched();
@@ -253,6 +288,10 @@ loadServices(): void {
     });
   }
 
+  /**
+   * Réinitialise le formulaire aux valeurs par défaut.
+   * Réinitialise également l'état d'édition et l'ID de l'élément en cours d'édition.
+   */
   resetForm(): void {
     this.serviceForm.reset({
       centreId: this.currentUser?.centreId || '',
@@ -272,7 +311,12 @@ loadServices(): void {
     this.currentEditingId = null;
   }
 
-  populateForm(service: SettingsService): void {
+  /**
+   * Remplit le formulaire avec les données d'un service existant.
+   * Met à jour l'état d'édition et l'ID de l'élément en cours d'édition.
+   * @param service Le service à éditer.
+   */
+  populateForm(service: ServiceSettings): void {
     this.serviceForm.patchValue({
       centreId: service.centreId,
       name: service.name,
@@ -301,8 +345,12 @@ loadServices(): void {
   //#endregion
 
   //#region CRUD OPERATIONS
+  /**
+   * Crée un nouveau service avec les données du formulaire.
+   * Affiche un message de succès ou d'erreur en fonction du résultat de l'opération.
+   * @param serviceData Les données du service à créer.
+   */
   createService(serviceData: any): void {
-    console.log('Creating service with data:', serviceData);
 
     this.serviceSettingsService.createService(serviceData).subscribe({
       next: (response) => {
@@ -329,61 +377,93 @@ loadServices(): void {
     });
   }
 
-updateService(serviceId: string, serviceData: any): void {
-  // Debug: Check if currentUser and its id exist
-  console.log('Current user:', this.currentUser);
-  console.log('Current user ID:', this.currentUser?.id);
+  /**
+   * Met à jour un service existant avec les données du formulaire.
+   * Affiche un message de succès ou d'erreur en fonction du résultat de l'opération.
+   * @param serviceId L'ID du service à mettre à jour.
+   * @param serviceData Les données du service à mettre à jour.
+   */
+  updateService(serviceId: string, serviceData: any): void {
+    const updatedBy = this.currentUser?.id;
+    if (!updatedBy) {
+      this.toastr.showError(
+        'Utilisateur non identifié. Impossible de mettre à jour le service.'
+      );
+      this.isLoading = false;
+      return;
+    }
 
-  const updatedBy = this.currentUser?.id;
-  if (!updatedBy) {
-    this.toastr.showError('Utilisateur non identifié. Impossible de mettre à jour le service.');
-    this.isLoading = false;
-    return;
-  }
-
-  // Debug: Log what we're sending
-  console.log('Updating service with:', {
-    serviceId,
-    serviceData,
-    updatedBy
-  });
-
-  this.serviceSettingsService
-    .updateService(serviceId, serviceData, updatedBy)
-    .subscribe({
-      next: (response) => {
-        this.toastr.showSuccess('Service mis à jour avec succès');
-        this.resetForm();
-        this.loadServices();
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Erreur lors de la mise à jour:', error);
-        console.error('Error response:', error.error);
-        this.toastr.showError('Erreur lors de la mise à jour du service');
-        this.isLoading = false;
-      },
-    });
-}
-
-  deleteService(serviceId: string): void {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce service ?')) {
-      this.isLoading = true;
-      this.serviceSettingsService.deleteService(serviceId).subscribe({
+    this.serviceSettingsService
+      .updateService(serviceId, serviceData, updatedBy)
+      .subscribe({
         next: (response) => {
-          this.toastr.showSuccess('Service supprimé avec succès');
+          this.toastr.showSuccess('Service mis à jour avec succès');
+          this.resetForm();
+          // Actualiser les deux tableaux
           this.loadServices();
+          this.getServicesByCentre(serviceData.centreId);
           this.isLoading = false;
         },
         error: (error) => {
-          this.toastr.showError('Erreur lors de la suppression du service');
+          console.error('Erreur lors de la mise à jour:', error);
+          this.toastr.showError('Erreur lors de la mise à jour du service');
           this.isLoading = false;
         },
       });
-    }
   }
 
-  toggleServiceStatus(service: SettingsService): void {
+  /**
+   * Supprime un service en fonction de son ID.
+   * Affiche un message de confirmation avant la suppression.
+   * @param serviceId L'ID du service à supprimer.
+   */
+  deleteService(serviceId: string): void {
+    if (!serviceId) {
+      this.toastr.showError('ID du service manquant');
+      return;
+    }
+
+    this.currentServiceId = serviceId;
+    this.showConfirmDialog = true;
+  }
+
+  /**
+   * Confirme la suppression du service actuellement sélectionné.
+   * Supprime le service et met à jour les tableaux de services.
+   */
+  onConfirmDelete(): void {
+    if (!this.currentServiceId) return;
+
+    this.isLoading = true;
+    this.serviceSettingsService.deleteService(this.currentServiceId).subscribe({
+      next: (response) => {
+        this.toastr.showSuccess('Service supprimé avec succès');
+
+        // Supprimer directement l'élément des tableaux
+        this.services = this.services.filter(
+          (service) => service.id !== this.currentServiceId
+        );
+        this.filteredServices = this.filteredServices.filter(
+          (service) => service.id !== this.currentServiceId
+        );
+
+        this.showConfirmDialog = false;
+        this.currentServiceId = null;
+        this.isLoading = false;
+      },
+      error: (error) => {
+        this.toastr.showError('Erreur lors de la suppression du service');
+        this.showConfirmDialog = false;
+        this.currentServiceId = null;
+        this.isLoading = false;
+      },
+    });
+  }
+
+  /**
+   * Annule la suppression du service et ferme la boîte de dialogue de confirmation.
+   */
+  toggleServiceStatus(service: ServiceSettings): void {
     const newStatus = !service.isActive;
     this.serviceSettingsService
       .toggleServiceStatus(
@@ -406,6 +486,11 @@ updateService(serviceId: string, serviceData: any): void {
   //#endregion
 
   //#region FILTRES ET RECHERCHE
+  /**
+   * Filtre les services par catégorie.
+   * Si la catégorie est 'all', affiche tous les services.
+   * @param category La catégorie à filtrer.
+   */
   filterByCategory(category: string): void {
     if (category === 'all') {
       this.filteredServices = [...this.services];
@@ -416,6 +501,11 @@ updateService(serviceId: string, serviceData: any): void {
     }
   }
 
+  /**
+   * Recherche des services par nom ou description.
+   * Met à jour la liste des services filtrés en fonction du terme de recherche.
+   * @param searchTerm Le terme de recherche saisi par l'utilisateur.
+   */
   searchServices(searchTerm: string): void {
     if (!searchTerm) {
       this.filteredServices = [...this.services];
@@ -474,7 +564,6 @@ updateService(serviceId: string, serviceData: any): void {
       next: (user) => {
         if (user) {
           this.currentUser = user;
-          console.log('Current user centreId:', user.centreId);
 
           if (user.centreId && this.isValidObjectId(user.centreId)) {
             this.serviceForm.patchValue({ centreId: user.centreId });
@@ -486,7 +575,6 @@ updateService(serviceId: string, serviceData: any): void {
           this.usersService.getCurrentUser().subscribe({
             next: (user) => {
               this.currentUser = user;
-              console.log('Current user centreId:', user.centreId);
 
               if (user.centreId && this.isValidObjectId(user.centreId)) {
                 this.serviceForm.patchValue({ centreId: user.centreId });
@@ -592,17 +680,13 @@ updateService(serviceId: string, serviceData: any): void {
     if (this.authService.isAuthenticated()) {
       try {
         console.log('État du localStorage avant déconnexion:', {
-          token: !!this.authService.getToken(),
-          userRole: localStorage.getItem('userRole'),
-          profile: localStorage.getItem('currentUserProfile'),
+
         });
 
         this.authService.logout();
 
         console.log('État du localStorage après déconnexion:', {
-          token: !!this.authService.getToken(),
-          userRole: localStorage.getItem('userRole'),
-          profile: localStorage.getItem('currentUserProfile'),
+
         });
 
         this.router.navigate(['/auth/login']);

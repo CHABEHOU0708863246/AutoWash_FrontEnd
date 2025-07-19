@@ -160,8 +160,7 @@ registerUserWithPhoto(userData: Users, photoFile?: File): Observable<any> {
 
     return this.http.put<any>(url, {}).pipe(
       tap(() => {
-        console.log('Rôle mis à jour avec succès');
-        // Vous pouvez appeler un service de notification ou afficher un message à l'utilisateur ici
+
       }),
       catchError(this.handleError)
     );

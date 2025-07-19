@@ -10,8 +10,8 @@
         }, 1);
     };
     spinner();
-    
-    
+
+
     // Back to top button
     $(window).scroll(function () {
         if ($(this).scrollTop() > 300) {
@@ -112,7 +112,7 @@
             responsive: true
         }
     });
-    
+
 
 
     // Single Line Chart
@@ -202,6 +202,6 @@
         }
     });
 
-    
+
 })(jQuery);
 

@@ -17,6 +17,7 @@ import {
   ScheduleSettings,
 } from '../../../core/models/Settings/ScheduleSettings';
 import { ScheduleSettingsService } from '../../../core/services/ScheduleSettings/schedule-settings.service';
+import { RolesService } from '../../../core/services/Roles/roles.service';
 
 @Component({
   selector: 'app-settings-schedule',
@@ -55,6 +56,7 @@ export class SettingsScheduleComponent implements OnInit {
     { id: DayOfWeek.Saturday, name: 'Samedi', controlName: 'saturday' },
     { id: DayOfWeek.Sunday, name: 'Dimanche', controlName: 'sunday' },
   ];
+  userRoles: any;
   //#endregion
 
   //#region Constructeur et Initialisation
@@ -65,7 +67,8 @@ export class SettingsScheduleComponent implements OnInit {
     private usersService: UsersService,
     private centresService: CentresService,
     private authService: AuthService,
-    private scheduleSettingsService: ScheduleSettingsService
+    private scheduleSettingsService: ScheduleSettingsService,
+    private rolesService: RolesService
   ) {}
 
   ngOnInit(): void {
@@ -183,10 +186,6 @@ export class SettingsScheduleComponent implements OnInit {
   }
 
   onSubmit(): void {
-    console.log('Form status:', this.scheduleForm.status);
-    console.log('Form errors:', this.scheduleForm.errors);
-    console.log('Centre ID:', this.centreId);
-    console.log('Selected Centre ID:', this.selectedCentreId);
 
     // Validation
     if (this.scheduleForm.invalid) {
@@ -248,8 +247,6 @@ export class SettingsScheduleComponent implements OnInit {
       updatedBy: this.currentUser?.id || 'admin',
     };
 
-    console.log('Settings à enregistrer:', settings);
-
     const saveOperation = this.currentSettings
       ? this.scheduleSettingsService.updateScheduleSettings(
           settings,
@@ -260,7 +257,6 @@ export class SettingsScheduleComponent implements OnInit {
     saveOperation.subscribe({
       next: (response) => {
         this.isLoading = false;
-        console.log('Réponse sauvegarde:', response);
 
         if (response.success) {
           this.successMessage = 'Paramètres enregistrés avec succès';
@@ -334,7 +330,6 @@ export class SettingsScheduleComponent implements OnInit {
       .subscribe({
         next: (response) => {
           if (response.success) {
-            console.log('Créneaux disponibles:', response.data);
             // Traiter les créneaux disponibles ici
           }
         },
@@ -504,13 +499,14 @@ export class SettingsScheduleComponent implements OnInit {
    * Vérifie le rôle de l'utilisateur
    * @param user L'utilisateur à vérifier
    */
-  checkUserRole(user: Users): void {
-    // Récupérer les noms des rôles depuis l'API ou le localStorage
-    // au lieu de comparer directement les IDs
-    this.isAdmin = this.checkIfUserIsAdmin(user.roles);
+  async checkUserRole(user: Users): Promise<void> {
+    this.userRoles = user.roles || [];
 
-    console.log('User roles:', user.roles);
-    console.log('Is admin:', this.isAdmin);
+    // Vérification dynamique du rôle admin
+    this.isAdmin = await this.rolesService.isUserAdmin(this.userRoles);
+
+    // Optionnel : obtenir les noms des rôles pour l'affichage
+    const roleNames = await this.rolesService.getRoleNames(this.userRoles);
 
     if (this.isAdmin) {
       this.showCentreSelector = true;
@@ -524,12 +520,6 @@ export class SettingsScheduleComponent implements OnInit {
         this.loadScheduleSettings();
       }
     }
-  }
-
-  private checkIfUserIsAdmin(roleIds: string[]): boolean {
-    // ID du rôle admin dans votre base de données
-    const ADMIN_ROLE_ID = '6857b69ad24152b1c4b778e9';
-    return roleIds?.includes(ADMIN_ROLE_ID) || false;
   }
 
   loadCentres(): void {
@@ -652,13 +642,11 @@ export class SettingsScheduleComponent implements OnInit {
     if (this.authService.isAuthenticated()) {
       try {
         console.log('État du localStorage avant déconnexion:', {
-          token: !!this.authService.getToken(),
         });
 
         this.authService.logout();
 
         console.log('État du localStorage après déconnexion:', {
-          token: !!this.authService.getToken(),
         });
 
         this.router.navigate(['/auth/login']);
@@ -668,32 +656,6 @@ export class SettingsScheduleComponent implements OnInit {
       }
     } else {
       this.router.navigate(['/auth/login']);
-    }
-  }
-
-  /**
-   * Diagnostique les problèmes avec le centreId
-   */
-  diagnoseCentreIdIssue(): void {
-    console.log('🔍 === DIAGNOSTIC CENTRE ID ===');
-    console.log('CurrentUser:', this.currentUser);
-    console.log('CentreId from component:', this.centreId);
-    console.log('CentreId from currentUser:', this.currentUser?.centreId);
-    console.log('AuthService token:', this.authService.getToken());
-    console.log('LocalStorage userRole:', localStorage.getItem('userRole'));
-    console.log(
-      'LocalStorage profile:',
-      localStorage.getItem('currentUserProfile')
-    );
-
-    const token = this.authService.getToken();
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        console.log('Token payload:', payload);
-      } catch (e) {
-        console.error('Erreur décodage token:', e);
-      }
     }
   }
   //#endregion

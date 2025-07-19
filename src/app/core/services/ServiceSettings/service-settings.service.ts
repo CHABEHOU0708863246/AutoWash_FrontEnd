@@ -3,17 +3,17 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment.development';
 import {
-  SettingsService,
+  ServiceSettings,
   ServiceMaterial,
   DayOfWeek,
-} from '../../models/Settings/SettingsService';
+} from '../../models/Settings/ServiceSettings';
 import { ApiResponseData } from '../../models/ApiResponseData';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ServiceSettingsService {
-  private readonly baseUrl = `${environment.apiUrl}/api/SettingsService`;
+  private readonly baseUrl = `${environment.apiUrl}/api/ServiceSettings`;
 
   constructor(private http: HttpClient) {}
 
@@ -24,8 +24,8 @@ export class ServiceSettingsService {
    */
   getServiceById(
     serviceId: string
-  ): Observable<ApiResponseData<SettingsService>> {
-    return this.http.get<ApiResponseData<SettingsService>>(
+  ): Observable<ApiResponseData<ServiceSettings>> {
+    return this.http.get<ApiResponseData<ServiceSettings>>(
       `${this.baseUrl}/${serviceId}`
     );
   }
@@ -35,8 +35,8 @@ export class ServiceSettingsService {
    */
   getServicesByCentre(
     centreId: string
-  ): Observable<ApiResponseData<SettingsService[]>> {
-    return this.http.get<ApiResponseData<SettingsService[]>>(
+  ): Observable<ApiResponseData<ServiceSettings[]>> {
+    return this.http.get<ApiResponseData<ServiceSettings[]>>(
       `${this.baseUrl}/centre/${centreId}`
     );
   }
@@ -46,8 +46,8 @@ export class ServiceSettingsService {
    */
   getActiveServicesByCentre(
     centreId: string
-  ): Observable<ApiResponseData<SettingsService[]>> {
-    return this.http.get<ApiResponseData<SettingsService[]>>(
+  ): Observable<ApiResponseData<ServiceSettings[]>> {
+    return this.http.get<ApiResponseData<ServiceSettings[]>>(
       `${this.baseUrl}/centre/${centreId}/active`
     );
   }
@@ -58,8 +58,8 @@ export class ServiceSettingsService {
   getServicesByCategory(
     centreId: string,
     category: string
-  ): Observable<ApiResponseData<SettingsService[]>> {
-    return this.http.get<ApiResponseData<SettingsService[]>>(
+  ): Observable<ApiResponseData<ServiceSettings[]>> {
+    return this.http.get<ApiResponseData<ServiceSettings[]>>(
       `${this.baseUrl}/centre/${centreId}/category/${category}`
     );
   }
@@ -68,9 +68,9 @@ export class ServiceSettingsService {
    * Crée un nouveau service pour un centre
    */
   createService(
-    service: SettingsService
-  ): Observable<ApiResponseData<SettingsService>> {
-    return this.http.post<ApiResponseData<SettingsService>>(
+    service: ServiceSettings
+  ): Observable<ApiResponseData<ServiceSettings>> {
+    return this.http.post<ApiResponseData<ServiceSettings>>(
       this.baseUrl,
       service
     );
@@ -83,7 +83,7 @@ updateService(
     serviceId: string,
     serviceData: any,
     updatedBy: string
-  ): Observable<ApiResponseData<SettingsService>> {
+  ): Observable<ApiResponseData<ServiceSettings>> {
     // Validation des paramètres
     if (!serviceId || serviceId.trim() === '') {
       throw new Error('serviceId is required');
@@ -110,10 +110,7 @@ updateService(
       updatedBy: updatedBy.trim()
     };
 
-    console.log('Sending update request:', updateRequest);
-    console.log('Service ID in URL:', serviceId);
-
-    return this.http.put<ApiResponseData<SettingsService>>(
+    return this.http.put<ApiResponseData<ServiceSettings>>(
       `${this.baseUrl}/${serviceId}`,
       updateRequest
     );
@@ -135,8 +132,8 @@ updateService(
     serviceId: string,
     isActive: boolean,
     updatedBy: string
-  ): Observable<ApiResponseData<SettingsService>> {
-    return this.http.patch<ApiResponseData<SettingsService>>(
+  ): Observable<ApiResponseData<ServiceSettings>> {
+    return this.http.patch<ApiResponseData<ServiceSettings>>(
       `${this.baseUrl}/${serviceId}/status`,
       { isActive },
       { params: { updatedBy } }
@@ -165,8 +162,8 @@ updateService(
    */
   getOnlineAvailableServices(
     centreId: string
-  ): Observable<ApiResponseData<SettingsService[]>> {
-    return this.http.get<ApiResponseData<SettingsService[]>>(
+  ): Observable<ApiResponseData<ServiceSettings[]>> {
+    return this.http.get<ApiResponseData<ServiceSettings[]>>(
       `${this.baseUrl}/centre/${centreId}/online-available`
     );
   }
@@ -176,8 +173,8 @@ updateService(
    */
   getInStoreAvailableServices(
     centreId: string
-  ): Observable<ApiResponseData<SettingsService[]>> {
-    return this.http.get<ApiResponseData<SettingsService[]>>(
+  ): Observable<ApiResponseData<ServiceSettings[]>> {
+    return this.http.get<ApiResponseData<ServiceSettings[]>>(
       `${this.baseUrl}/centre/${centreId}/in-store-available`
     );
   }
@@ -334,8 +331,8 @@ updateService(
   getMostPopularServices(
     centreId: string,
     limit = 10
-  ): Observable<ApiResponseData<SettingsService[]>> {
-    return this.http.get<ApiResponseData<SettingsService[]>>(
+  ): Observable<ApiResponseData<ServiceSettings[]>> {
+    return this.http.get<ApiResponseData<ServiceSettings[]>>(
       `${this.baseUrl}/centre/${centreId}/most-popular`,
       { params: { limit: limit.toString() } }
     );
@@ -347,8 +344,8 @@ updateService(
   searchServices(
     centreId: string,
     searchTerm: string
-  ): Observable<ApiResponseData<SettingsService[]>> {
-    return this.http.get<ApiResponseData<SettingsService[]>>(
+  ): Observable<ApiResponseData<ServiceSettings[]>> {
+    return this.http.get<ApiResponseData<ServiceSettings[]>>(
       `${this.baseUrl}/centre/${centreId}/search`,
       { params: { searchTerm } }
     );
@@ -359,8 +356,8 @@ updateService(
    */
   getServicesSortedByOrder(
     centreId: string
-  ): Observable<ApiResponseData<SettingsService[]>> {
-    return this.http.get<ApiResponseData<SettingsService[]>>(
+  ): Observable<ApiResponseData<ServiceSettings[]>> {
+    return this.http.get<ApiResponseData<ServiceSettings[]>>(
       `${this.baseUrl}/centre/${centreId}/sorted`
     );
   }
@@ -376,8 +373,8 @@ updateService(
     serviceId: string,
     newName: string,
     createdBy: string
-  ): Observable<ApiResponseData<SettingsService>> {
-    return this.http.post<ApiResponseData<SettingsService>>(
+  ): Observable<ApiResponseData<ServiceSettings>> {
+    return this.http.post<ApiResponseData<ServiceSettings>>(
       `${this.baseUrl}/${serviceId}/duplicate`,
       { newName },
       { params: { createdBy } }

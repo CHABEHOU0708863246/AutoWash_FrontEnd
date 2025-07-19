@@ -1,4 +1,4 @@
-export class SettingsService {
+export class ServiceSettings {
   id?: string;
   centreId: string = '';
   name: string = '';
@@ -43,7 +43,7 @@ export class SettingsService {
   updatedBy?: string;
   lastBookingDate?: Date;
 
-  constructor(init?: Partial<SettingsService>) {
+  constructor(init?: Partial<ServiceSettings>) {
     Object.assign(this, init);
   }
 
@@ -153,8 +153,8 @@ export class ServiceTemplate {
     Object.assign(this, init);
   }
 
-  createService(centreId: string): SettingsService {
-    return new SettingsService({
+  createService(centreId: string): ServiceSettings {
+    return new ServiceSettings({
       centreId: centreId,
       name: this.name,
       category: this.category,
