@@ -1,0 +1,617 @@
+<html lang="fr">
+
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet">
+</head>
+
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fas fa-hashtag"></i> AUTOWASH
+    </div>
+    <div class="user-profile">
+      <img [src]="currentUser?.photoSafeUrl" [alt]="'Photo de ' + (currentUser?.firstName || 'Utilisateur')"
+        class="user-avatar">
+      <div class="user-info">
+        <h4>
+          <h4>{{ getFullName() }}</h4>
+          <p>{{ getUserRole() }}</p>
+        </h4>
+      </div>
+    </div>
+    <div class="nav-menu">
+      <!-- Dashboard -->
+      <div class="dropdown dropdown-hover">
+        <a class="nav-item active" data-mdb-dropdown-init>
+          <i class="fas fa-tachometer-alt" [routerLink]="['/admin/dashboard']"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
+
+      <!-- Gestion des Utilisateurs -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-users-cog"></i>
+          <span>Utilisateurs</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-list']"><i class="fas fa-list"></i> Liste des
+              utilisateurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-create']"><i class="fas fa-user-plus"></i> Ajouter
+              un utilisateur</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-permissions']"><i class="fas fa-user-shield"></i>
+              Permissions</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-attendance']"><i class="fas fa-user-clock"></i>
+              Présences</a></li>
+        </ul>
+      </div>
+
+      <!-- Centres de Lavage -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fa-solid fa-car"></i>
+          <span>Centres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-list']"><i class="fas fa-list"></i> Tous les
+              centres</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-create']"><i class="fas fa-plus-circle"></i>
+              Nouveau centre</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-stock']"><i class="fas fa-boxes"></i> Stocks par
+              centre</a></li>
+        </ul>
+      </div>
+
+      <!-- Sessions de Lavage -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-car-side"></i>
+          <span>Lavages</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-sessions']"><i class="fas fa-list"></i> Toutes les
+              sessions</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-now']"><i class="fas fa-play-circle"></i> Nouveau
+              lavage</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-queue']"><i class="fas fa-clock"></i> File
+              d'attente</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-types']"><i class="fas fa-list-alt"></i> Types de
+              lavage</a></li>
+        </ul>
+      </div>
+
+      <!-- Paiements -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-money-bill-wave"></i>
+          <span>Paiements</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-washers']"><i class="fas fa-user-tie"></i>
+              Paiements laveurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-customers']"><i class="fas fa-users"></i>
+              Paiements clients</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-methods']"><i class="fas fa-credit-card"></i>
+              Méthodes de paiement</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-reports']"><i
+                class="fas fa-file-invoice-dollar"></i> Rapports</a></li>
+        </ul>
+      </div>
+
+      <!-- Stocks -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-box-open"></i>
+          <span>Stocks</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-list']"><i class="fas fa-boxes"></i> Inventaire</a>
+          </li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-alerts']"><i
+                class="fas fa-exclamation-triangle"></i> Alertes stock</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-movements']"><i class="fas fa-exchange-alt"></i>
+              Mouvements</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-suppliers']"><i class="fas fa-truck"></i>
+              Fournisseurs</a></li>
+        </ul>
+      </div>
+
+      <!-- Statistiques & Rapports -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-chart-pie"></i>
+          <span>Statistiques</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-daily']"><i class="fas fa-calendar-day"></i>
+              Journalier</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-weekly']"><i class="fas fa-calendar-week"></i>
+              Hebdomadaire</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-monthly']"><i class="fas fa-calendar-alt"></i>
+              Mensuel</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-comparison']"><i class="fas fa-balance-scale"></i>
+              Comparaison</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-export']"><i class="fas fa-file-export"></i>
+              Exports</a></li>
+        </ul>
+      </div>
+
+      <!-- Audit -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-clipboard-check"></i>
+          <span>Audit</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-logs']"><i class="fas fa-clipboard-list"></i>
+              Journal d'activité</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-changes']"><i class="fas fa-history"></i> Historique
+              modifications</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-security']"><i class="fas fa-shield-alt"></i>
+              Sécurité</a></li>
+        </ul>
+      </div>
+
+      <!-- Dépenses -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-file-invoice-dollar"></i>
+          <span>Dépenses</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>
+              Eau/Électricité</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-products']"><i
+                class="fas fa-shopping-basket"></i> Produits</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-rent']"><i class="fas fa-home"></i> Loyer</a>
+          </li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-other']"><i class="fas fa-receipt"></i>
+              Divers</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-profitability']"><i
+                class="fas fa-chart-line"></i> Rentabilité</a></li>
+        </ul>
+      </div>
+
+      <!-- Paramètres -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-cogs"></i>
+          <span>Paramètres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-schedule']"><i class="fas fa-clock"></i>
+              Horaires</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-services']"><i class="fas fa-concierge-bell"></i>
+              Prestations</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-vehicles']"><i class="fas fa-car"></i> Types de
+              véhicules</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-notifications']"><i class="fas fa-bell"></i>
+              Notifications</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-system']"><i class="fas fa-sliders-h"></i>
+              Système</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-templates']"><i class="fas fa-file-alt"></i>
+              Modèles de paramètres</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" id="main-content">
+    <div class="top-bar">
+      <div class="menu-toggle" id="menu-toggle">
+        <i class="fas fa-bars"></i>
+      </div>
+      <div class="top-right">
+        <div class="icon-button">
+          <i class="fas fa-envelope"></i>
+        </div>
+        <div class="icon-button">
+          <i class="fas fa-bell"></i>
+          <span class="badge">3</span>
+        </div>
+        <div class="dropdown dropdown-hover">
+          <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
+            <img src="https://via.placeholder.com/32" alt="User">
+            <span>Affery Auxence Delors CHABEHOU</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
+            <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Mon profil</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
+            <li><a class="dropdown-item" (click)="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="container-fluid">
+        <!-- Header avec titre et bouton de retour -->
+        <div class="row mb-4">
+          <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+              <h2 class="page-title">
+                <i class="fas fa-car-side text-primary me-2"></i> Nouveau Lavage
+              </h2>
+              <button class="btn btn-outline-secondary" routerLink="/admin/wash-sessions">
+                <i class="fas fa-arrow-left me-2"></i> Retour
+              </button>
+            </div>
+            <p class="text-muted">Enregistrez une nouvelle session de lavage pour un client</p>
+          </div>
+        </div>
+
+        <!-- Messages d'alerte -->
+<div class="container-fluid">
+  <div class="row mb-3" *ngIf="errorMessages.length > 0 || successMessage">
+    <div class="col-12">
+      <div class="alert alert-danger alert-dismissible fade show" *ngIf="errorMessages.length > 0">
+        <strong><i class="fas fa-exclamation-triangle me-2"></i>Erreur!</strong>
+        <ul class="mb-0 mt-2">
+          <li *ngFor="let error of errorMessages">{{ error }}</li>
+        </ul>
+        <button type="button" class="btn-close" (click)="errorMessages = []"></button>
+      </div>
+
+      <div class="alert alert-success alert-dismissible fade show" *ngIf="successMessage">
+        <strong><i class="fas fa-check-circle me-2"></i>Succès!</strong>
+        {{ successMessage }}
+        <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Formulaire principal -->
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-white border-bottom">
+          <h5 class="card-title mb-0 text-primary">
+            <i class="fas fa-info-circle me-2"></i> Informations du lavage
+            <span class="spinner-border spinner-border-sm ms-2" *ngIf="isLoading"></span>
+          </h5>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="washForm" (ngSubmit)="onSubmit()">
+
+            <!-- Section Centre et Service -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="centreId" class="form-label">Centre de lavage <span class="text-danger">*</span></label>
+                  <select id="centreId" class="form-select" formControlName="centreId"
+                          [class.is-invalid]="washForm.get('centreId')?.invalid && washForm.get('centreId')?.touched">
+                    <option value="" disabled>Sélectionnez un centre</option>
+                    <option *ngFor="let centre of centres" [value]="centre.id">
+                      {{ centre.name }} ({{ centre.address }})
+                    </option>
+                  </select>
+                  <div class="invalid-feedback" *ngIf="washForm.get('centreId')?.invalid && washForm.get('centreId')?.touched">
+                    Veuillez sélectionner un centre
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="serviceId" class="form-label">Type de service <span class="text-danger">*</span></label>
+                  <select id="serviceId" class="form-select" formControlName="serviceId"
+                          [class.is-invalid]="washForm.get('serviceId')?.invalid && washForm.get('serviceId')?.touched"
+                          [disabled]="!washForm.get('centreId')?.value">
+                    <option value="" disabled>Sélectionnez un service</option>
+                    <option *ngFor="let service of services" [value]="service.id">
+                      {{ service.name }} ({{ service.basePrice }})
+                    </option>
+                  </select>
+                  <div class="invalid-feedback" *ngIf="washForm.get('serviceId')?.invalid && washForm.get('serviceId')?.touched">
+                    Veuillez sélectionner un service
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section Véhicule -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="vehicleTypeId" class="form-label">Type de véhicule <span class="text-danger">*</span></label>
+                  <select id="vehicleTypeId" class="form-select" formControlName="vehicleTypeId"
+                          [class.is-invalid]="washForm.get('vehicleTypeId')?.invalid && washForm.get('vehicleTypeId')?.touched"
+                          [disabled]="!washForm.get('centreId')?.value">
+                    <option value="" disabled>Sélectionnez un type</option>
+                    <option *ngFor="let vehicleType of vehicleTypes" [value]="vehicleType.id">
+                      {{ vehicleType.label }} (x{{ vehicleType.priceMultiplier }})
+                    </option>
+                  </select>
+                  <div class="invalid-feedback" *ngIf="washForm.get('vehicleTypeId')?.invalid && washForm.get('vehicleTypeId')?.touched">
+                    Veuillez sélectionner un type de véhicule
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="vehiclePlate" class="form-label">Plaque d'immatriculation <span class="text-danger">*</span></label>
+                  <input type="text" id="vehiclePlate" class="form-control" formControlName="vehiclePlate"
+                         placeholder="Ex: AB123CD" style="text-transform: uppercase"
+                         [class.is-invalid]="washForm.get('vehiclePlate')?.invalid && washForm.get('vehiclePlate')?.touched">
+                  <div class="invalid-feedback" *ngIf="washForm.get('vehiclePlate')?.invalid && washForm.get('vehiclePlate')?.touched">
+                    La plaque est requise (min 4 caractères)
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section Client -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="customerPhone" class="form-label">Téléphone client <span class="text-danger">*</span></label>
+                  <div class="input-group">
+                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                    <input type="tel" id="customerPhone" class="form-control" formControlName="customerPhone"
+                           placeholder="Ex: 2250708863246"
+                           [class.is-invalid]="washForm.get('customerPhone')?.invalid && washForm.get('customerPhone')?.touched">
+                    <span class="input-group-text" *ngIf="isSearchingCustomer">
+                      <span class="spinner-border spinner-border-sm"></span>
+                    </span>
+                  </div>
+                  <div class="invalid-feedback" *ngIf="washForm.get('customerPhone')?.invalid && washForm.get('customerPhone')?.touched">
+                    Un numéro de téléphone valide est requis (10-15 chiffres)
+                  </div>
+                  <div class="text-success small mt-1" *ngIf="currentCustomer">
+                    <i class="fas fa-user-check me-1"></i>Client trouvé: {{ currentCustomer?.getFullName() }}
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="customerName" class="form-label">Nom du client</label>
+                  <input type="text" id="customerName" class="form-control" formControlName="customerName"
+                         placeholder="Ex: Jean Dupont">
+                  <small class="text-muted">Renseigné automatiquement si client existant</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Détails véhicule -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="vehicleBrand" class="form-label">Marque du véhicule</label>
+                  <input type="text" id="vehicleBrand" class="form-control" formControlName="vehicleBrand"
+                         placeholder="Ex: Toyota">
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="vehicleColor" class="form-label">Couleur du véhicule</label>
+                  <input type="text" id="vehicleColor" class="form-control" formControlName="vehicleColor"
+                         placeholder="Ex: Rouge">
+                </div>
+              </div>
+            </div>
+
+            <!-- Section Paiement -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label class="form-label">Méthode de paiement <span class="text-danger">*</span></label>
+                  <div class="btn-group w-100" role="group">
+                    <button type="button"
+                            class="btn"
+                            [class.btn-primary]="selectedPaymentMethod === PaymentMethod.CASH"
+                            [class.btn-outline-primary]="selectedPaymentMethod !== PaymentMethod.CASH"
+                            (click)="onPaymentMethodChange(PaymentMethod.CASH)">
+                      <i class="fas fa-money-bill-wave me-2"></i> Espèces
+                    </button>
+                    <button type="button"
+                            class="btn"
+                            [class.btn-primary]="selectedPaymentMethod === PaymentMethod.MOBILE_MONEY"
+                            [class.btn-outline-primary]="selectedPaymentMethod !== PaymentMethod.MOBILE_MONEY"
+                            (click)="onPaymentMethodChange(PaymentMethod.MOBILE_MONEY)">
+                      <i class="fas fa-mobile-alt me-2"></i> Mobile Money
+                    </button>
+                    <button type="button"
+                            class="btn"
+                            [class.btn-primary]="selectedPaymentMethod === PaymentMethod.CREDIT_CARD"
+                            [class.btn-outline-primary]="selectedPaymentMethod !== PaymentMethod.CREDIT_CARD"
+                            (click)="onPaymentMethodChange(PaymentMethod.CREDIT_CARD)">
+                      <i class="fas fa-credit-card me-2"></i> Carte
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-group">
+                  <label for="transactionId" class="form-label">Référence transaction</label>
+                  <input type="text" id="transactionId" class="form-control" formControlName="transactionId"
+                         placeholder="Ex: MM123456789"
+                         [required]="selectedPaymentMethod !== PaymentMethod.CASH">
+                  <small class="text-muted">
+                    {{ selectedPaymentMethod === PaymentMethod.CASH ? 'Optionnel pour les espèces' : 'Obligatoire pour les paiements électroniques' }}
+                  </small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Options supplémentaires -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="applyLoyaltyDiscount"
+                         formControlName="applyLoyaltyDiscount" [disabled]="!canApplyLoyaltyDiscount">
+                  <label class="form-check-label" for="applyLoyaltyDiscount">
+                    Appliquer remise fidélité
+                  </label>
+                  <small class="text-muted d-block">
+                    {{ canApplyLoyaltyDiscount ? '10% de réduction disponible' : 'Disponible après 5 lavages' }}
+                  </small>
+                </div>
+              </div>
+              <div class="col-md-6" *ngIf="currentUser && (getUserRole() === 'Administrateur' || getUserRole() === 'Manager')">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="isAdminOverride"
+                         formControlName="isAdminOverride">
+                  <label class="form-check-label" for="isAdminOverride">
+                    <i class="fas fa-shield-alt me-1 text-warning"></i>
+                    Override administrateur
+                  </label>
+                  <small class="text-muted d-block">Force l'enregistrement même en cas d'erreur mineure</small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Boutons d'action -->
+            <div class="row">
+              <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                  <button type="button" class="btn btn-secondary" (click)="resetForm()" [disabled]="isSubmitting">
+                    <i class="fas fa-redo me-2"></i> Réinitialiser
+                  </button>
+
+                  <button type="submit" class="btn btn-primary btn-lg" [disabled]="!isFormValid || isSubmitting">
+                    <span class="spinner-border spinner-border-sm me-2" *ngIf="isSubmitting"></span>
+                    <i class="fas fa-save me-2" *ngIf="!isSubmitting"></i>
+                    {{ isSubmitting ? 'Enregistrement...' : 'Enregistrer le lavage' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panneau latéral - Récapitulatif -->
+    <div class="col-lg-4">
+      <!-- Cart de calcul des prix -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-primary text-white">
+          <h6 class="card-title mb-0">
+            <i class="fas fa-calculator me-2"></i> Calcul du prix
+          </h6>
+        </div>
+        <div class="card-body">
+          <div *ngIf="isCalculatingPrice" class="text-center py-3">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="text-muted mt-2">Calcul en cours...</p>
+          </div>
+
+          <div *ngIf="priceCalculation && !isCalculatingPrice">
+            <div class="mb-3">
+              <div class="d-flex justify-content-between mb-2">
+                <span>Prix de base:</span>
+                <span>{{ basePrice }}</span>
+              </div>
+              <div class="d-flex justify-content-between mb-2">
+                <span>Multiplicateur véhicule:</span>
+                <span>x{{ vehicleMultiplier }}</span>
+              </div>
+              <div class="d-flex justify-content-between mb-2" *ngIf="loyaltyDiscount > 0">
+                <span class="text-success">Remise fidélité:</span>
+                <span class="text-success">-{{ loyaltyDiscount }}</span>
+              </div>
+              <hr>
+              <div class="d-flex justify-content-between fs-5 fw-bold text-primary">
+                <span>Total à payer:</span>
+                <span>{{ totalPrice }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="!priceCalculation && !isCalculatingPrice" class="text-center py-3 text-muted">
+            <i class="fas fa-info-circle fa-2x mb-2"></i>
+            <p>Sélectionnez un service et un type de véhicule pour voir le prix</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Informations client -->
+      <div class="card shadow-sm border-0 mb-4" *ngIf="currentCustomer">
+        <div class="card-header bg-info text-white">
+          <h6 class="card-title mb-0">
+            <i class="fas fa-user me-2"></i> Profil client
+          </h6>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <strong>{{ currentCustomer?.name }}</strong>
+            <br>
+            <small class="text-muted">{{ currentCustomer?.phone }}</small>
+          </div>
+
+          <div class="row text-center">
+            <div class="col-6">
+              <div class="border-end">
+                <div class="fs-4 fw-bold text-primary">{{ currentCustomer?.totalCompletedBookings || 0 }}</div>
+                <small class="text-muted">Lavages</small>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="fs-4 fw-bold text-success">{{ customerTotalSpent }}</div>
+              <small class="text-muted">Dépensé</small>
+            </div>
+          </div>
+
+          <div class="mt-3" *ngIf="canApplyLoyaltyDiscount">
+            <div class="alert alert-success alert-sm mb-0">
+              <i class="fas fa-star me-1"></i>
+              <strong>Client fidèle!</strong> Éligible à la remise de 10%
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Historique des lavages -->
+      <div class="card shadow-sm border-0" *ngIf="customerHistory.length > 0">
+        <div class="card-header bg-secondary text-white">
+          <h6 class="card-title mb-0">
+            <i class="fas fa-history me-2"></i> Derniers lavages
+          </h6>
+        </div>
+        <div class="card-body p-0">
+          <div class="list-group list-group-flush">
+            <div class="list-group-item" *ngFor="let wash of customerHistory; let i = index">
+              <div class="d-flex justify-content-between align-items-start">
+                <div class="flex-grow-1">
+                  <h6 class="mb-1">{{ wash.serviceName }}</h6>
+                  <p class="mb-1 text-muted small">{{ wash.vehiclePlate }} - {{ wash.vehicleBrand }}</p>
+                  <small class="text-muted">{{ wash.createdAt }}</small>
+                </div>
+                <div class="text-end">
+                  <span class="badge bg-success">{{ wash.finalPrice }}</span>
+                  <br>
+                  <small class="text-muted">{{ wash.paymentMethod }}</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>©2025 AutoWash, Tous droit reservé.</div>
+      <div>Crée par <a href="https://www.linkedin.com/in/afferyauxencedelorschabehou/">Affery Auxence Delors
+          CHABEHOU</a></div>
+    </div>
+  </div>
+</body>
+
+</html>

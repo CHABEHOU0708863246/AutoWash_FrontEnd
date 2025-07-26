@@ -9,7 +9,8 @@ import { CentresCreateComponent } from '../../view/admin-dashboard/centres-creat
 import { SettingsScheduleComponent } from '../../view/admin-dashboard/settings-schedule/settings-schedule.component';
 import { SettingsServicesComponent } from '../../view/admin-dashboard/settings-services/settings-services.component';
 import { SettingsVehiclesComponent } from '../../view/admin-dashboard/settings-vehicles/settings-vehicles.component';
-
+import { WashNowComponent } from '../../view/admin-dashboard/wash-now/wash-now.component';
+import { WashSessionsComponent } from '../../view/admin-dashboard/wash-sessions/wash-sessions.component';
 const routes: Routes = [
   {
     path: '',
@@ -51,6 +52,14 @@ const routes: Routes = [
   {
     path: 'settings-vehicles',
     component: SettingsVehiclesComponent
+  },
+  {
+    path: 'wash-sessions',
+    component: WashSessionsComponent
+  },
+  {
+    path: 'wash-now',
+    component: WashNowComponent
   },
 
 

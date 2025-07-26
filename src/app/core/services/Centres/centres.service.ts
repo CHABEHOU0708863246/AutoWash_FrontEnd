@@ -4,27 +4,6 @@ import { Subject, Observable, catchError, tap, throwError, map } from 'rxjs';
 import { Centres } from '../../models/Centres/Centres';
 import { Users } from '../../models/Users/Users';
 
-// Interface pour correspondre à la réponse de l'API des managers
-interface ManagerResponse {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-  isEnabled: boolean;
-  roles: string[];
-  workingHours: number;
-  isPartTime: boolean;
-  hireDate: string;
-  gender?: string;
-  contractType?: string;
-  numberOfChildren?: number;
-  maritalStatus?: string;
-  residence?: string;
-  postalAddress?: string;
-  photoUrl?: string;
-}
-
 @Injectable({
   providedIn: 'root'
 })
