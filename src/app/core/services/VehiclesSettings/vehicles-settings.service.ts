@@ -3,8 +3,9 @@ import { Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { environment } from '../../../../environments/environment.development';
 import { ApiResponseData } from '../../models/ApiResponseData';
-import { VehicleTypeSettings, VehicleTypeStatistics, VehicleTypeHistory } from '../../models/Settings/VehicleTypeSettings';
-import { VehicleSize } from '../../models/VehicleSize';
+import { VehicleTypeSettings, VehicleTypeHistory } from '../../models/Settings/Vehicles/VehicleTypeSettings';
+import { VehicleTypeStatistics } from '../../models/Settings/Vehicles/VehicleTypeStatistics';
+import { VehicleSize } from '../../models/Settings/Vehicles/VehicleSize';
 
 @Injectable({
   providedIn: 'root'

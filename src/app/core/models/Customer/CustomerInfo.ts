@@ -1,5 +1,5 @@
 export class CustomerInfo {
-  customerId?: string; // Si client existant
+  customerId?: string;
   phoneNumber: string = '';
   name?: string;
   email?: string;
@@ -10,17 +10,16 @@ export class CustomerInfo {
     Object.assign(this, init);
   }
 
-  getCustomerIdentifier(): string {
-    return this.customerId || this.phoneNumber;
+  // Méthodes utilitaires
+  hasLoyaltyDiscount(): boolean {
+    return this.loyaltyDiscountApplied > 0;
   }
 
-  applyLoyaltyDiscount(points: number, discountAmount: number): void {
-    this.loyaltyPointsUsed = points;
-    this.loyaltyDiscountApplied = discountAmount;
+  hasLoyaltyPointsUsed(): boolean {
+    return this.loyaltyPointsUsed > 0;
   }
 
-  clearLoyaltyDiscount(): void {
-    this.loyaltyPointsUsed = 0;
-    this.loyaltyDiscountApplied = 0;
+  isExistingCustomer(): boolean {
+    return !!this.customerId;
   }
 }

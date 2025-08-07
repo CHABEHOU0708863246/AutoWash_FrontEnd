@@ -2,12 +2,10 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment.development';
-import {
-  ServiceSettings,
-  ServiceMaterial,
-  DayOfWeek,
-} from '../../models/Settings/ServiceSettings';
 import { ApiResponseData } from '../../models/ApiResponseData';
+import { DayOfWeek } from '../../models/Settings/DayOfWeek';
+import { ServiceMaterial } from '../../models/Settings/Services/ServiceMaterial';
+import { ServiceSettings } from '../../models/Settings/Services/ServiceSettings';
 
 @Injectable({
   providedIn: 'root',

@@ -8,18 +8,16 @@ import { DomSanitizer } from '@angular/platform-browser';
 import { Users } from '../../../core/models/Users/Users';
 import { UsersService } from '../../../core/services/Users/users.service';
 import { Subscription } from 'rxjs';
-import {
-  VehicleTypeHistory,
-  VehicleTypeSettings,
-  VehicleTypeStatistics,
-} from '../../../core/models/Settings/VehicleTypeSettings';
+
 import { VehiclesSettingsService } from '../../../core/services/VehiclesSettings/vehicles-settings.service';
 import { ApiResponseData } from '../../../core/models/ApiResponseData';
-import { VehicleSize } from '../../../core/models/VehicleSize';
+import { VehicleSize } from '../../../core/models/Settings/Vehicles/VehicleSize';
 import { CentresService } from '../../../core/services/Centres/centres.service';
 import { Centres } from '../../../core/models/Centres/Centres';
 import { ToastService } from '../../../core/services/Toast/toast.service';
 import { RolesService } from '../../../core/services/Roles/roles.service';
+import { VehicleTypeSettings, VehicleTypeHistory } from '../../../core/models/Settings/Vehicles/VehicleTypeSettings';
+import { VehicleTypeStatistics } from '../../../core/models/Settings/Vehicles/VehicleTypeStatistics';
 
 @Component({
   selector: 'app-settings-vehicles',

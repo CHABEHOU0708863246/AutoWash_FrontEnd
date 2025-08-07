@@ -8,39 +8,57 @@ import { PriceCalculationResult } from '../../models/Wash/PriceCalculationResult
 import { CustomerPayment } from '../../models/Payments/CustomerPayment';
 import { PaymentMethod } from '../../models/Payments/PaymentMethod';
 import { Customer } from '../../models/Customer/Customer';
-import { ServiceSettings } from '../../models/Settings/ServiceSettings';
-import { VehicleTypeSettings } from '../../models/Settings/VehicleTypeSettings';
 import { Centres } from '../../models/Centres/Centres';
 import { PaymentInfo } from '../../models/Payments/PaymentInfo';
 import { CreateOrUpdateCustomerRequest } from '../../models/Wash/CreateOrUpdateCustomerRequest';
 import { WashRegistration } from '../../models/Wash/WashRegistration';
+import { ServiceSettings } from '../../models/Settings/Services/ServiceSettings';
+import { VehicleTypeSettings } from '../../models/Settings/Vehicles/VehicleTypeSettings';
 
 @Injectable({
   providedIn: 'root'
 })
 export class WashsService {
-  private readonly baseUrl = `${environment.apiUrl}/api/Washes`;
+  private readonly baseUrl = `${environment.apiUrl}/api/WashRegistration`;
 
   constructor(private http: HttpClient) {}
 
   //#region Méthodes principales d'enregistrement
 
   /**
+ * Récupère tous les services
+ */
+getAllServices(): Observable<ApiResponseData<ServiceSettings[]>> {
+  return this.http.get<ApiResponseData<ServiceSettings[]>>(
+    `${this.baseUrl}/all-services`
+  );
+}
+
+/**
+ * Récupère tous les types de véhicules
+ */
+getAllVehicleTypes(): Observable<ApiResponseData<VehicleTypeSettings[]>> {
+  return this.http.get<ApiResponseData<VehicleTypeSettings[]>>(
+    `${this.baseUrl}/all-vehicle-types`
+  );
+}
+
+  /**
+ * Récupère toutes les sessions de lavage
+ */
+getAllWashSessions(): Observable<ApiResponseData<WashSession[]>> {
+  return this.http.get<ApiResponseData<WashSession[]>>(
+    `${this.baseUrl}/all-sessions`
+  );
+}
+
+
+  /**
    * Enregistre une nouvelle session de lavage
    */
   registerWash(registration: WashRegistration): Observable<ApiResponseData<WashSession>> {
     return this.http.post<ApiResponseData<WashSession>>(
-      `${this.baseUrl}/register`,
-      registration
-    );
-  }
-
-  /**
-   * Valide les données d'enregistrement d'une session de lavage
-   */
-  validateWashRegistration(registration: WashRegistration): Observable<ApiResponseData<string[]>> {
-    return this.http.post<ApiResponseData<string[]>>(
-      `${this.baseUrl}/validate-registration`,
+      `${this.baseUrl}`,
       registration
     );
   }
@@ -58,7 +76,7 @@ export class WashsService {
       .set('vehicleTypeId', vehicleTypeId);
 
     return this.http.get<ApiResponseData<number>>(
-      `${this.baseUrl}/calculate-price`,
+      `${this.baseUrl}/calculate-base-price`, // URL distincte
       { params }
     );
   }
@@ -80,7 +98,7 @@ export class WashsService {
     }
 
     return this.http.get<ApiResponseData<PriceCalculationResult>>(
-      `${this.baseUrl}/calculate-final-price`,
+      `${this.baseUrl}/calculate-final-price`, // URL distincte et correcte
       { params }
     );
   }
@@ -97,7 +115,7 @@ export class WashsService {
       .set('originalPrice', originalPrice.toString());
 
     return this.http.get<ApiResponseData<number>>(
-      `${this.baseUrl}/apply-loyalty-discount`,
+      `${this.baseUrl}/loyalty-discount`, // URL distincte
       { params }
     );
   }
@@ -118,7 +136,7 @@ export class WashsService {
       .set('centreId', centreId);
 
     return this.http.get<ApiResponseData<boolean>>(
-      `${this.baseUrl}/is-service-available`,
+      `${this.baseUrl}/service-availability`, // URL plus claire
       { params }
     );
   }
@@ -135,7 +153,7 @@ export class WashsService {
       .set('centreId', centreId);
 
     return this.http.get<ApiResponseData<boolean>>(
-      `${this.baseUrl}/is-vehicle-type-accepted`,
+      `${this.baseUrl}/vehicle-type-acceptance`, // URL plus claire
       { params }
     );
   }
@@ -251,13 +269,10 @@ export class WashsService {
    * Trouve un client par son numéro de téléphone
    */
   findCustomerByPhone(phoneNumber: string): Observable<ApiResponseData<Customer | null>> {
-    const params = new HttpParams().set('phoneNumber', phoneNumber);
-
-    return this.http.get<ApiResponseData<Customer | null>>(
-      `${this.baseUrl}/find-customer-by-phone`,
-      { params }
-    );
-  }
+  return this.http.get<ApiResponseData<Customer | null>>(
+    `${this.baseUrl}/customers/${phoneNumber}`
+  );
+}
 
   /**
    * Crée ou met à jour un client
@@ -266,7 +281,7 @@ export class WashsService {
     customerRequest: CreateOrUpdateCustomerRequest
   ): Observable<ApiResponseData<Customer>> {
     return this.http.post<ApiResponseData<Customer>>(
-      `${this.baseUrl}/get-or-create-customer`,
+      `${this.baseUrl}/customer`,
       customerRequest
     );
   }
@@ -310,14 +325,13 @@ export class WashsService {
   /**
    * Récupère l'historique des lavages d'un client
    */
-  getCustomerWashHistory(customerPhone: string): Observable<ApiResponseData<WashSession[]>> {
-    const params = new HttpParams().set('customerPhone', customerPhone);
-
-    return this.http.get<ApiResponseData<WashSession[]>>(
-      `${this.baseUrl}/customer-wash-history`,
-      { params }
-    );
-  }
+getCustomerWashHistory(customerPhone: string, page: number = 1, pageSize: number = 5): Observable<ApiResponseData<WashSession[]>> {
+  const params = new HttpParams()
+    .set('customerPhone', customerPhone)
+    .set('page', page.toString())
+    .set('pageSize', pageSize.toString());
+  return this.http.get<ApiResponseData<WashSession[]>>(`${this.baseUrl}/customers/${customerPhone}/history`, { params });
+}
 
   //#endregion
 

@@ -62,7 +62,7 @@ export class CustomersService {
     }
 
     return this.http.get<ApiResponseData<Customer>>(
-      `${this.baseUrl}/phone/${phone}`
+      `${this.baseUrl}/by-phone/${phone}`
     );
   }
 

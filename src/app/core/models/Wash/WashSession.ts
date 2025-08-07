@@ -2,12 +2,12 @@ import { CustomerInfo } from "../Customer/CustomerInfo";
 import { PaymentMethod } from "../Payments/PaymentMethod";
 
 export class WashSession {
-  id: string | undefined;
+  id?: string;
   centreId: string = '';
   serviceId: string = '';
   vehicleTypeId: string = '';
   washerId?: string;
-  customer: CustomerInfo = new CustomerInfo();
+  customer: CustomerInfo = new CustomerInfo(); // Utilise la CustomerInfo corrigée
   vehiclePlate: string = '';
   vehicleBrand?: string;
   vehicleColor?: string;
@@ -34,12 +34,12 @@ export class WashSession {
   constructor(init?: Partial<WashSession>) {
     Object.assign(this, init);
 
-    // Initialisation des sous-objets
+    // Initialisation des sous-objets avec la CustomerInfo corrigée
     if (init?.customer) {
       this.customer = new CustomerInfo(init.customer);
     }
 
-    // Conversion des dates
+    // Conversion des dates (inchangé)
     if (init?.scheduledStart) {
       this.scheduledStart = new Date(init.scheduledStart);
     }
@@ -125,6 +125,16 @@ export class WashSession {
     return 'Non payé';
   }
 
+  // NOUVELLE méthode pour calculer le prix final avec réductions
+  getFinalPrice(): number {
+    return this.price - (this.customer.loyaltyDiscountApplied || 0);
+  }
+
+  // NOUVELLE méthode pour vérifier si le client a des avantages fidélité
+  hasLoyaltyBenefits(): boolean {
+    return this.customer.hasLoyaltyDiscount() || this.customer.hasLoyaltyPointsUsed();
+  }
+
   validate(): string[] {
     const errors: string[] = [];
 
@@ -132,7 +142,7 @@ export class WashSession {
     if (!this.serviceId) errors.push('serviceId est requis');
     if (!this.vehicleTypeId) errors.push('vehicleTypeId est requis');
     if (!this.vehiclePlate) errors.push('vehiclePlate est requis');
-    if (!this.customer.phoneNumber) errors.push('customer.phoneNumber est requis');
+    if (!this.customer.phoneNumber) errors.push('customer.phoneNumber est requis'); // Corrigé
     if (this.price <= 0) errors.push('price doit être positif');
     if (this.amountPaid < 0) errors.push('amountPaid ne peut pas être négatif');
 

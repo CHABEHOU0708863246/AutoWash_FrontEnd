@@ -14,15 +14,13 @@ import { Centres } from '../../../core/models/Centres/Centres';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Users } from '../../../core/models/Users/Users';
 import { UsersService } from '../../../core/services/Users/users.service';
-import {
-  ServiceSettings,
-  ServiceCategories,
-  BaseServices,
-} from '../../../core/models/Settings/ServiceSettings';
 import { ServiceSettingsService } from '../../../core/services/ServiceSettings/service-settings.service';
 import { CentresService } from '../../../core/services/Centres/centres.service';
 import { ToastService } from '../../../core/services/Toast/toast.service';
 import { ConfirmDialogComponent } from '../../../core/components/confirm-dialog/confirm-dialog.component';
+import { BaseServices } from '../../../core/models/Settings/Services/BaseServices';
+import { ServiceCategories } from '../../../core/models/Settings/Services/ServiceCategories';
+import { ServiceSettings } from '../../../core/models/Settings/Services/ServiceSettings';
 
 @Component({
   selector: 'app-settings-services',

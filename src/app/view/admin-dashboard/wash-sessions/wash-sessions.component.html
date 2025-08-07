@@ -223,8 +223,10 @@
         </div>
         <div class="dropdown dropdown-hover">
           <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
-            <img src="https://via.placeholder.com/32" alt="User">
-            <span>Affery Auxence Delors CHABEHOU</span>
+            <!-- Photo sécurisée si elle existe -->
+            <img *ngIf="currentUser?.photoSafeUrl as safeUrl" [src]="safeUrl" alt="User" class="user-avatar">
+            <!-- Nom complet -->
+            <span>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
             <i class="fas fa-chevron-down"></i>
           </button>
           <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
@@ -253,14 +255,36 @@
                         <span class="input-group-text bg-transparent">
                           <i class="fas fa-search"></i>
                         </span>
-                        <input type="text" class="form-control" placeholder="Rechercher...">
+                        <input type="text" class="form-control" placeholder="Rechercher..." [(ngModel)]="searchTerm">
                       </div>
-                      <button class="btn btn-outline-primary">
-                        <i class="fas fa-filter me-2"></i>Filtrer
-                      </button>
+                      <div class="dropdown me-3">
+                        <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                          aria-expanded="false">
+                          <i class="fas fa-filter me-2"></i>Filtrer
+                        </button>
+                        <ul class="dropdown-menu">
+                          <li>
+                            <h6 class="dropdown-header">Filtrer par centre</h6>
+                          </li>
+                          <li *ngFor="let centre of centres">
+                            <a class="dropdown-item" (click)="filterByCentre(centre.id? centre.id : ''  )">
+                              {{ centre.name }}
+                            </a>
+                          </li>
+                          <li>
+                            <hr class="dropdown-divider">
+                          </li>
+                          <li>
+                            <a class="dropdown-item" (click)="filterByCentre('')">
+                              Tous les centres
+                            </a>
+                          </li>
+                        </ul>
+                      </div>
                     </div>
                   </div>
                 </div>
+
                 <div class="card-body">
                   <div class="table-responsive">
                     <table class="table table-hover align-middle">
@@ -270,49 +294,63 @@
                           <th>Véhicule</th>
                           <th>Service</th>
                           <th>Centre</th>
-                          <th>Statut</th>
-                          <th>Prix</th>
-                          <th>Date</th>
+                          <th>Prix (FCFA)</th>
                           <th class="text-end pe-4">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        <!-- Exemple de ligne de données -->
-                        <tr class="border-bottom">
+                        <!-- Afficher un message de chargement -->
+                        <tr *ngIf="isLoading">
+                          <td colspan="8" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-2">Chargement des sessions...</p>
+                          </td>
+                        </tr>
+
+                        <!-- Afficher un message si aucune session -->
+                        <tr *ngIf="!isLoading && filteredSessions.length === 0">
+                          <td colspan="8" class="text-center py-4 text-muted">
+                            <i class="fas fa-info-circle fa-2x mb-3"></i>
+                            <p>Aucune session de lavage trouvée</p>
+                          </td>
+                        </tr>
+
+                        <!-- Afficher les sessions -->
+                        <tr *ngFor="let session of paginatedSessions" class="border-bottom">
                           <td>
                             <div class="d-flex align-items-center">
                               <div class="avatar avatar-sm me-3">
-                                <span class="avatar-initial rounded-circle bg-primary text-white">L</span>
+                                <span class="avatar-initial rounded-circle bg-primary text-white">
+                                  {{ session.customer.name?.charAt(0) || '?' }}
+                                </span>
                               </div>
                               <div>
-                                <h6 class="mb-0">Lenny Gad</h6>
-                                <small class="text-muted">2250102030405</small>
+                                <h6 class="mb-0">{{ session.customer.name || 'Non renseigné' }}</h6>
+                                <small class="text-muted">{{ session.customer.phoneNumber || 'N/A' }}</small>
                               </div>
                             </div>
                           </td>
                           <td>
                             <div>
-                              <span class="d-block fw-bold">Toyota (Rouge)</span>
-                              <small class="text-muted">332201252AAA</small>
+                              <span class="d-block fw-bold">
+                                {{ session.vehicleBrand || 'N/A' }}
+                                <span *ngIf="session.vehicleColor">({{ session.vehicleColor }})</span>
+                              </span>
+                              <small class="text-muted">{{ session.vehiclePlate || 'N/A' }}</small>
                             </div>
                           </td>
                           <td>
-                            <span class="badge bg-info-light text-info">Lavage extérieur complet</span>
-                          </td>
-                          <td>Centre Cocody</td>
-                          <td>
-                            <span class="badge bg-success-light text-success">
-                              <i class="fas fa-check-circle me-1"></i> Terminé
+                            <span class="badge bg-info-light text-info">
+                              {{ session.serviceId || 'N/A' }}
                             </span>
                           </td>
                           <td>
-                            <span class="fw-bold text-primary">1 600 FCFA</span>
+                            {{ session.centreId || 'N/A' }}
                           </td>
                           <td>
-                            <div>
-                              <span class="d-block">26/07/2025</span>
-                              <small class="text-muted">10:30 - 11:00</small>
-                            </div>
+                            <span class="fw-bold text-primary">
+                              {{ session.price }}
+                            </span>
                           </td>
                           <td class="text-end pe-4">
                             <div class="dropdown">
@@ -331,7 +369,7 @@
                                     <i class="fas fa-receipt me-2"></i>Facture
                                   </a>
                                 </li>
-                                <li>
+                                <li *ngIf="session.cancellationReason">
                                   <a class="dropdown-item text-danger" href="#">
                                     <i class="fas fa-times-circle me-2"></i>Annuler
                                   </a>
@@ -345,24 +383,18 @@
                   </div>
 
                   <!-- Pagination -->
-                  <div class="d-flex justify-content-between align-items-center mt-4">
+                  <div class="d-flex justify-content-between align-items-center mt-4"
+                    *ngIf="filteredSessions.length > 0">
                     <div class="text-muted">
-                      Affichage de <span class="fw-bold">1</span> à <span class="fw-bold">3</span> sur <span
-                        class="fw-bold">12</span> sessions
+                      Affichage de <span class="fw-bold">{{ (currentPage - 1) * itemsPerPage + 1 }}</span>
+                      à
+                      sur <span class="fw-bold">{{ totalItems }}</span> sessions
                     </div>
                     <nav aria-label="Page navigation">
                       <ul class="pagination pagination-sm mb-0">
-                        <li class="page-item disabled">
-                          <a class="page-link" href="#" tabindex="-1" aria-disabled="true">
+                        <li class="page-item" [class.disabled]="currentPage === 1">
+                          <a class="page-link" (click)="pageChanged(currentPage - 1)" aria-label="Previous">
                             <i class="fas fa-chevron-left"></i>
-                          </a>
-                        </li>
-                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
-                        <li class="page-item"><a class="page-link" href="#">2</a></li>
-                        <li class="page-item"><a class="page-link" href="#">3</a></li>
-                        <li class="page-item">
-                          <a class="page-link" href="#">
-                            <i class="fas fa-chevron-right"></i>
                           </a>
                         </li>
                       </ul>

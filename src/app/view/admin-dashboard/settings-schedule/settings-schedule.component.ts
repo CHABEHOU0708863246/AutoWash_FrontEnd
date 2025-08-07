@@ -12,12 +12,10 @@ import { CommonModule } from '@angular/common';
 import { CentresService } from '../../../core/services/Centres/centres.service';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Users } from '../../../core/models/Users/Users';
-import {
-  DayOfWeek,
-  ScheduleSettings,
-} from '../../../core/models/Settings/ScheduleSettings';
 import { ScheduleSettingsService } from '../../../core/services/ScheduleSettings/schedule-settings.service';
 import { RolesService } from '../../../core/services/Roles/roles.service';
+import { DayOfWeek } from '../../../core/models/Settings/DayOfWeek';
+import { ScheduleSettings } from '../../../core/models/Settings/Schedule/ScheduleSettings';
 
 @Component({
   selector: 'app-settings-schedule',

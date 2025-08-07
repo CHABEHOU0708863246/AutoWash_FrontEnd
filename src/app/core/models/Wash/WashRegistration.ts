@@ -14,6 +14,8 @@ export interface WashRegistration {
   transactionId?: string;
   applyLoyaltyDiscount: boolean;
   discountCode?: string;
-  performedByUserId: string;
-  isAdminOverride: boolean;
+  notes?: string;
+  performedByUserId?: string;
+  isAdminOverride?: boolean;
+  requestDate?: Date;
 }

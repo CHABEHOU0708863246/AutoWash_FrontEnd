@@ -5,29 +5,56 @@ import { Router, RouterLink } from '@angular/router';
 import { Users } from '../../../core/models/Users/Users';
 import { AuthService } from '../../../core/services/Auth/auth.service';
 import { UsersService } from '../../../core/services/Users/users.service';
+import { WashSession } from '../../../core/models/Wash/WashSession';
+import { Centres } from '../../../core/models/Centres/Centres';
+import { WashsService } from '../../../core/services/Washs/washs.service';
+import { finalize } from 'rxjs';
+import { CommonModule } from '@angular/common';
+import { ApiResponseData } from '../../../core/models/ApiResponseData';
+import { ServiceSettingsService } from '../../../core/services/ServiceSettings/service-settings.service';
+import { VehiclesSettingsService } from '../../../core/services/VehiclesSettings/vehicles-settings.service';
+import { ServiceSettings } from '../../../core/models/Settings/Services/ServiceSettings';
+import { VehicleTypeSettings } from '../../../core/models/Settings/Vehicles/VehicleTypeSettings';
 
 @Component({
   selector: 'app-wash-sessions',
-  imports: [ReactiveFormsModule, FormsModule, RouterLink],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, CommonModule],
   templateUrl: './wash-sessions.component.html',
   styleUrl: './wash-sessions.component.scss'
 })
 export class WashSessionsComponent implements OnInit{
 
-  users: Users[] = []; // Liste complète des utilisateurs.
-  displayedUsers: Users[] = []; // Liste des utilisateurs affichés sur la page actuelle.
-  currentUser: Users | null = null; // Utilisateur actuellement connecté.
-  user: Users | null = null; // Informations sur l'utilisateur connecté.
+  users: Users[] = [];
+  displayedUsers: Users[] = [];
+  currentUser: Users | null = null;
+  user: Users | null = null;
   isSidebarCollapsed = false;
   washForm!: FormGroup;
+
+  // Propriétés pour la gestion des sessions de lavage
+  washSessions: WashSession[] = [];
+  filteredSessions: WashSession[] = [];
+  isLoading = false;
+  currentPage = 1;
+  itemsPerPage = 10;
+  totalItems = 0;
+  searchTerm = '';
+  centres: Centres[] = [];
+  selectedCentre = '';
+
+  services: ServiceSettings[] = [];
+  vehicleTypes: VehicleTypeSettings[] = [];
 
 
   constructor(
     private sanitizer: DomSanitizer,
-    private usersService: UsersService, // Service pour interagir avec les utilisateurs.
-    private router: Router, // Service pour la navigation entre les routes.
-    private authService: AuthService, // Service pour gérer l'authentification.
-    private fb: FormBuilder
+    private usersService: UsersService,
+    private router: Router,
+    private authService: AuthService,
+    private fb: FormBuilder,
+    private washService: WashsService,
+    private serviceSettingsService: ServiceSettingsService, // Ajouter
+    private vehiclesSettingsService: VehiclesSettingsService
   ) {
     this.washForm = this.fb.group({
       centreId: ['', Validators.required],
@@ -44,11 +71,63 @@ export class WashSessionsComponent implements OnInit{
     });
   }
 
-  ngOnInit(): void {
-    this.getUsers(); // Récupère les utilisateurs.
-    this.loadCurrentUser(); // Charge l'utilisateur connecté
+  loadServicesAndVehicleTypes(): void {
+    if (this.centres.length > 0) {
+      // Charger les services pour tous les centres
+      const servicePromises = this.centres.map(centre =>
+        this.serviceSettingsService.getActiveServicesByCentre(centre.id!).toPromise()
+      );
 
-    // S'abonner aux changements de l'utilisateur connecté
+      // Charger les types de véhicules pour tous les centres
+      const vehicleTypePromises = this.centres.map(centre =>
+        this.vehiclesSettingsService.getActiveVehicleTypesByCentre(centre.id!).toPromise()
+      );
+
+      // Exécuter les promesses en parallèle
+      Promise.all([
+        Promise.all(servicePromises),
+        Promise.all(vehicleTypePromises)
+      ]).then(([serviceResponses, vehicleTypeResponses]) => {
+
+        // Traiter les services
+        this.services = [];
+        serviceResponses.forEach(response => {
+          if (response?.success && response.data) {
+            this.services = [...this.services, ...response.data];
+          }
+        });
+        // Supprimer les doublons
+        this.services = this.services.filter((service, index, self) =>
+          index === self.findIndex(s => s.id === service.id)
+        );
+
+        // Traiter les types de véhicules
+        this.vehicleTypes = [];
+        vehicleTypeResponses.forEach(response => {
+          if (response?.success && response.data) {
+            this.vehicleTypes = [...this.vehicleTypes, ...response.data];
+          }
+        });
+        // Supprimer les doublons
+        this.vehicleTypes = this.vehicleTypes.filter((type, index, self) =>
+          index === self.findIndex(t => t.id === type.id)
+        );
+
+      }).catch(error => {
+        console.error('Erreur lors du chargement des services et types de véhicules', error);
+      });
+    }
+  }
+
+   ngOnInit(): void {
+    this.getUsers();
+    this.loadCurrentUser();
+    this.loadCentres();
+    // Charger les sessions après avoir chargé les centres
+    setTimeout(() => {
+      this.loadWashSessions();
+    }, 500);
+
     this.authService.currentUser$.subscribe((user) => {
       if (user && user !== this.currentUser) {
         this.currentUser = user;
@@ -56,6 +135,108 @@ export class WashSessionsComponent implements OnInit{
       }
     });
   }
+
+  // Méthodes pour obtenir les noms à partir des IDs
+  getServiceName(serviceId: string): string {
+    const service = this.services.find(s => s.id === serviceId);
+    return service?.name || serviceId;
+  }
+
+  getCentreName(centreId: string): string {
+    const centre = this.centres.find(c => c.id === centreId);
+    return centre?.name || centreId;
+  }
+
+
+  loadCentres(): void {
+    this.washService.getActiveCentres().subscribe({
+      next: (response) => {
+        console.log('Centres response:', response);
+        if (response.success && response.data) {
+          this.centres = response.data;
+          // Si aucun centre n'est sélectionné, prendre le premier
+          if (!this.selectedCentre && this.centres.length > 0) {
+            this.selectedCentre = this.centres[0].id || '';
+          }
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des centres', error);
+      }
+    });
+  }
+
+
+  loadWashSessions(): void {
+  this.isLoading = true;
+  if (this.selectedCentre) {
+    // Chargement par centre (méthode existante)
+    this.washService.getCompletedWashes(this.selectedCentre)
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (response) => this.handleWashSessionsResponse(response),
+        error: (error) => this.handleWashSessionsError(error)
+      });
+  } else {
+    // Chargement de toutes les sessions
+    this.washService.getAllWashSessions()
+      .pipe(finalize(() => this.isLoading = false))
+      .subscribe({
+        next: (response) => this.handleWashSessionsResponse(response),
+        error: (error) => this.handleWashSessionsError(error)
+      });
+  }
+}
+
+handleWashSessionsResponse(response: ApiResponseData<WashSession[]>): void {
+  if (response.success && response.data) {
+    this.washSessions = response.data;
+    this.filteredSessions = [...this.washSessions];
+    this.totalItems = this.filteredSessions.length;
+
+    // Optionnel: Trier par date (du plus récent au plus ancien)
+    this.filteredSessions.sort((a, b) =>
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
+}
+
+handleWashSessionsError(error: any): void {
+  console.error('Erreur lors du chargement des sessions', error);
+  // Vous pouvez ajouter ici un toast/message d'erreur
+}
+
+  filterByCentre(centreId: string): void {
+    this.selectedCentre = centreId;
+    this.loadWashSessions();
+  }
+
+
+  // Pagination
+  get paginatedSessions(): WashSession[] {
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    return this.filteredSessions.slice(startIndex, startIndex + this.itemsPerPage);
+  }
+
+  // Change de page
+  pageChanged(page: number): void {
+    this.currentPage = page;
+  }
+
+  // Formatte le statut
+  getStatusBadge(status: string): string {
+    switch (status) {
+      case 'Completed':
+        return 'bg-success-light text-success';
+      case 'Cancelled':
+        return 'bg-danger-light text-danger';
+      case 'InProgress':
+        return 'bg-warning-light text-warning';
+      default:
+        return 'bg-secondary-light text-secondary';
+    }
+  }
+
 
  /**
    * Charge les photos des utilisateurs et les sécurise pour l'affichage.

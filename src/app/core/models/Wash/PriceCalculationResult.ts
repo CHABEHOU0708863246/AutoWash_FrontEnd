@@ -7,6 +7,7 @@ export class PriceCalculationResult {
   loyaltyDiscountApplied: boolean = false;
   customerWashCount: number = 0;
 
+
   constructor(init?: Partial<PriceCalculationResult>) {
     Object.assign(this, init);
 
