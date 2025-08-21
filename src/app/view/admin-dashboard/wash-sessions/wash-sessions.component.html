@@ -80,8 +80,6 @@
               lavage</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/wash-queue']"><i class="fas fa-clock"></i> File
               d'attente</a></li>
-          <li><a class="dropdown-item" [routerLink]="['/admin/wash-types']"><i class="fas fa-list-alt"></i> Types de
-              lavage</a></li>
         </ul>
       </div>
 
@@ -294,8 +292,8 @@
                           <th>Véhicule</th>
                           <th>Service</th>
                           <th>Centre</th>
+                          <th>Date</th>
                           <th>Prix (FCFA)</th>
-                          <th class="text-end pe-4">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -341,41 +339,23 @@
                           </td>
                           <td>
                             <span class="badge bg-info-light text-info">
-                              {{ session.serviceId || 'N/A' }}
+                              <i class="fas fa-concierge-bell me-1"></i>
+                              {{ getServiceName(session.serviceId) }}
                             </span>
                           </td>
                           <td>
-                            {{ session.centreId || 'N/A' }}
+                            <span class="d-block fw-bold">
+                               {{ getCentreName(session.centreId) }}
+                            </span>
                           </td>
+                          <td>
+                            <span class="d-block">
+                              {{ session.updatedAt| date: 'dd/MM/yyyy HH:mm' }}
+                            </span>
                           <td>
                             <span class="fw-bold text-primary">
                               {{ session.price }}
                             </span>
-                          </td>
-                          <td class="text-end pe-4">
-                            <div class="dropdown">
-                              <button class="btn btn-sm btn-icon-only text-muted" type="button"
-                                data-bs-toggle="dropdown">
-                                <i class="fas fa-ellipsis-v"></i>
-                              </button>
-                              <ul class="dropdown-menu dropdown-menu-end">
-                                <li>
-                                  <a class="dropdown-item" href="#">
-                                    <i class="fas fa-eye me-2"></i>Détails
-                                  </a>
-                                </li>
-                                <li>
-                                  <a class="dropdown-item" href="#">
-                                    <i class="fas fa-receipt me-2"></i>Facture
-                                  </a>
-                                </li>
-                                <li *ngIf="session.cancellationReason">
-                                  <a class="dropdown-item text-danger" href="#">
-                                    <i class="fas fa-times-circle me-2"></i>Annuler
-                                  </a>
-                                </li>
-                              </ul>
-                            </div>
                           </td>
                         </tr>
                       </tbody>

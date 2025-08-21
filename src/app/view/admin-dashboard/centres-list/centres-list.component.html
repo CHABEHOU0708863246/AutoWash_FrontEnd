@@ -83,8 +83,6 @@
               lavage</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/wash-queue']"><i class="fas fa-clock"></i> File
               d'attente</a></li>
-          <li><a class="dropdown-item" [routerLink]="['/admin/wash-types']"><i class="fas fa-list-alt"></i> Types de
-              lavage</a></li>
         </ul>
       </div>
 
@@ -278,7 +276,7 @@
                     <th>Nom du centre</th>
                     <th>Précision sur la localisation</th>
                     <th>Gérant du centre</th>
-                    <th>Nombre d'employés</th>
+                    <th>Nombre de laveurs</th>
                     <th>Statut</th>
                     <th width="120px">Actions</th>
                   </tr>
@@ -313,7 +311,8 @@
                     <td>
                       <span class="badge bg-light text-dark rounded-pill py-2 px-3">
                         <i class="fas fa-users me-2 text-muted"></i>
-                        {{'À déterminer' }}
+                        {{ getEmployeeCount(centre?.id) }}
+                        <span class="text-muted">laveur(s)</span>
                       </span>
                     </td>
                     <td>

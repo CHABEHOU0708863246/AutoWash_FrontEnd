@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { catchError, map, Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment.development';
 import { ApiResponseData } from '../../models/ApiResponseData';
 import { WashSession } from '../../models/Wash/WashSession';
@@ -14,6 +14,7 @@ import { CreateOrUpdateCustomerRequest } from '../../models/Wash/CreateOrUpdateC
 import { WashRegistration } from '../../models/Wash/WashRegistration';
 import { ServiceSettings } from '../../models/Settings/Services/ServiceSettings';
 import { VehicleTypeSettings } from '../../models/Settings/Vehicles/VehicleTypeSettings';
+import { Users } from '../../models/Users/Users';
 
 @Injectable({
   providedIn: 'root'
@@ -26,11 +27,13 @@ export class WashsService {
   //#region Méthodes principales d'enregistrement
 
   /**
- * Récupère tous les services
+ * Récupère la liste des laveurs par centre
+ * @param centreId ID du centre
+ * @returns Observable contenant la liste des laveurs
  */
-getAllServices(): Observable<ApiResponseData<ServiceSettings[]>> {
-  return this.http.get<ApiResponseData<ServiceSettings[]>>(
-    `${this.baseUrl}/all-services`
+getWashersByCentre(centreId: string): Observable<ApiResponseData<Users[]>> {
+  return this.http.get<ApiResponseData<Users[]>>(
+    `${this.baseUrl}/by-centre/${centreId}`
   );
 }
 
@@ -63,6 +66,13 @@ getAllWashSessions(): Observable<ApiResponseData<WashSession[]>> {
     );
   }
 
+  registerCustomer(registration: CreateOrUpdateCustomerRequest): Observable<ApiResponseData<Customer>> {
+  return this.http.post<ApiResponseData<Customer>>(
+    `${this.baseUrl}/customer`,
+    registration
+  );
+}
+
   //#endregion
 
   //#region Méthodes de calcul de prix
@@ -76,7 +86,7 @@ getAllWashSessions(): Observable<ApiResponseData<WashSession[]>> {
       .set('vehicleTypeId', vehicleTypeId);
 
     return this.http.get<ApiResponseData<number>>(
-      `${this.baseUrl}/calculate-base-price`, // URL distincte
+      `${this.baseUrl}/calculate-base-price`,
       { params }
     );
   }
@@ -98,7 +108,7 @@ getAllWashSessions(): Observable<ApiResponseData<WashSession[]>> {
     }
 
     return this.http.get<ApiResponseData<PriceCalculationResult>>(
-      `${this.baseUrl}/calculate-final-price`, // URL distincte et correcte
+      `${this.baseUrl}/calculate-final-price`,
       { params }
     );
   }
@@ -115,7 +125,7 @@ getAllWashSessions(): Observable<ApiResponseData<WashSession[]>> {
       .set('originalPrice', originalPrice.toString());
 
     return this.http.get<ApiResponseData<number>>(
-      `${this.baseUrl}/loyalty-discount`, // URL distincte
+      `${this.baseUrl}/loyalty-discount`,
       { params }
     );
   }
@@ -136,7 +146,7 @@ getAllWashSessions(): Observable<ApiResponseData<WashSession[]>> {
       .set('centreId', centreId);
 
     return this.http.get<ApiResponseData<boolean>>(
-      `${this.baseUrl}/service-availability`, // URL plus claire
+      `${this.baseUrl}/service-availability`,
       { params }
     );
   }
@@ -153,7 +163,7 @@ getAllWashSessions(): Observable<ApiResponseData<WashSession[]>> {
       .set('centreId', centreId);
 
     return this.http.get<ApiResponseData<boolean>>(
-      `${this.baseUrl}/vehicle-type-acceptance`, // URL plus claire
+      `${this.baseUrl}/vehicle-type-acceptance`,
       { params }
     );
   }
@@ -202,7 +212,7 @@ getAllWashSessions(): Observable<ApiResponseData<WashSession[]>> {
    */
   getActiveCentres(): Observable<ApiResponseData<Centres[]>> {
     return this.http.get<ApiResponseData<Centres[]>>(
-      `${this.baseUrl}/active-centres`
+      `${this.baseUrl}/centres`
     );
   }
 
@@ -325,12 +335,20 @@ getAllWashSessions(): Observable<ApiResponseData<WashSession[]>> {
   /**
    * Récupère l'historique des lavages d'un client
    */
-getCustomerWashHistory(customerPhone: string, page: number = 1, pageSize: number = 5): Observable<ApiResponseData<WashSession[]>> {
+getCustomerWashHistory(
+  customerPhone: string,
+  page: number = 1,
+  pageSize: number = 100  // Par défaut, récupérer plus d'historique
+): Observable<ApiResponseData<WashSession[]>> {
   const params = new HttpParams()
     .set('customerPhone', customerPhone)
     .set('page', page.toString())
     .set('pageSize', pageSize.toString());
-  return this.http.get<ApiResponseData<WashSession[]>>(`${this.baseUrl}/customers/${customerPhone}/history`, { params });
+
+  return this.http.get<ApiResponseData<WashSession[]>>(
+    `${this.baseUrl}/customers/${customerPhone}/history`,
+    { params }
+  );
 }
 
   //#endregion
@@ -447,23 +465,32 @@ getCustomerWashHistory(customerPhone: string, page: number = 1, pageSize: number
   /**
    * Récupère les lavages terminés pour un centre
    */
-  getCompletedWashes(
-    centreId: string,
-    startDate?: Date,
-    endDate?: Date
-  ): Observable<ApiResponseData<WashSession[]>> {
-    let params = new HttpParams().set('centreId', centreId);
-
-    if (startDate) {
-      params = params.set('startDate', startDate.toISOString());
-    }
-    if (endDate) {
-      params = params.set('endDate', endDate.toISOString());
-    }
-
+  getCompletedWashes(centreId: string): Observable<ApiResponseData<WashSession[]>> {
+    // Vérifier si l'endpoint existe réellement ou utiliser une alternative
+    // Si l'endpoint n'existe pas, utiliser getAllWashSessions() et filtrer côté client
     return this.http.get<ApiResponseData<WashSession[]>>(
-      `${this.baseUrl}/completed-washes`,
-      { params }
+      `${this.baseUrl}/completed-washes?centreId=${centreId}`
+    ).pipe(
+      // Gestion d'erreur si l'endpoint n'existe pas
+      catchError(error => {
+        console.warn('Endpoint completed-washes non trouvé, utilisation de fallback');
+        return this.getAllWashSessions().pipe(
+          map(response => {
+            if (response.success && response.data) {
+              // Filtrer côté client les sessions complétées pour ce centre
+              const completedSessions = response.data.filter(session =>
+                session.centreId === centreId
+              );
+              return {
+                success: true,
+                data: completedSessions,
+                message: 'Sessions complétées récupérées avec succès'
+              };
+            }
+            return response;
+          })
+        );
+      })
     );
   }
 

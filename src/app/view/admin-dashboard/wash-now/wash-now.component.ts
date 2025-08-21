@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../../../core/services/Auth/auth.service';
 import { UsersService } from '../../../core/services/Users/users.service';
@@ -14,9 +14,11 @@ import {
 } from '@angular/forms';
 import { PaymentMethod } from '../../../core/models/Payments/PaymentMethod';
 import {
+  catchError,
   debounceTime,
   distinctUntilChanged,
   EMPTY,
+  finalize,
   lastValueFrom,
   of,
   Subject,
@@ -45,7 +47,6 @@ import { VehicleTypeSettings } from '../../../core/models/Settings/Vehicles/Vehi
     FormsModule,
     RouterLink,
     CommonModule,
-    CurrencyPipe,
     DatePipe,
   ],
   templateUrl: './wash-now.component.html',
@@ -59,6 +60,10 @@ export class WashNowComponent implements OnInit {
   user: Users | null = null;
   isSidebarCollapsed = false;
   washForm!: FormGroup;
+  // Propriétés existantes...
+  washers: Users[] = []; // Liste complète des laveurs
+  filteredWashers: Users[] = []; // Laveurs filtrés (par centre)
+  isLoadingWashers = false; // État de chargement
 
   // Nouvelles propriétés pour le service
   centres: Centres[] = [];
@@ -82,6 +87,8 @@ export class WashNowComponent implements OnInit {
   errorMessages: string[] = [];
   successMessage = '';
 
+  private registrationCounter = 0;
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -93,7 +100,8 @@ export class WashNowComponent implements OnInit {
     private washsService: WashsService,
     private centresService: CentresService,
     private serviceSettingsService: ServiceSettingsService,
-    private vehiclesSettingsService: VehiclesSettingsService
+    private vehiclesSettingsService: VehiclesSettingsService,
+    private cdr: ChangeDetectorRef
   ) {
     this.initializeForm();
     this.setupFormSubscriptions();
@@ -123,61 +131,104 @@ export class WashNowComponent implements OnInit {
   initializeForm(): void {
     this.washForm = this.fb.group({
       centreId: ['', Validators.required],
-      serviceId: [{ value: '', disabled: true }, Validators.required],
-      vehicleTypeId: [{ value: '', disabled: true }, Validators.required],
+      serviceId: ['', Validators.required],
+      vehicleTypeId: ['', Validators.required],
+      washerId: ['', Validators.required],
       vehiclePlate: ['', [Validators.required, Validators.minLength(4)]],
       vehicleBrand: [''],
       vehicleColor: [''],
       customerPhone: [
         '',
-        [Validators.required, Validators.pattern(/^[0-9]{10,15}$/)],
+        [Validators.required, Validators.pattern(/^\+?[0-9]{10,15}$/)],
       ],
-      customerName: [''],
+      customerName: ['', Validators.required],
+      customerEmail: ['', [Validators.email]],
       transactionId: [''],
       paymentMethod: [PaymentMethod.CASH, Validators.required],
       amountPaid: [0],
       applyLoyaltyDiscount: [false],
       isAdminOverride: [false],
-      registration: ['', Validators.required],
+      registration: [''],
+      status: true
     });
+
+    // Désactiver les champs après création du formulaire
+    this.washForm.get('serviceId')?.disable();
+    this.washForm.get('vehicleTypeId')?.disable();
+    this.washForm.get('washerId')?.disable();
   }
 
+  debugFormValidation(): void {
+  console.log('Form valid:', this.washForm.valid);
+  console.log('Form status:', this.washForm.status);
+  console.log('Form errors:', this.washForm.errors);
+
+  // Vérification spéciale pour le nom du client
+  const customerName = this.washForm.get('customerName');
+  if (customerName?.invalid) {
+    console.log('Customer name errors:', customerName.errors);
+    if (customerName.errors?.['required']) {
+      console.log('Le nom du client est obligatoire');
+    }
+  }
+
+  Object.keys(this.washForm.controls).forEach(key => {
+    const control = this.washForm.get(key);
+    if (control?.invalid) {
+      console.log(`${key} errors:`, control.errors);
+    }
+  });
+}
+
   setupFormSubscriptions(): void {
-    // Surveillance des changements du centre pour charger les services et types de véhicules
+    // Surveillance des changements du centre
     this.washForm
       .get('centreId')
       ?.valueChanges.pipe(takeUntil(this.destroy$), distinctUntilChanged())
-      .subscribe((centreId) => {
+      .subscribe(async (centreId) => {
+        console.log('Centre changed to:', centreId);
+
         if (centreId) {
-          this.loadServicesByCentre(centreId);
-          this.loadVehicleTypesByCentre(centreId);
-          this.resetPriceCalculation();
-
-          // Activer les selects quand un centre est sélectionné
-          this.washForm.get('serviceId')?.enable();
-          this.washForm.get('vehicleTypeId')?.enable();
-        } else {
-          this.services = [];
-          this.vehicleTypes = [];
-
-          // Désactiver et vider les selects
-          this.washForm.get('serviceId')?.disable();
-          this.washForm.get('vehicleTypeId')?.disable();
+          // Réinitialiser les valeurs AVANT de désactiver
           this.washForm.patchValue({
             serviceId: '',
             vehicleTypeId: '',
+            washerId: '',
           });
+
+          // Réinitialiser immédiatement les listes
+          this.services = [];
+          this.vehicleTypes = [];
+          this.filteredWashers = [];
+
+          try {
+            // Charger les données en parallèle
+            await Promise.all([
+              this.loadServicesByCentre(centreId),
+              this.loadVehicleTypesByCentre(centreId),
+              this.loadWashersByCentre(centreId),
+            ]);
+
+            // CORRECTION: Activer les champs APRÈS avoir chargé les données
+            this.washForm.get('serviceId')?.enable();
+            this.washForm.get('vehicleTypeId')?.enable();
+            this.washForm.get('washerId')?.enable();
+          } catch (error) {
+            console.error('Error loading centre data:', error);
+            this.handleError(
+              'Erreur lors du chargement des données du centre',
+              error
+            );
+          }
         }
       });
 
-    // CORRECTION: Synchroniser selectedPaymentMethod avec le formulaire
+    // Reste des subscriptions...
     this.washForm
       .get('paymentMethod')
       ?.valueChanges.pipe(takeUntil(this.destroy$))
       .subscribe((method: PaymentMethod) => {
-        // Synchroniser la propriété selectedPaymentMethod
         this.selectedPaymentMethod = method;
-
         const transactionControl = this.washForm.get('transactionId');
         if (method !== PaymentMethod.CASH) {
           transactionControl?.setValidators([Validators.required]);
@@ -187,7 +238,7 @@ export class WashNowComponent implements OnInit {
         transactionControl?.updateValueAndValidity();
       });
 
-    // Surveillance du téléphone client pour recherche automatique
+    // Surveillance du téléphone client
     this.washForm
       .get('customerPhone')
       ?.valueChanges.pipe(
@@ -205,7 +256,7 @@ export class WashNowComponent implements OnInit {
       )
       .subscribe();
 
-    // Surveillance des changements pour recalculer le prix
+    // Surveillance pour recalcul du prix
     const priceFields = [
       'serviceId',
       'vehicleTypeId',
@@ -235,6 +286,46 @@ export class WashNowComponent implements OnInit {
       );
     } finally {
       this.isLoading = false;
+    }
+  }
+
+  async loadWashersByCentre(centreId: string): Promise<void> {
+    try {
+      this.isLoadingWashers = true;
+      this.washers = [];
+      this.filteredWashers = [];
+      this.cdr.detectChanges();
+
+      const response = await lastValueFrom(
+        this.washsService.getWashersByCentre(centreId).pipe(
+          takeUntil(this.destroy$),
+          catchError((error) => {
+            console.error('Error loading washers:', error);
+            this.handleError('Erreur lors du chargement des laveurs', error);
+            return of({ success: false, data: [] }); // Retourner un tableau vide en cas d'erreur
+          })
+        )
+      );
+
+      // Modifiez cette partie pour gérer directement le tableau
+      if (Array.isArray(response)) {
+        this.washers = response;
+        this.filteredWashers = [...response];
+      } else if (response?.data && Array.isArray(response.data)) {
+        this.washers = response.data;
+        this.filteredWashers = [...response.data];
+      } else {
+        this.washers = [];
+        this.filteredWashers = [];
+      }
+
+    } catch (error) {
+      console.error('Unexpected error loading washers:', error);
+      this.washers = [];
+      this.filteredWashers = [];
+    } finally {
+      this.isLoadingWashers = false;
+      this.cdr.detectChanges();
     }
   }
 
@@ -300,35 +391,36 @@ export class WashNowComponent implements OnInit {
   }
 
   searchCustomerByPhone(phone: string) {
-    this.isSearchingCustomer = true;
+  this.isSearchingCustomer = true;
 
-    return this.washsService.findCustomerByPhone(phone).pipe(
-      takeUntil(this.destroy$),
-      switchMap((response) => {
-        this.isSearchingCustomer = false;
+  return this.washsService.findCustomerByPhone(phone).pipe(
+    takeUntil(this.destroy$),
+    switchMap((response) => {
+      this.isSearchingCustomer = false;
 
-        if (response.success && response.data) {
-          this.currentCustomer = response.data;
+      if (response.success && response.data) {
+        this.currentCustomer = response.data;
 
-          // Mise à jour automatique du nom du client
+        // CORRECTION: Ne mettre à jour le nom que s'il est vide
+        const currentName = this.washForm.get('customerName')?.value;
+        if (!currentName || currentName.trim() === '') {
           this.washForm.patchValue({
             customerName: this.currentCustomer.name,
           });
-
-          // Charger l'historique
-          this.loadCustomerHistory(phone);
-        } else {
-          // Réinitialiser si client non trouvé
-          this.currentCustomer = null;
-          this.customerHistory = [];
-          this.washForm.patchValue({
-            customerName: '',
-          });
         }
-        return of(response);
-      })
-    );
-  }
+
+        // Charger l'historique
+        this.loadCustomerHistory(phone);
+      } else {
+        // Réinitialiser si client non trouvé (mais garder le nom saisi)
+        this.currentCustomer = null;
+        this.customerHistory = [];
+        // NE PAS vider le nom si l'utilisateur l'a déjà saisi
+      }
+      return of(response);
+    })
+  );
+}
 
   loadCustomerHistory(customerPhone: string): void {
     this.washsService
@@ -382,7 +474,6 @@ export class WashNowComponent implements OnInit {
         error: (error) => {
           this.isCalculatingPrice = false;
           this.priceCalculation = null;
-          console.error('Erreur lors du calcul du prix:', error);
 
           // AJOUT : Fallback avec calcul local basique si l'API échoue
           if (error.status === 404 || error.status === 500) {
@@ -444,7 +535,33 @@ export class WashNowComponent implements OnInit {
     transactionControl?.updateValueAndValidity();
   }
 
+  getInvalidControls(): Array<{ name: string; errors: any }> {
+    const invalid = [];
+    const controls = this.washForm.controls;
+    for (const name in controls) {
+      if (controls[name].invalid) {
+        invalid.push({
+          name: name,
+          errors: controls[name].errors,
+        });
+      }
+    }
+    return invalid;
+  }
+
+  /**
+   *
+   * @returns Un numéro d'enregistrement unique basé sur la date et un compteur.
+   */
+  generateRegistrationNumber(): string {
+    const timestamp = new Date().getTime().toString().slice(-6);
+    this.registrationCounter = (this.registrationCounter + 1) % 1000;
+    const counter = this.registrationCounter.toString().padStart(3, '0');
+    return `REG-${timestamp}-${counter}`;
+  }
+
   async onSubmit(): Promise<void> {
+    this.debugFormValidation();
     if (this.washForm.invalid) {
       this.markFormGroupTouched(this.washForm);
       return;
@@ -455,10 +572,16 @@ export class WashNowComponent implements OnInit {
     this.successMessage = '';
 
     try {
+      // 1. Générer le numéro d'enregistrement si non fourni
+      if (!this.washForm.value.registration) {
+        const autoRegistration = this.generateRegistrationNumber();
+        this.washForm.patchValue({ registration: autoRegistration });
+      }
+
       // 2. Créer ou obtenir le client
       const customer = await this.getOrCreateCustomer();
 
-      // 3. Préparer l'enregistrement
+      // 3. Préparer l'enregistrement avec le statut true (terminé)
       const registration = this.prepareWashRegistration(customer);
 
       // 4. Enregistrer le lavage
@@ -481,63 +604,86 @@ export class WashNowComponent implements OnInit {
     }
   }
 
-
   async getOrCreateCustomer(): Promise<Customer> {
-    const { customerPhone, customerName } = this.washForm.value;
+  const { customerPhone, customerName, customerEmail, vehicleBrand } = this.washForm.value;
 
-    const customerRequest: CreateOrUpdateCustomerRequest = {
-      phone: customerPhone,
-      name: customerName || 'Client',
-      email: '',
-    };
-
-    return new Promise((resolve, reject) => {
-      this.washsService
-        .getOrCreateCustomer(customerRequest)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (response) => {
-            if (response.success && response.data) {
-              resolve(response.data);
-            } else {
-              reject(new Error('Impossible de créer/obtenir le client'));
-            }
-          },
-          error: reject,
-        });
-    });
+  // VALIDATION: Vérifier que le nom n'est pas vide
+  if (!customerName || customerName.trim() === '') {
+    throw new Error('Le nom du client est obligatoire');
   }
 
-prepareWashRegistration(customer?: Customer): WashRegistration {
-    const formValue = this.washForm.value;
+  // Récupérer le type de véhicule sélectionné
+  const selectedVehicleType = this.vehicleTypes.find(vt => vt.id === this.washForm.value.vehicleTypeId);
+  const vehicleTypeLabel = selectedVehicleType?.label || 'Non spécifié';
 
-    const customerRequest: CreateOrUpdateCustomerRequest = {
-      phone: formValue.customerPhone,
-      name: formValue.customerName || 'Client',
-      email: formValue.customerEmail || null,
-    };
+  const customerRequest: CreateOrUpdateCustomerRequest = {
+    phone: customerPhone,
+    name: customerName.trim(), // CORRECTION: Utiliser le nom saisi (sans espaces)
+    email: customerEmail || '',
+    vehicleType: vehicleTypeLabel,
+    vehicleBrand: vehicleBrand || 'Non spécifié'
+  };
 
-    return {
-      centreId: formValue.centreId,
-      serviceId: formValue.serviceId,
-      vehicleTypeId: formValue.vehicleTypeId,
-      vehiclePlate: formValue.vehiclePlate.toUpperCase(),
-      vehicleBrand: formValue.vehicleBrand || 'Non spécifié',
-      vehicleColor: formValue.vehicleColor || 'Non spécifié',
-      customer: customerRequest,
-      amountPaid: this.priceCalculation?.finalPrice || 0,
-      paymentMethod: formValue.paymentMethod as PaymentMethod,
-      transactionId: formValue.transactionId || '',
-      applyLoyaltyDiscount: formValue.applyLoyaltyDiscount,
-      isAdminOverride: formValue.isAdminOverride,
-      performedByUserId: this.currentUser?.id || '',
-    };
+  return new Promise((resolve, reject) => {
+    this.washsService
+      .registerCustomer(customerRequest)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            resolve(response.data);
+          } else {
+            reject(new Error('Impossible de créer/obtenir le client'));
+          }
+        },
+        error: reject,
+      });
+  });
 }
 
-  // Méthode pour générer un numéro d'enregistrement si vide
-  generateRegistrationNumber(): string {
-    return 'REG' + Math.random().toString(36).substring(2, 10).toUpperCase();
+  get isFormValid(): boolean {
+    return this.washForm.valid && !this.isSubmitting;
   }
+
+  prepareWashRegistration(customer?: Customer): WashRegistration {
+  const formValue = this.washForm.value;
+
+  // VALIDATION: S'assurer que le nom n'est pas vide
+  if (!formValue.customerName || formValue.customerName.trim() === '') {
+    throw new Error('Le nom du client est obligatoire');
+  }
+
+  // Récupérer les labels des types de véhicule
+  const selectedVehicleType = this.vehicleTypes.find(vt => vt.id === formValue.vehicleTypeId);
+  const vehicleTypeLabel = selectedVehicleType?.label || 'Non spécifié';
+
+  const customerRequest: CreateOrUpdateCustomerRequest = {
+    phone: formValue.customerPhone,
+    name: formValue.customerName.trim(), // CORRECTION: Utiliser le nom saisi
+    email: formValue.customerEmail || '',
+    vehicleType: vehicleTypeLabel,
+    vehicleBrand: formValue.vehicleBrand || 'Non spécifié'
+  };
+
+  return {
+    centreId: formValue.centreId,
+    serviceId: formValue.serviceId,
+    vehicleTypeId: formValue.vehicleTypeId,
+    WasherId: formValue.washerId || '',
+    vehiclePlate: formValue.vehiclePlate.toUpperCase(),
+    vehicleBrand: formValue.vehicleBrand || 'Non spécifié',
+    vehicleColor: formValue.vehicleColor || 'Non spécifié',
+    customer: customerRequest,
+    amountPaid: this.priceCalculation?.finalPrice || 0,
+    paymentMethod: Number(formValue.paymentMethod),
+    transactionId: formValue.transactionId || '',
+    applyLoyaltyDiscount: formValue.applyLoyaltyDiscount,
+    isAdminOverride: formValue.isAdminOverride,
+    performedByUserId: this.currentUser?.id || '',
+    registration: formValue.registration || this.generateRegistrationNumber(),
+    status: true
+  };
+}
 
   getPaymentMethodString(method: PaymentMethod): string {
     switch (method) {
@@ -672,54 +818,10 @@ prepareWashRegistration(customer?: Customer): WashRegistration {
   }
 
   handleError(message: string, error: any): void {
-    console.error(message, error);
     this.errorMessages = [message];
     if (error?.error?.message) {
       this.errorMessages.push(error.error.message);
     }
-  }
-
-  // Getters pour le template
-  get isFormValid(): boolean {
-    // Vérification de base du formulaire
-    if (!this.washForm.valid) {
-      console.log('Formulaire non valide:', this.getFormErrors());
-      return false;
-    }
-
-    // Vérification que le calcul de prix est fait
-    if (!this.priceCalculation) {
-      console.log('Calcul de prix manquant');
-      return false;
-    }
-
-    // Vérification spéciale pour la référence de transaction
-    const transactionId = this.washForm.get('transactionId')?.value;
-    const paymentMethod = this.washForm.get('paymentMethod')?.value;
-
-    if (
-      paymentMethod !== PaymentMethod.CASH &&
-      (!transactionId || transactionId.trim().length === 0)
-    ) {
-      console.log(
-        'Référence de transaction manquante pour le mode de paiement:',
-        paymentMethod
-      );
-      return false;
-    }
-
-    return true;
-  }
-
-  getFormErrors(): any {
-    const errors: any = {};
-    Object.keys(this.washForm.controls).forEach((key) => {
-      const control = this.washForm.get(key);
-      if (control && control.errors) {
-        errors[key] = control.errors;
-      }
-    });
-    return errors;
   }
 
   get totalPrice(): number {

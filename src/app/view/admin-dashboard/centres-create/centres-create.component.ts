@@ -76,6 +76,49 @@ export class CentresCreateComponent {
   }
 
   /**
+   * Vérifie si un utilisateur peut être gérant de plusieurs centres
+   * Seul l'administrateur peut gérer plusieurs centres
+   */
+  canUserManageMultipleCentres(user: Users): boolean {
+    return  user.roles.includes('admin');
+  }
+
+  /**
+   * Vérifie si un gérant est déjà attribué à un autre centre
+   */
+  isManagerAlreadyAssigned(managerId: string): boolean {
+    if (!managerId) return false;
+
+    // Recherche si le manager est déjà assigné à un centre existant
+    const existingAssignment = this.centre.find(centre =>
+      centre.ownerId === managerId && centre.ownerId !== null
+    );
+
+    return !!existingAssignment;
+  }
+
+  /**
+   * Valide la sélection du gérant selon les règles métier
+   */
+  validateManagerSelection(managerId: string, selectedManager: Users): boolean {
+    if (!managerId || managerId === 'null' || managerId === '') {
+      return true; // Aucun gérant sélectionné = valide
+    }
+
+    // Vérifie si le gérant sélectionné peut gérer plusieurs centres
+    const canManageMultiple = this.canUserManageMultipleCentres(selectedManager);
+
+    if (!canManageMultiple && this.isManagerAlreadyAssigned(managerId)) {
+      this.showNotification('error', 'Ce gérant est déjà assigné à un autre centre. Veuillez en choisir un autre.');
+      return false;
+    }
+
+    return true;
+  }
+
+
+
+  /**
    * S'abonne aux changements de l'utilisateur connecté
    */
   private subscribeToCurrentUser(): void {
@@ -253,9 +296,18 @@ export class CentresCreateComponent {
    */
   onSubmit(): void {
     if (this.centreForm.valid) {
-      this.isSubmitting = true;
       const formValue = this.centreForm.value;
 
+      // Validation finale du gérant sélectionné
+      if (formValue.ownerId && formValue.ownerId !== 'null') {
+        const selectedManager = this.managers.find(m => m.id === formValue.ownerId.toString());
+
+        if (selectedManager && !this.validateManagerSelection(formValue.ownerId, selectedManager)) {
+          return; // Arrête la soumission si validation échoue
+        }
+      }
+
+      this.isSubmitting = true;
       const centreData = this.prepareCentreData(formValue);
 
       this.centreService.createCentre(centreData).subscribe({
@@ -323,33 +375,32 @@ export class CentresCreateComponent {
   /**
    * Gère le changement de sélection du gérant
    */
-  onManagerChange(event: Event): void {
-    const selectElement = event.target as HTMLSelectElement;
-    const selectedValue = selectElement.value === 'null' ? null : selectElement.value;
+  onManagerChange(event: any): void {
+    const managerId = event.target.value;
 
-    this.centreForm.patchValue({
-        ownerId: selectedValue
-    });
-}
+    if (managerId && managerId !== 'null') {
+      const selectedManager = this.managers.find(m => m.id === managerId.toString());
 
-  /**
-   * Met à jour le nom du propriétaire dans le formulaire
-   */
-  private updateOwnerName(managerId: string): void {
-    const selectedManager = this.managers.find(
-      (m) => String(m.id) === managerId
-    );
+      if (selectedManager) {
+        const isValid = this.validateManagerSelection(managerId, selectedManager);
 
-    if (selectedManager) {
-      const ownerName =
-        `${selectedManager.firstName || ''} ${
-          selectedManager.lastName || ''
-        }`.trim() ||
-        selectedManager.email ||
-        'Nom non disponible';
-
+        if (!isValid) {
+          // Réinitialise la sélection si invalide
+          this.centreForm.patchValue({
+            ownerId: '',
+            ownerName: ''
+          });
+        } else {
+          // Met à jour le nom du gérant
+          this.centreForm.patchValue({
+            ownerName: `${selectedManager.firstName} ${selectedManager.lastName}`.trim()
+          });
+        }
+      }
+    } else {
+      // Aucun gérant sélectionné
       this.centreForm.patchValue({
-        ownerName: ownerName,
+        ownerName: ''
       });
     }
   }

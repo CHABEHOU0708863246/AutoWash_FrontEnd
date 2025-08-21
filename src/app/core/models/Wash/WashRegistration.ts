@@ -5,6 +5,7 @@ export interface WashRegistration {
   centreId: string;
   serviceId: string;
   vehicleTypeId: string;
+  WasherId : string;
   customer: CreateOrUpdateCustomerRequest;
   vehiclePlate: string;
   vehicleBrand?: string;
@@ -18,4 +19,6 @@ export interface WashRegistration {
   performedByUserId?: string;
   isAdminOverride?: boolean;
   requestDate?: Date;
+  registration: string;
+  status: boolean;
 }

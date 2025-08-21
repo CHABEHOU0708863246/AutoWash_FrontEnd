@@ -25,7 +25,7 @@ body {
   position: fixed;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.05);
   z-index: 1000;
-  transition: all 20s ease;
+  transition: all 0.3s ease;
   /* Ajoutez ces propriétés */
   display: flex;
   flex-direction: column;
@@ -144,7 +144,7 @@ body {
   /* Couleur de texte par défaut */
   text-decoration: none;
   /* Suppression du soulignement des liens */
-  transition: all 9s;
+  transition: all 0.3s;
   /* Animation fluide pour les interactions */
 }
 
@@ -194,7 +194,7 @@ body {
   /* Pas de soulignement */
   font-size: 14px;
   /* Taille de police */
-  transition: color 9s;
+  transition: color 0.3s;
   /* Animation fluide pour le survol */
 }
 
@@ -211,7 +211,7 @@ body {
   /* Largeur ajustée */
   min-height: 100vh;
   /* Hauteur minimale de la fenêtre */
-  transition: all 9s ease;
+  transition: all 0.3s ease;
   /* Animation fluide pour les changements */
 }
 
@@ -246,7 +246,7 @@ body {
   /* Couleur par défaut */
   cursor: pointer;
   /* Curseur cliquable */
-  transition: color 9s;
+  transition: color 0.3s;
   /* Animation fluide */
 }
 

@@ -50,6 +50,8 @@ export class CentresListComponent {
   currentCentreId: string | undefined;
   showConfirmDialog = false;
 
+  centreEmployeeCounts: { [centreId: string]: number } = {};
+
   // Notification
   notification = {
     show: false,
@@ -121,11 +123,45 @@ export class CentresListComponent {
         this.totalItems = data.length;
         this.calculateTotalPages();
         this.updateDisplayedCentres();
+
+        // Charger le nombre d'employés pour chaque centre
+        this.loadEmployeeCounts();
       },
       error: (error) => {
-        console.error('Erreur lors du chargement des utilisateurs', error);
+        console.error('Erreur lors du chargement des centres', error);
       },
     });
+  }
+
+  loadEmployeeCounts(): void {
+    this.centres.forEach(centre => {
+      if (centre.id) {
+        this.getEmployeeCountForCentre(centre.id);
+      }
+    });
+  }
+
+
+  getEmployeeCountForCentre(centreId: string): void {
+    this.usersService.getAllUsers().subscribe({
+      next: (users) => {
+        // Filtrer les utilisateurs qui travaillent dans ce centre et qui ont le rôle "LAVEUR"
+        const employeesInCentre = users.filter(user =>
+          user.centreId === centreId &&
+          user.roles?.some(role => role.toUpperCase() === 'WASHER')
+        );
+        this.centreEmployeeCounts[centreId] = employeesInCentre.length;
+      },
+      error: (error) => {
+        console.error(`Erreur lors du chargement des employés pour le centre ${centreId}`, error);
+        this.centreEmployeeCounts[centreId] = 0;
+      }
+    });
+  }
+
+  getEmployeeCount(centreId: string | undefined): number {
+    if (!centreId) return 0;
+    return this.centreEmployeeCounts[centreId] || 0;
   }
 
   /**
@@ -360,12 +396,25 @@ export class CentresListComponent {
    * Met à jour les centres affichés
    */
   updateDisplayedCentres(): void {
+    // Application du filtre de recherche si nécessaire
+    let filtered = this.centres;
+
+    if (this.searchTerm.trim()) {
+      filtered = this.centres.filter(centre =>
+        centre.name?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        centre.location?.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+        centre.ownerName?.toLowerCase().includes(this.searchTerm.toLowerCase())
+      );
+    }
+
+    this.filteredCentre = filtered;
+    this.totalItems = filtered.length;
+    this.calculateTotalPages();
+
+    // Pagination
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    const endIndex = Math.min(
-      startIndex + this.itemsPerPage,
-      this.filteredCentre.length
-    );
-    this.displayedCentre = this.filteredCentre.slice(startIndex, endIndex);
+    const endIndex = startIndex + this.itemsPerPage;
+    this.displayedCentre = filtered.slice(startIndex, endIndex);
   }
 
   /**

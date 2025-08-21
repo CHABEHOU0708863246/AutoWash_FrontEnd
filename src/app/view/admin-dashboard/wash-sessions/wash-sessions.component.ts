@@ -1,5 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { ReactiveFormsModule, FormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import {
+  ReactiveFormsModule,
+  FormsModule,
+  FormBuilder,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
 import { Users } from '../../../core/models/Users/Users';
@@ -15,15 +21,15 @@ import { ServiceSettingsService } from '../../../core/services/ServiceSettings/s
 import { VehiclesSettingsService } from '../../../core/services/VehiclesSettings/vehicles-settings.service';
 import { ServiceSettings } from '../../../core/models/Settings/Services/ServiceSettings';
 import { VehicleTypeSettings } from '../../../core/models/Settings/Vehicles/VehicleTypeSettings';
+import { CentresService } from '../../../core/services/Centres/centres.service';
 
 @Component({
   selector: 'app-wash-sessions',
   imports: [ReactiveFormsModule, FormsModule, RouterLink, CommonModule],
   templateUrl: './wash-sessions.component.html',
-  styleUrl: './wash-sessions.component.scss'
+  styleUrl: './wash-sessions.component.scss',
 })
-export class WashSessionsComponent implements OnInit{
-
+export class WashSessionsComponent implements OnInit {
   users: Users[] = [];
   displayedUsers: Users[] = [];
   currentUser: Users | null = null;
@@ -45,7 +51,6 @@ export class WashSessionsComponent implements OnInit{
   services: ServiceSettings[] = [];
   vehicleTypes: VehicleTypeSettings[] = [];
 
-
   constructor(
     private sanitizer: DomSanitizer,
     private usersService: UsersService,
@@ -53,7 +58,8 @@ export class WashSessionsComponent implements OnInit{
     private authService: AuthService,
     private fb: FormBuilder,
     private washService: WashsService,
-    private serviceSettingsService: ServiceSettingsService, // Ajouter
+    private serviceSettingsService: ServiceSettingsService,
+    private centresService: CentresService,
     private vehiclesSettingsService: VehiclesSettingsService
   ) {
     this.washForm = this.fb.group({
@@ -67,62 +73,15 @@ export class WashSessionsComponent implements OnInit{
       customerName: [''],
       transactionId: [''],
       applyLoyaltyDiscount: [false],
-      isAdminOverride: [false]
+      isAdminOverride: [false],
     });
   }
 
-  loadServicesAndVehicleTypes(): void {
-    if (this.centres.length > 0) {
-      // Charger les services pour tous les centres
-      const servicePromises = this.centres.map(centre =>
-        this.serviceSettingsService.getActiveServicesByCentre(centre.id!).toPromise()
-      );
-
-      // Charger les types de véhicules pour tous les centres
-      const vehicleTypePromises = this.centres.map(centre =>
-        this.vehiclesSettingsService.getActiveVehicleTypesByCentre(centre.id!).toPromise()
-      );
-
-      // Exécuter les promesses en parallèle
-      Promise.all([
-        Promise.all(servicePromises),
-        Promise.all(vehicleTypePromises)
-      ]).then(([serviceResponses, vehicleTypeResponses]) => {
-
-        // Traiter les services
-        this.services = [];
-        serviceResponses.forEach(response => {
-          if (response?.success && response.data) {
-            this.services = [...this.services, ...response.data];
-          }
-        });
-        // Supprimer les doublons
-        this.services = this.services.filter((service, index, self) =>
-          index === self.findIndex(s => s.id === service.id)
-        );
-
-        // Traiter les types de véhicules
-        this.vehicleTypes = [];
-        vehicleTypeResponses.forEach(response => {
-          if (response?.success && response.data) {
-            this.vehicleTypes = [...this.vehicleTypes, ...response.data];
-          }
-        });
-        // Supprimer les doublons
-        this.vehicleTypes = this.vehicleTypes.filter((type, index, self) =>
-          index === self.findIndex(t => t.id === type.id)
-        );
-
-      }).catch(error => {
-        console.error('Erreur lors du chargement des services et types de véhicules', error);
-      });
-    }
-  }
-
-   ngOnInit(): void {
+  ngOnInit(): void {
     this.getUsers();
     this.loadCurrentUser();
     this.loadCentres();
+    this.loadServices();
     // Charger les sessions après avoir chargé les centres
     setTimeout(() => {
       this.loadWashSessions();
@@ -136,17 +95,34 @@ export class WashSessionsComponent implements OnInit{
     });
   }
 
-  // Méthodes pour obtenir les noms à partir des IDs
+  loadServices(): void {
+    if (this.selectedCentre) {
+      this.washService.getServicesByCentre(this.selectedCentre).subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.services = response.data;
+          }
+        },
+        error: (error) => {
+          console.error(
+            'Erreur lors du chargement des services du centre',
+            error
+          );
+        },
+      });
+    }
+  }
+
   getServiceName(serviceId: string): string {
-    const service = this.services.find(s => s.id === serviceId);
-    return service?.name || serviceId;
+    const service = this.services.find((s) => s.id === serviceId);
+    return service ? service.name : 'Service non trouvé';
   }
 
+  // Méthode pour récupérer le nom du centre par ID
   getCentreName(centreId: string): string {
-    const centre = this.centres.find(c => c.id === centreId);
-    return centre?.name || centreId;
+    const centre = this.centres.find((c) => c.id === centreId);
+    return centre ? centre.name : 'Centre non trouvé';
   }
-
 
   loadCentres(): void {
     this.washService.getActiveCentres().subscribe({
@@ -162,60 +138,63 @@ export class WashSessionsComponent implements OnInit{
       },
       error: (error) => {
         console.error('Erreur lors du chargement des centres', error);
-      }
+      },
     });
   }
 
-
   loadWashSessions(): void {
-  this.isLoading = true;
-  if (this.selectedCentre) {
-    // Chargement par centre (méthode existante)
-    this.washService.getCompletedWashes(this.selectedCentre)
-      .pipe(finalize(() => this.isLoading = false))
-      .subscribe({
-        next: (response) => this.handleWashSessionsResponse(response),
-        error: (error) => this.handleWashSessionsError(error)
-      });
-  } else {
-    // Chargement de toutes les sessions
-    this.washService.getAllWashSessions()
-      .pipe(finalize(() => this.isLoading = false))
-      .subscribe({
-        next: (response) => this.handleWashSessionsResponse(response),
-        error: (error) => this.handleWashSessionsError(error)
-      });
+    this.isLoading = true;
+    if (this.selectedCentre) {
+      // Chargement par centre (méthode existante)
+      this.washService
+        .getCompletedWashes(this.selectedCentre)
+        .pipe(finalize(() => (this.isLoading = false)))
+        .subscribe({
+          next: (response) => this.handleWashSessionsResponse(response),
+          error: (error) => this.handleWashSessionsError(error),
+        });
+    } else {
+      // Chargement de toutes les sessions
+      this.washService
+        .getAllWashSessions()
+        .pipe(finalize(() => (this.isLoading = false)))
+        .subscribe({
+          next: (response) => this.handleWashSessionsResponse(response),
+          error: (error) => this.handleWashSessionsError(error),
+        });
+    }
   }
-}
 
-handleWashSessionsResponse(response: ApiResponseData<WashSession[]>): void {
-  if (response.success && response.data) {
-    this.washSessions = response.data;
-    this.filteredSessions = [...this.washSessions];
-    this.totalItems = this.filteredSessions.length;
+  handleWashSessionsResponse(response: ApiResponseData<WashSession[]>): void {
+    if (response.success && response.data) {
+      this.washSessions = response.data;
+      this.filteredSessions = [...this.washSessions];
+      this.totalItems = this.filteredSessions.length;
 
-    // Optionnel: Trier par date (du plus récent au plus ancien)
-    this.filteredSessions.sort((a, b) =>
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    );
+      // Optionnel: Trier par date (du plus récent au plus ancien)
+      this.filteredSessions.sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      );
+    }
   }
-}
 
-handleWashSessionsError(error: any): void {
-  console.error('Erreur lors du chargement des sessions', error);
-  // Vous pouvez ajouter ici un toast/message d'erreur
-}
+  handleWashSessionsError(error: any): void {
+    console.error('Erreur lors du chargement des sessions', error);
+  }
 
   filterByCentre(centreId: string): void {
     this.selectedCentre = centreId;
     this.loadWashSessions();
   }
 
-
   // Pagination
   get paginatedSessions(): WashSession[] {
     const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    return this.filteredSessions.slice(startIndex, startIndex + this.itemsPerPage);
+    return this.filteredSessions.slice(
+      startIndex,
+      startIndex + this.itemsPerPage
+    );
   }
 
   // Change de page
@@ -237,8 +216,7 @@ handleWashSessionsError(error: any): void {
     }
   }
 
-
- /**
+  /**
    * Charge les photos des utilisateurs et les sécurise pour l'affichage.
    * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
    */
@@ -265,19 +243,18 @@ handleWashSessionsError(error: any): void {
    * Cette méthode est appelée lors du clic sur le bouton de
    * basculement de la barre latérale.
    */
-    toggleSidebar() {
-      this.isSidebarCollapsed = !this.isSidebarCollapsed;
+  toggleSidebar() {
+    this.isSidebarCollapsed = !this.isSidebarCollapsed;
 
-      // Ajoute/retire les classes nécessaires
-      const sidebar = document.getElementById('sidebar');
-      const mainContent = document.querySelector('.main-content');
+    // Ajoute/retire les classes nécessaires
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.querySelector('.main-content');
 
-      if (sidebar && mainContent) {
-        sidebar.classList.toggle('collapsed');
-        mainContent.classList.toggle('collapsed');
-      }
+    if (sidebar && mainContent) {
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('collapsed');
     }
-
+  }
 
   /**
    * Récupère tous les utilisateurs et charge leurs photos.
