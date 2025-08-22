@@ -11,6 +11,12 @@ import { SettingsServicesComponent } from '../../view/admin-dashboard/settings-s
 import { SettingsVehiclesComponent } from '../../view/admin-dashboard/settings-vehicles/settings-vehicles.component';
 import { WashNowComponent } from '../../view/admin-dashboard/wash-now/wash-now.component';
 import { WashSessionsComponent } from '../../view/admin-dashboard/wash-sessions/wash-sessions.component';
+import { ExpensesUtilitiesComponent } from '../../view/admin-dashboard/expenses-utilities/expenses-utilities.component';
+import { ExpensesRentComponent } from '../../view/admin-dashboard/expenses-rent/expenses-rent.component';
+import { ExpensesProfitabilityComponent } from '../../view/admin-dashboard/expenses-profitability/expenses-profitability.component';
+import { Payment } from '../../core/models/Payments/Payment';
+import { PaymentsWashersComponent } from '../../view/admin-dashboard/payments-washers/payments-washers.component';
+import { PaymentsReportsComponent } from '../../view/admin-dashboard/payments-reports/payments-reports.component';
 const routes: Routes = [
   {
     path: '',
@@ -60,6 +66,22 @@ const routes: Routes = [
   {
     path: 'wash-now',
     component: WashNowComponent
+  },
+  {
+    path: 'expenses-utilities',
+    component: ExpensesUtilitiesComponent
+  },
+  {
+    path: 'expenses-profitability',
+    component: ExpensesProfitabilityComponent
+  },
+  {
+    path: 'payments-washers',
+    component: PaymentsWashersComponent
+  },
+  {
+    path: 'payments-reports',
+    component: PaymentsReportsComponent
   },
 
 

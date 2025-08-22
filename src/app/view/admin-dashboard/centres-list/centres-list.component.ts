@@ -52,6 +52,8 @@ export class CentresListComponent {
 
   centreEmployeeCounts: { [centreId: string]: number } = {};
 
+  isSidebarCollapsed = false;
+
   // Notification
   notification = {
     show: false,
@@ -354,6 +356,26 @@ export class CentresListComponent {
     }
     return 'Utilisateur';
   }
+
+  /**
+   * Bascule l'état de la barre latérale entre "collapsée" et
+   * "étendue".
+   * Modifie les classes CSS pour ajuster l'affichage.
+   * Cette méthode est appelée lors du clic sur le bouton de
+   * basculement de la barre latérale.
+   */
+    toggleSidebar() {
+      this.isSidebarCollapsed = !this.isSidebarCollapsed;
+
+      // Ajoute/retire les classes nécessaires
+      const sidebar = document.getElementById('sidebar');
+      const mainContent = document.querySelector('.main-content');
+
+      if (sidebar && mainContent) {
+        sidebar.classList.toggle('collapsed');
+        mainContent.classList.toggle('collapsed');
+      }
+    }
 
   /**
    * Retourne le rôle de l'utilisateur

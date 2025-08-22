@@ -145,7 +145,6 @@
       </button>
       <ul class="dropdown-menu dropdown-menu-hover">
         <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion dépenses</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/expenses-other']"><i class="fas fa-receipt"></i> Divers</a></li>
         <li><a class="dropdown-item" [routerLink]="['/admin/expenses-profitability']"><i class="fas fa-chart-line"></i> Rentabilité</a></li>
       </ul>
     </div>
@@ -202,102 +201,214 @@
     </div>
 
     <div class="page-content">
-      <!-- Cartes de statistiques (comme dans l'image) -->
-      <div class="stats-cards">
-        <div class="stat-card">
-          <div class="stat-icon blue">
-            <i class="fas fa-chart-line"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-title">Today Sale</div>
-            <div class="stat-value">1234 €</div>
-          </div>
-        </div>
+    <!-- En-tête de page -->
+    <div class="page-header">
+      <h1 class="page-title"><i class="fas fa-chart-line"></i> Analyse de Rentabilité</h1>
+      <a href="#" class="back-button">
+        <i class="fas fa-arrow-left"></i> Retour au Tableau de Bord
+      </a>
+    </div>
 
-        <div class="stat-card">
-          <div class="stat-icon green">
-            <i class="fas fa-chart-bar"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-title">Total Sale</div>
-            <div class="stat-value">1234 €</div>
-          </div>
+    <!-- Cartes de statistiques -->
+    <div class="stats-cards">
+      <div class="stat-card">
+        <div class="stat-icon blue">
+          <i class="fas fa-money-bill-wave"></i>
         </div>
-
-        <div class="stat-card">
-          <div class="stat-icon orange">
-            <i class="fas fa-chart-area"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-title">Today Revenue</div>
-            <div class="stat-value">1234 €</div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon purple">
-            <i class="fas fa-chart-pie"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-title">Total Revenue</div>
-            <div class="stat-value">1234 €</div>
-          </div>
+        <div class="stat-content">
+          <div class="stat-title">Revenus Totaux (Mensuel)</div>
+          <div class="stat-value">5 250 000 FCFA</div>
         </div>
       </div>
-
-      <!-- Graphiques (comme dans l'image) -->
-      <div class="charts-container">
-        <div class="chart-card">
-          <div class="chart-header">
-            <div class="chart-title">Worldwide Sales</div>
-            <a href="#" class="chart-action">Show All</a>
-          </div>
-          <div class="chart-content">
-            <!-- Code pour simuler le graphique à barres -->
-            <div
-              style="width:100%; height:100%; background-image: url('/api/placeholder/600/300'); background-size: contain; background-repeat: no-repeat; background-position: center;">
-            </div>
-            <div class="chart-legend">
-              <div class="legend-item">
-                <div class="legend-color" style="background-color: #36a2eb;"></div>
-                <span>USA</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-color" style="background-color: #67e8f9;"></div>
-                <span>UK</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-color" style="background-color: #a5f3fc;"></div>
-                <span>AU</span>
-              </div>
-            </div>
-          </div>
+      <div class="stat-card">
+        <div class="stat-icon green">
+          <i class="fas fa-chart-pie"></i>
         </div>
-
-        <div class="chart-card">
-          <div class="chart-header">
-            <div class="chart-title">Salse & Revenue</div>
-            <a href="#" class="chart-action">Show All</a>
-          </div>
-          <div class="chart-content">
-            <!-- Code pour simuler le graphique en ligne -->
-            <div
-              style="width:100%; height:100%; background-image: url('/api/placeholder/600/300'); background-size: contain; background-repeat: no-repeat; background-position: center;">
-            </div>
-            <div class="chart-legend">
-              <div class="legend-item">
-                <div class="legend-color" style="background-color: #36a2eb;"></div>
-                <span>Salse</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-color" style="background-color: #a5f3fc;"></div>
-                <span>Revenue</span>
-              </div>
-            </div>
-          </div>
+        <div class="stat-content">
+          <div class="stat-title">Marge Brute</div>
+          <div class="stat-value">62.5%</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon orange">
+          <i class="fas fa-coins"></i>
+        </div>
+        <div class="stat-content">
+          <div class="stat-title">Dépenses d'Exploitation</div>
+          <div class="stat-value">1 875 000 FCFA</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon purple">
+          <i class="fas fa-hand-holding-usd"></i>
+        </div>
+        <div class="stat-content">
+          <div class="stat-title">Bénéfice Net</div>
+          <div class="stat-value">1 406 250 FCFA</div>
         </div>
       </div>
     </div>
+
+    <!-- Formulaire d'analyse de rentabilité -->
+    <div class="form-container">
+      <div class="form-card">
+        <div class="form-header">
+          <h2 class="form-title">Analyse de Rentabilité</h2>
+          <p class="form-subtitle">Sélectionnez les paramètres pour analyser la rentabilité</p>
+        </div>
+        <form class="form-content">
+          <div class="form-group">
+            <label for="centre-id">ID du Centre</label>
+            <select id="centre-id" name="centreId" required>
+              <option value="" disabled selected>Sélectionnez un centre</option>
+              <option value="centre-001">Centre Principal (CENTRE-001)</option>
+              <option value="centre-002">Centre Secondaire (CENTRE-002)</option>
+              <option value="centre-003">Centre Régional (CENTRE-003)</option>
+              <option value="all">Tous les centres</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="period">Période d'analyse</label>
+            <select id="period" name="period" required>
+              <option value="month" selected>Mensuelle</option>
+              <option value="quarter">Trimestrielle</option>
+              <option value="semester">Semestrielle</option>
+              <option value="year">Annuelle</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="start-date">Date de début</label>
+            <input type="date" id="start-date" name="startDate" required>
+          </div>
+          <div class="form-group">
+            <label for="end-date">Date de fin</label>
+            <input type="date" id="end-date" name="endDate" required>
+          </div>
+          <div class="form-group">
+            <label for="metric">Métrique de rentabilité</label>
+            <select id="metric" name="metric" required>
+              <option value="roi" selected>Retour sur Investissement (ROI)</option>
+              <option value="ros">Retour sur Ventes (ROS)</option>
+              <option value="margin">Marge Nette</option>
+              <option value="roa">Retour sur Actifs (ROA)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="comparison">Comparaison avec</label>
+            <select id="comparison" name="comparison">
+              <option value="none" selected>Aucune comparaison</option>
+              <option value="previous">Période précédente</option>
+              <option value="target">Objectifs</option>
+              <option value="industry">Moyenne du secteur</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Générer le Rapport</button>
+            <button type="button" class="btn btn-secondary">Exporter les Données</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Graphiques de rentabilité -->
+    <div class="charts-container">
+      <div class="chart-card">
+        <div class="chart-header">
+          <h4 class="chart-title">Évolution de la Rentabilité</h4>
+          <div class="chart-actions">
+            <select id="profitability-metric">
+              <option value="roi">ROI</option>
+              <option value="ros">ROS</option>
+              <option value="margin" selected>Marge Nette</option>
+            </select>
+          </div>
+        </div>
+        <div class="chart-canvas">
+          <canvas id="profitability-trend-chart"></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <h4 class="chart-title">Répartition des Coûts et Revenus</h4>
+          <div class="chart-actions">
+            <select id="cost-revenue-view">
+              <option value="percent" selected>Pourcentages</option>
+              <option value="values">Valeurs absolues</option>
+            </select>
+          </div>
+        </div>
+        <div class="chart-canvas">
+          <canvas id="cost-revenue-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tableau d'analyse de rentabilité -->
+    <div class="form-card">
+      <div class="form-header">
+        <h2 class="form-title">Détails de la Rentabilité par Centre</h2>
+        <p class="form-subtitle">Analyse comparative des performances financières</p>
+      </div>
+
+      <table class="profitability-table">
+        <thead>
+          <tr>
+            <th>Centre</th>
+            <th>Revenus</th>
+            <th>Coûts directs</th>
+            <th>Marge brute</th>
+            <th>Frais d'exploitation</th>
+            <th>Bénéfice net</th>
+            <th>Marge nette</th>
+            <th>ROI</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Centre Principal</td>
+            <td>3 250 000 FCFA</td>
+            <td>1 200 000 FCFA</td>
+            <td>2 050 000 FCFA</td>
+            <td>875 000 FCFA</td>
+            <td class="positive-value">1 175 000 FCFA</td>
+            <td class="positive-value">36.2%</td>
+            <td class="positive-value">24.5%</td>
+          </tr>
+          <tr>
+            <td>Centre Secondaire</td>
+            <td>1 500 000 FCFA</td>
+            <td>675 000 FCFA</td>
+            <td>825 000 FCFA</td>
+            <td>500 000 FCFA</td>
+            <td class="positive-value">325 000 FCFA</td>
+            <td class="positive-value">21.7%</td>
+            <td class="positive-value">18.2%</td>
+          </tr>
+          <tr>
+            <td>Centre Régional</td>
+            <td>2 000 000 FCFA</td>
+            <td>950 000 FCFA</td>
+            <td>1 050 000 FCFA</td>
+            <td>700 000 FCFA</td>
+            <td class="positive-value">350 000 FCFA</td>
+            <td class="positive-value">17.5%</td>
+            <td class="positive-value">15.8%</td>
+          </tr>
+          <tr>
+            <td><strong>Total</strong></td>
+            <td><strong>6 750 000 FCFA</strong></td>
+            <td><strong>2 825 000 FCFA</strong></td>
+            <td><strong>3 925 000 FCFA</strong></td>
+            <td><strong>2 075 000 FCFA</strong></td>
+            <td class="positive-value"><strong>1 850 000 FCFA</strong></td>
+            <td class="positive-value"><strong>27.4%</strong></td>
+            <td class="positive-value"><strong>20.1%</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
     <div class="footer">
       <div>©2025 AutoWash, Tous droit reservé.</div>

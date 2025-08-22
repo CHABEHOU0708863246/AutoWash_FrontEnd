@@ -11,21 +11,24 @@
     <div class="logo">
       <i class="fas fa-hashtag"></i> AUTOWASH
     </div>
-    <div class="user-profile">
-      <img [src]="currentUser?.photoSafeUrl" [alt]="'Photo de ' + (currentUser?.firstName || 'Utilisateur')"
-        class="user-avatar">
+    <div class="user-profile" *ngIf="currentUser">
+      <div class="user-photo-container">
+        <img *ngIf="currentUser.photoSafeUrl" [src]="currentUser.photoSafeUrl"
+          [alt]="'Photo de ' + (currentUser.firstName || 'Utilisateur')" class="user-avatar">
+        <div *ngIf="!currentUser.photoSafeUrl" class="user-initials">
+          {{ (currentUser.firstName?.charAt(0) || '') + (currentUser.lastName?.charAt(0) || '') }}
+        </div>
+      </div>
       <div class="user-info">
-        <h4>
-          <h4>{{ getFullName() }}</h4>
-          <p>{{ getUserRole() }}</p>
-        </h4>
+        <h4>{{ getFullName() }}</h4>
+        <p>{{ getUserRole() }}</p>
       </div>
     </div>
     <div class="nav-menu">
       <!-- Dashboard -->
       <div class="dropdown dropdown-hover">
-        <a class="nav-item active" data-mdb-dropdown-init>
-          <i class="fas fa-tachometer-alt" [routerLink]="['/admin/dashboard']"></i>
+        <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
+          <i class="fas fa-tachometer-alt"></i>
           <span>Tableau de bord</span>
         </a>
       </div>
@@ -201,13 +204,8 @@
   <!-- Main Content -->
   <div class="main-content" id="main-content">
     <div class="top-bar">
-      <div class="menu-toggle" id="menu-toggle">
+      <div class="menu-toggle" id="menu-toggle" (click)="toggleSidebar()">
         <i class="fas fa-bars"></i>
-      </div>
-      <div class="search-box">
-        <input type="text"
-          class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
-          placeholder="Rechercher un utilisateur..." [(ngModel)]="searchTerm" (ngModelChange)="filterUsers()" />
       </div>
       <div class="top-right">
         <div class="icon-button">
@@ -229,97 +227,118 @@
             <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Mon profil</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
-            <li>
-              <a class="dropdown-item" (click)="logout()">
-                <i class="fas fa-sign-out-alt"></i> Déconnexion
-              </a>
-            </li>
-
+            <li><a class="dropdown-item" (click)="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
           </ul>
         </div>
       </div>
     </div>
 
     <div class="page-content">
-      <div class="blank-page">
-        <div class="page-content">
-          <div class="users-table-container">
-            <div class="table-header">
-              <div class="table-title">Liste des Utilisateurs</div>
-              <div class="table-actions">
-                <!-- <button class="btn-action btn-outline">
-                  <i class="fas fa-filter btn-icon"></i>Filtrer
-                </button> -->
-                <button (click)="exportUsers()" class="btn-action btn-outline">
-                  <i class="fas fa-download btn-icon"></i>Exporter
-                </button>
-                <button [routerLink]="['/admin/users-create']" class="btn-action btn-primary">
-                  <i class="fas fa-plus btn-icon"></i>Ajouter un utilisateur
-                </button>
-              </div>
-            </div>
-
-            <table class="users-table">
-              <thead>
-                <tr>
-                  <th>Prénom</th>
-                  <th>Nom</th>
-                  <th>Rôles</th>
-                  <th>Email</th>
-                  <th>Statut</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr *ngFor="let user of displayedUsers">
-                  <td>
-                    <div class="user-info-cell">
-                      <div>
-                        <div class="user-name">{{ user?.firstName }}</div>
-                        <img *ngIf="user?.photoSafeUrl" [src]="user.photoSafeUrl" alt="Photo de profil"
-                          class="user-photo">
-                        <div *ngIf="!user?.photoSafeUrl" class="user-initials">
-                          {{ (user?.firstName?.charAt(0) || '') + (user?.lastName?.charAt(0) || '') }}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>{{ user?.lastName }}</td>
-                  <td>{{ user?.roles }}</td>
-                  <td>{{ user?.email }}</td>
-                  <td>
-                    <span class="status" [class.status-active]="user?.isEnabled"
-                      [class.status-inactive]="!user?.isEnabled">
-                      {{ user?.isEnabled ? 'Actif' : 'Inactif' }}
-                    </span>
-                  </td>
-                  <td>
-                    <div class="actions-cell">
-                      <button (click)="toggleAccount(user)" class="btn-toggle" [class.active]="user.isEnabled"
-                        title="{{ user.isEnabled ? 'Désactiver' : 'Activer' }}">
-                        <span class="toggle-thumb"></span>
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div class="table-pagination">
-              <div class="pagination-info">
-                Page {{ currentPage }} sur {{ totalPages }} • Nombre d'utilisateurs = {{ totalItems }} utilisateurs
-              </div>
-              <div class="pagination-controls">
-                <button (click)="previousPage()" [disabled]="currentPage === 1" class="pagination-btn">
-                  <i class="fas fa-angle-double-left"></i>
-                </button>
-                <button (click)="nextPage()" [disabled]="currentPage === totalPages" class="pagination-btn">
-                  <i class="fas fa-angle-double-right"></i>
-                </button>
-              </div>
-            </div>
+      <!-- Stats Cards -->
+      <div class="stats-cards">
+        <div class="stat-card">
+          <div class="stat-icon blue">
+            <i class="fas fa-tint"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Loyer (Mois)</div>
+            <div class="stat-value">200 000 FCFA</div>
           </div>
         </div>
+        <div class="stat-card">
+          <div class="stat-icon orange">
+            <i class="fas fa-wallet"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Loyer Totales (Année)</div>
+            <div class="stat-value">3 221 FCFA</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">
+            <i class="fas fa-chart-bar"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Dépenses par Type</div>
+            <div class="stat-value" id="expenses-by-type">-</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon orange">
+            <i class="fas fa-calendar"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Dépenses Mensuelles</div>
+            <div class="stat-value" id="monthly-expenses">-</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon purple">
+            <i class="fas fa-calculator"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Moyenne Dépenses</div>
+            <div class="stat-value" id="average-expenses">-</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <div class="form-container">
+        <div class="form-card">
+          <div class="form-header">
+            <h2 class="form-title">Gestion des Dépenses</h2>
+            <p class="form-subtitle">Saisissez les informations pour enregistrer une dépense</p>
+          </div>
+          <form id="expense-form" class="form-content">
+            <div class="form-group">
+              <label for="expense-type">Type de Dépense</label>
+              <select id="expense-type" name="type" required>
+                <option value="" disabled selected>Sélectionnez un type</option>
+                <option value="water">Eau</option>
+                <option value="electricity">Électricité</option>
+                <option value="other">Autre</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="centre-id">ID du Centre</label>
+              <input type="text" id="centre-id" name="centreId" placeholder="Entrez l'ID du centre" required>
+            </div>
+            <div class="form-group">
+              <label for="description">Description</label>
+              <textarea id="description" name="description" placeholder="Décrivez la dépense"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="amount">Montant (FCFA)</label>
+              <input type="number" id="amount" name="amount" placeholder="Entrez le montant" step="0.01" required>
+            </div>
+            <div class="form-group">
+              <label for="date">Date</label>
+              <input type="date" id="date" name="date" required>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Enregistrer</button>
+              <button type="button" class="btn btn-secondary" onclick="resetForm()">Annuler</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Expenses Table -->
+      <div class="table-container">
+        <h2 class="table-header">Liste des Dépenses Enregistrées</h2>
+        <table class="expense-table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Centre ID</th>
+              <th>Description</th>
+              <th>Montant (FCFA)</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody id="expense-table-body"></tbody>
+        </table>
       </div>
     </div>
 

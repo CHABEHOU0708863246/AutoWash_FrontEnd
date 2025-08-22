@@ -35,8 +35,44 @@ body {
 
 /* État de la barre latérale lorsqu'elle est repliée */
 .sidebar.collapsed {
-  transform: translateX(-250px);
-  /* Déplace la barre hors de l'écran */
+  width: 70px; /* Largeur réduite pour ne montrer que les icônes */
+  transition: width 0.3s ease;
+}
+
+.sidebar.collapsed .logo {
+  justify-content: center;
+  padding: 20px 5px;
+}
+
+.sidebar.collapsed .logo i {
+  margin-right: 0;
+}
+
+.sidebar.collapsed .logo span,
+.sidebar.collapsed .user-info,
+.sidebar.collapsed .nav-item span,
+.sidebar.collapsed .dropdown-toggle::after {
+  display: none; /* Cache le texte */
+}
+
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.sidebar.collapsed .user-profile {
+  justify-content: center;
+  padding: 15px 0;
+}
+
+.sidebar.collapsed .user-photo-container {
+  margin-right: 0;
+}
+
+/* Ajustement du contenu principal */
+.main-content.collapsed {
+  margin-left: 70px;
+  width: calc(100% - 70px);
 }
 
 /* Styles du logo dans la barre latérale */
@@ -1856,3 +1892,6 @@ body {
     }
   }
 }
+
+
+

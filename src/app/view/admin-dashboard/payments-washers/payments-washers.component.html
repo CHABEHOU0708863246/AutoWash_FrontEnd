@@ -1,0 +1,611 @@
+<html lang="fr">
+
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet">
+</head>
+
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fas fa-hashtag"></i> AUTOWASH
+    </div>
+    <div class="user-profile" *ngIf="currentUser">
+      <div class="user-photo-container">
+        <img *ngIf="currentUser.photoSafeUrl" [src]="currentUser.photoSafeUrl"
+          [alt]="'Photo de ' + (currentUser.firstName || 'Utilisateur')" class="user-avatar">
+        <div *ngIf="!currentUser.photoSafeUrl" class="user-initials">
+          {{ (currentUser.firstName?.charAt(0) || '') + (currentUser.lastName?.charAt(0) || '') }}
+        </div>
+      </div>
+      <div class="user-info">
+        <h4>{{ getFullName() }}</h4>
+        <p>{{ getUserRole() }}</p>
+      </div>
+    </div>
+    <div class="nav-menu">
+      <!-- Dashboard -->
+      <div class="dropdown dropdown-hover">
+        <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
+
+      <!-- Gestion des Utilisateurs -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-users-cog"></i>
+          <span>Utilisateurs</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-list']"><i class="fas fa-list"></i> Liste des
+              utilisateurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-create']"><i class="fas fa-user-plus"></i> Ajouter
+              un utilisateur</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-permissions']"><i class="fas fa-user-shield"></i>
+              Permissions</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-attendance']"><i class="fas fa-user-clock"></i>
+              Présences</a></li>
+        </ul>
+      </div>
+
+      <!-- Centres de Lavage -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fa-solid fa-car"></i>
+          <span>Centres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-list']"><i class="fas fa-list"></i> Tous les
+              centres</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-create']"><i class="fas fa-plus-circle"></i>
+              Nouveau centre</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-stock']"><i class="fas fa-boxes"></i> Stocks par
+              centre</a></li>
+        </ul>
+      </div>
+
+      <!-- Sessions de Lavage -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-car-side"></i>
+          <span>Lavages</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-sessions']"><i class="fas fa-list"></i> Toutes les
+              sessions</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-now']"><i class="fas fa-play-circle"></i> Nouveau
+              lavage</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-queue']"><i class="fas fa-clock"></i> File
+              d'attente</a></li>
+        </ul>
+      </div>
+
+      <!-- Paiements -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-money-bill-wave"></i>
+          <span>Paiements</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-washers']"><i class="fas fa-user-tie"></i>
+              Paiements laveurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-customers']"><i class="fas fa-users"></i>
+              Paiements clients</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-methods']"><i class="fas fa-credit-card"></i>
+              Méthodes de paiement</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-reports']"><i
+                class="fas fa-file-invoice-dollar"></i> Rapports</a></li>
+        </ul>
+      </div>
+
+      <!-- Stocks -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-box-open"></i>
+          <span>Stocks</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-list']"><i class="fas fa-boxes"></i> Inventaire</a>
+          </li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-alerts']"><i
+                class="fas fa-exclamation-triangle"></i> Alertes stock</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-movements']"><i class="fas fa-exchange-alt"></i>
+              Mouvements</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-suppliers']"><i class="fas fa-truck"></i>
+              Fournisseurs</a></li>
+        </ul>
+      </div>
+
+      <!-- Statistiques & Rapports -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-chart-pie"></i>
+          <span>Statistiques</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-daily']"><i class="fas fa-calendar-day"></i>
+              Journalier</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-weekly']"><i class="fas fa-calendar-week"></i>
+              Hebdomadaire</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-monthly']"><i class="fas fa-calendar-alt"></i>
+              Mensuel</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-comparison']"><i class="fas fa-balance-scale"></i>
+              Comparaison</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-export']"><i class="fas fa-file-export"></i>
+              Exports</a></li>
+        </ul>
+      </div>
+
+      <!-- Audit -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-clipboard-check"></i>
+          <span>Audit</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-logs']"><i class="fas fa-clipboard-list"></i>
+              Journal d'activité</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-changes']"><i class="fas fa-history"></i> Historique
+              modifications</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-security']"><i class="fas fa-shield-alt"></i>
+              Sécurité</a></li>
+        </ul>
+      </div>
+
+      <!-- Dépenses -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-file-invoice-dollar"></i>
+          <span>Dépenses</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+        <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion dépenses</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-profitability']"><i
+                class="fas fa-chart-line"></i> Rentabilité</a></li>
+        </ul>
+      </div>
+
+      <!-- Paramètres -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-cogs"></i>
+          <span>Paramètres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-schedule']"><i class="fas fa-clock"></i>
+              Horaires</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-services']"><i class="fas fa-concierge-bell"></i>
+              Prestations</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-vehicles']"><i class="fas fa-car"></i> Types de
+              véhicules</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-notifications']"><i class="fas fa-bell"></i>
+              Notifications</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-system']"><i class="fas fa-sliders-h"></i>
+              Système</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-templates']"><i class="fas fa-file-alt"></i>
+              Modèles de paramètres</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" id="main-content">
+    <div class="top-bar">
+      <div class="menu-toggle" id="menu-toggle" (click)="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+      </div>
+      <div class="top-right">
+        <div class="icon-button">
+          <i class="fas fa-envelope"></i>
+        </div>
+        <div class="icon-button">
+          <i class="fas fa-bell"></i>
+          <span class="badge">3</span>
+        </div>
+        <div class="dropdown dropdown-hover">
+          <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
+            <!-- Photo sécurisée si elle existe -->
+            <img *ngIf="currentUser?.photoSafeUrl as safeUrl" [src]="safeUrl" alt="User" class="user-avatar">
+            <!-- Nom complet -->
+            <span>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
+            <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Mon profil</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
+            <li><a class="dropdown-item" (click)="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <!-- En-tête de page -->
+      <div class="page-header">
+        <h1 class="page-title"><i class="fas fa-user-tie"></i> Paiements des Laveurs</h1>
+        <div class="header-actions">
+          <button class="btn btn-secondary">
+            <i class="fas fa-file-export"></i> Exporter
+          </button>
+          <button class="btn btn-primary" id="new-payment-btn">
+            <i class="fas fa-plus"></i> Nouveau Paiement
+          </button>
+        </div>
+      </div>
+
+      <!-- Cartes de statistiques -->
+      <div class="stats-cards">
+        <div class="stat-card">
+          <div class="stat-icon blue">
+            <i class="fas fa-money-bill-wave"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Paiements du Mois</div>
+            <div class="stat-value">2 450 000 FCFA</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">
+            <i class="fas fa-users"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Laveurs Actifs</div>
+            <div class="stat-value">18</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon orange">
+            <i class="fas fa-file-invoice-dollar"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Paiements en Attente</div>
+            <div class="stat-value">5</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon purple">
+            <i class="fas fa-percentage"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Commission Moyenne</div>
+            <div class="stat-value">15.2%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Onglets -->
+      <div class="tabs-container">
+        <div class="tabs">
+          <button class="tab active" data-tab="payments-list">Liste des Paiements</button>
+          <button class="tab" data-tab="new-payment">Nouveau Paiement</button>
+          <button class="tab" data-tab="reports">Rapports</button>
+          <button class="tab" data-tab="settings">Paramètres</button>
+        </div>
+
+        <!-- Liste des paiements -->
+        <div class="tab-content active" id="payments-list">
+          <div class="filters">
+            <div class="filter-group">
+              <label for="filter-centre">Centre</label>
+              <select id="filter-centre">
+                <option value="all">Tous les centres</option>
+                <option value="centre-001">Centre Principal</option>
+                <option value="centre-002">Centre Secondaire</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="filter-status">Statut</label>
+              <select id="filter-status">
+                <option value="all">Tous les statuts</option>
+                <option value="paid">Payé</option>
+                <option value="pending">En attente</option>
+                <option value="failed">Échoué</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="filter-type">Type de paiement</label>
+              <select id="filter-type">
+                <option value="all">Tous les types</option>
+                <option value="daily">Quotidien</option>
+                <option value="weekly">Hebdomadaire</option>
+                <option value="monthly">Mensuel</option>
+                <option value="perservice">Par service</option>
+                <option value="bonus">Bonus</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="filter-date">Période</label>
+              <select id="filter-date">
+                <option value="today">Aujourd'hui</option>
+                <option value="week">Cette semaine</option>
+                <option value="month" selected>Ce mois</option>
+                <option value="quarter">Ce trimestre</option>
+                <option value="year">Cette année</option>
+                <option value="custom">Personnalisée</option>
+              </select>
+            </div>
+          </div>
+
+          <table class="payments-table">
+            <thead>
+              <tr>
+                <th>Laveur</th>
+                <th>Centre</th>
+                <th>Type</th>
+                <th>Méthode</th>
+                <th>Montant</th>
+                <th>Commission</th>
+                <th>Date</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Amadou Diallo</td>
+                <td>Centre Principal</td>
+                <td>Par service</td>
+                <td>Mobile Money</td>
+                <td>75 000 FCFA</td>
+                <td>12 500 FCFA</td>
+                <td>15/03/2024</td>
+                <td><span class="status-badge status-paid">Payé</span></td>
+                <td class="action-buttons">
+                  <button class="btn-icon"><i class="fas fa-eye"></i></button>
+                  <button class="btn-icon"><i class="fas fa-edit"></i></button>
+                  <button class="btn-icon"><i class="fas fa-receipt"></i></button>
+                </td>
+              </tr>
+              <tr>
+                <td>Fatou Diop</td>
+                <td>Centre Secondaire</td>
+                <td>Mensuel</td>
+                <td>Virement Bancaire</td>
+                <td>250 000 FCFA</td>
+                <td>0 FCFA</td>
+                <td>05/03/2024</td>
+                <td><span class="status-badge status-paid">Payé</span></td>
+                <td class="action-buttons">
+                  <button class="btn-icon"><i class="fas fa-eye"></i></button>
+                  <button class="btn-icon"><i class="fas fa-edit"></i></button>
+                  <button class="btn-icon"><i class="fas fa-receipt"></i></button>
+                </td>
+              </tr>
+              <tr>
+                <td>Moussa Koné</td>
+                <td>Centre Principal</td>
+                <td>Quotidien</td>
+                <td>Espèces</td>
+                <td>35 000 FCFA</td>
+                <td>5 250 FCFA</td>
+                <td>20/03/2024</td>
+                <td><span class="status-badge status-pending">En attente</span></td>
+                <td class="action-buttons">
+                  <button class="btn-icon"><i class="fas fa-eye"></i></button>
+                  <button class="btn-icon"><i class="fas fa-edit"></i></button>
+                  <button class="btn-icon"><i class="fas fa-check"></i></button>
+                </td>
+              </tr>
+              <tr>
+                <td>Aïcha Traoré</td>
+                <td>Centre Secondaire</td>
+                <td>Bonus</td>
+                <td>Mobile Money</td>
+                <td>50 000 FCFA</td>
+                <td>0 FCFA</td>
+                <td>18/03/2024</td>
+                <td><span class="status-badge status-failed">Échoué</span></td>
+                <td class="action-buttons">
+                  <button class="btn-icon"><i class="fas fa-eye"></i></button>
+                  <button class="btn-icon"><i class="fas fa-edit"></i></button>
+                  <button class="btn-icon"><i class="fas fa-redo"></i></button>
+                </td>
+              </tr>
+              <tr>
+                <td>Jean Kouassi</td>
+                <td>Centre Principal</td>
+                <td>Par service</td>
+                <td>Espèces</td>
+                <td>68 000 FCFA</td>
+                <td>10 200 FCFA</td>
+                <td>22/03/2024</td>
+                <td><span class="status-badge status-paid">Payé</span></td>
+                <td class="action-buttons">
+                  <button class="btn-icon"><i class="fas fa-eye"></i></button>
+                  <button class="btn-icon"><i class="fas fa-edit"></i></button>
+                  <button class="btn-icon"><i class="fas fa-receipt"></i></button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Formulaire de nouveau paiement -->
+        <div class="tab-content" id="new-payment">
+          <div class="form-container">
+            <div class="form-header">
+              <h2 class="form-title">Nouveau Paiement</h2>
+              <p class="form-subtitle">Renseignez les informations pour effectuer un paiement</p>
+            </div>
+            <form class="form-content">
+              <div class="form-group">
+                <label for="washer-select">Laveur</label>
+                <select id="washer-select" required>
+                  <option value="" disabled selected>Sélectionnez un laveur</option>
+                  <option value="washer-001">Amadou Diallo</option>
+                  <option value="washer-002">Fatou Diop</option>
+                  <option value="washer-003">Moussa Koné</option>
+                  <option value="washer-004">Aïcha Traoré</option>
+                  <option value="washer-005">Jean Kouassi</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="centre-select">Centre</label>
+                <select id="centre-select" required>
+                  <option value="" disabled selected>Sélectionnez un centre</option>
+                  <option value="centre-001">Centre Principal</option>
+                  <option value="centre-002">Centre Secondaire</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="payment-type">Type de Paiement</label>
+                <select id="payment-type" required>
+                  <option value="" disabled selected>Sélectionnez un type</option>
+                  <option value="daily">Quotidien</option>
+                  <option value="weekly">Hebdomadaire</option>
+                  <option value="monthly">Mensuel</option>
+                  <option value="perservice">Par service</option>
+                  <option value="bonus">Bonus</option>
+                  <option value="other">Autre</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="payment-method">Méthode de Paiement</label>
+                <select id="payment-method" required>
+                  <option value="" disabled selected>Sélectionnez une méthode</option>
+                  <option value="cash">Espèces</option>
+                  <option value="mobilemoney">Mobile Money</option>
+                  <option value="banktransfer">Virement Bancaire</option>
+                  <option value="check">Chèque</option>
+                  <option value="creditcard">Carte de Crédit</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="amount">Montant (FCFA)</label>
+                <input type="number" id="amount" placeholder="Entrez le montant" step="0.01" required>
+              </div>
+              <div class="form-group">
+                <label for="commission">Commission/Pourboire (FCFA)</label>
+                <input type="number" id="commission" placeholder="Entrez la commission" step="0.01" value="0">
+              </div>
+              <div class="form-group">
+                <label for="payment-date">Date de Paiement</label>
+                <input type="date" id="payment-date" required>
+              </div>
+              <div class="form-group">
+                <label for="sessions">Sessions de Travail (IDs)</label>
+                <input type="text" id="sessions" placeholder="Séparés par des virgules">
+              </div>
+              <div class="form-group full-width">
+                <label for="notes">Notes</label>
+                <textarea id="notes" placeholder="Notes supplémentaires..."></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Enregistrer le Paiement</button>
+                <button type="reset" class="btn btn-secondary">Annuler</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Rapports -->
+        <div class="tab-content" id="reports">
+          <div class="charts-container">
+            <div class="chart-card">
+              <div class="chart-header">
+                <h4 class="chart-title">Répartition des Paiements par Type</h4>
+              </div>
+              <div class="chart-canvas">
+                <canvas id="payment-types-chart"></canvas>
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-header">
+                <h4 class="chart-title">Évolution des Paiements</h4>
+                <div class="chart-actions">
+                  <select id="trend-period">
+                    <option value="month">Mois</option>
+                    <option value="quarter" selected>Trimestre</option>
+                    <option value="year">Année</option>
+                  </select>
+                </div>
+              </div>
+              <div class="chart-canvas">
+                <canvas id="payment-trend-chart"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-container">
+            <div class="form-header">
+              <h2 class="form-title">Générer un Rapport</h2>
+              <p class="form-subtitle">Sélectionnez les paramètres pour générer un rapport détaillé</p>
+            </div>
+            <form class="form-content">
+              <div class="form-group">
+                <label for="report-type">Type de Rapport</label>
+                <select id="report-type" required>
+                  <option value="payments">Paiements</option>
+                  <option value="commissions">Commissions</option>
+                  <option value="washers">Performance des Laveurs</option>
+                  <option value="centres">Par Centre</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="report-format">Format</label>
+                <select id="report-format" required>
+                  <option value="pdf">PDF</option>
+                  <option value="excel">Excel</option>
+                  <option value="csv">CSV</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="report-start-date">Date de Début</label>
+                <input type="date" id="report-start-date" required>
+              </div>
+              <div class="form-group">
+                <label for="report-end-date">Date de Fin</label>
+                <input type="date" id="report-end-date" required>
+              </div>
+              <div class="form-group">
+                <label for="report-centre">Centre</label>
+                <select id="report-centre">
+                  <option value="all" selected>Tous les centres</option>
+                  <option value="centre-001">Centre Principal</option>
+                  <option value="centre-002">Centre Secondaire</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="report-washer">Laveur</label>
+                <select id="report-washer">
+                  <option value="all" selected>Tous les laveurs</option>
+                  <option value="washer-001">Amadou Diallo</option>
+                  <option value="washer-002">Fatou Diop</option>
+                  <option value="washer-003">Moussa Koné</option>
+                  <option value="washer-004">Aïcha Traoré</option>
+                  <option value="washer-005">Jean Kouassi</option>
+                </select>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Générer le Rapport</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>©2025 AutoWash, Tous droit reservé.</div>
+      <div>Crée par <a href="https://www.linkedin.com/in/afferyauxencedelorschabehou/">Affery Auxence Delors
+          CHABEHOU</a></div>
+    </div>
+  </div>
+</body>
+
+</html>
