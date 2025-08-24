@@ -59,7 +59,7 @@ export class ExpensesUtilitiesComponent implements OnInit {
   ngOnInit(): void {
     this.getUsers();
     this.loadCurrentUser();
-    this.loadCentres(); // Charger d'abord les centres
+    this.loadCentres();
 
     this.authService.currentUser$.subscribe((user) => {
       if (user && user !== this.currentUser) {

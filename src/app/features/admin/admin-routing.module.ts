@@ -17,6 +17,7 @@ import { ExpensesProfitabilityComponent } from '../../view/admin-dashboard/expen
 import { Payment } from '../../core/models/Payments/Payment';
 import { PaymentsWashersComponent } from '../../view/admin-dashboard/payments-washers/payments-washers.component';
 import { PaymentsReportsComponent } from '../../view/admin-dashboard/payments-reports/payments-reports.component';
+import { UsersProfilComponent } from '../../view/admin-dashboard/users-profil/users-profil.component';
 const routes: Routes = [
   {
     path: '',
@@ -38,6 +39,10 @@ const routes: Routes = [
   {
     path: 'users-permissions',
     component: UsersPermissionsComponent
+  },
+  {
+    path: 'users-profil',
+    component: UsersProfilComponent
   },
   {
     path: 'centres-list',

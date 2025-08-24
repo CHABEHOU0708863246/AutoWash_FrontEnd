@@ -11,14 +11,17 @@
     <div class="logo">
       <i class="fas fa-hashtag"></i> AUTOWASH
     </div>
-    <div class="user-profile">
-      <img [src]="currentUser?.photoSafeUrl" [alt]="'Photo de ' + (currentUser?.firstName || 'Utilisateur')"
-        class="user-avatar">
+    <div class="user-profile" *ngIf="currentUser">
+      <div class="user-photo-container">
+        <img *ngIf="currentUser.photoSafeUrl" [src]="currentUser.photoSafeUrl"
+          [alt]="'Photo de ' + (currentUser.firstName || 'Utilisateur')" class="user-avatar">
+        <div *ngIf="!currentUser.photoSafeUrl" class="user-initials">
+          {{ (currentUser.firstName?.charAt(0) || '') + (currentUser.lastName?.charAt(0) || '') }}
+        </div>
+      </div>
       <div class="user-info">
-        <h4>
-          <h4>{{ getFullName() }}</h4>
-          <p>{{ getUserRole() }}</p>
-        </h4>
+        <h4>{{ getFullName() }}</h4>
+        <p>{{ getUserRole() }}</p>
       </div>
     </div>
     <div class="nav-menu">
@@ -167,7 +170,8 @@
           <i class="fas fa-chevron-right dropdown-arrow"></i>
         </button>
         <ul class="dropdown-menu dropdown-menu-hover">
-        <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion dépenses</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion
+              dépenses</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/expenses-other']"><i class="fas fa-receipt"></i>
               Divers</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/expenses-profitability']"><i
@@ -203,7 +207,7 @@
   <!-- Main Content -->
   <div class="main-content" id="main-content">
     <div class="top-bar">
-      <div class="menu-toggle" id="menu-toggle">
+      <div class="menu-toggle" id="menu-toggle" (click)="toggleSidebar()">
         <i class="fas fa-bars"></i>
       </div>
       <div class="top-right">
@@ -223,7 +227,8 @@
             <i class="fas fa-chevron-down"></i>
           </button>
           <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
-            <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Mon profil</a></li>
+            <li><a class="dropdown-item" [routerLink]="['/admin/users-profil']"><i class="fas fa-user"></i> Mon
+                profil</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
             <li><a class="dropdown-item" (click)="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
@@ -233,152 +238,229 @@
     </div>
 
     <div class="page-content">
-      <div class="container-fluid">
-        <div class="container-fluid py-4">
-          <div class="row">
-            <div class="col-12">
-              <div class="card shadow-sm border-0">
-                <div class="card-header bg-white border-bottom">
-                  <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="card-title mb-0 text-primary">
-                      <i class="fas fa-car me-2"></i> Historique des Sessions de Lavage
-                    </h5>
-                    <div class="d-flex">
-                      <div class="input-group me-3" style="width: 250px;">
-                        <span class="input-group-text bg-transparent">
-                          <i class="fas fa-search"></i>
-                        </span>
-                        <input type="text" class="form-control" placeholder="Rechercher..." [(ngModel)]="searchTerm">
-                      </div>
-                      <div class="dropdown me-3">
-                        <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
-                          aria-expanded="false">
-                          <i class="fas fa-filter me-2"></i>Filtrer
-                        </button>
-                        <ul class="dropdown-menu">
-                          <li>
-                            <h6 class="dropdown-header">Filtrer par centre</h6>
-                          </li>
-                          <li *ngFor="let centre of centres">
-                            <a class="dropdown-item" (click)="filterByCentre(centre.id? centre.id : ''  )">
-                              {{ centre.name }}
-                            </a>
-                          </li>
-                          <li>
-                            <hr class="dropdown-divider">
-                          </li>
-                          <li>
-                            <a class="dropdown-item" (click)="filterByCentre('')">
-                              Tous les centres
-                            </a>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
+      <div class="container">
+        <!-- En-tête du profil -->
+        <div class="profile-header">
+          <div class="profile-content">
+            <div class="profile-photo-section">
+              <div class="photo-container">
+                <div class="profile-photo" id="profilePhoto">
+                  <i class="fas fa-user"></i>
                 </div>
+                <div class="photo-upload-btn">
+                  <i class="fas fa-camera"></i>
+                </div>
+                <input type="file" id="photoInput" class="hidden-input" accept="image/*">
+              </div>
+              <div class="profile-info">
+                <h1 class="profile-name" id="profileName">Jean Dupont</h1>
+                <p class="profile-role" id="profileRole">Responsable Centre</p>
+                <span class="profile-status" id="profileStatus">Actif</span>
 
-                <div class="card-body">
-                  <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                      <thead class="text-uppercase text-xs text-muted">
-                        <tr>
-                          <th>Client</th>
-                          <th>Véhicule</th>
-                          <th>Service</th>
-                          <th>Centre</th>
-                          <th>Date</th>
-                          <th>Prix (FCFA)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <!-- Afficher un message de chargement -->
-                        <tr *ngIf="isLoading">
-                          <td colspan="8" class="text-center py-4">
-                            <div class="spinner-border text-primary" role="status"></div>
-                            <p class="mt-2">Chargement des sessions...</p>
-                          </td>
-                        </tr>
-
-                        <!-- Afficher un message si aucune session -->
-                        <tr *ngIf="!isLoading && filteredSessions.length === 0">
-                          <td colspan="8" class="text-center py-4 text-muted">
-                            <i class="fas fa-info-circle fa-2x mb-3"></i>
-                            <p>Aucune session de lavage trouvée</p>
-                          </td>
-                        </tr>
-
-                        <!-- Afficher les sessions -->
-                        <tr *ngFor="let session of paginatedSessions" class="border-bottom">
-                          <td>
-                            <div class="d-flex align-items-center">
-                              <div class="avatar avatar-sm me-3">
-                                <span class="avatar-initial rounded-circle bg-primary text-white">
-                                  {{ session.customer.name?.charAt(0) || '?' }}
-                                </span>
-                              </div>
-                              <div>
-                                <h6 class="mb-0">{{ session.customer.name || 'Non renseigné' }}</h6>
-                                <small class="text-muted">{{ session.customer.phoneNumber || 'N/A' }}</small>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            <div>
-                              <span class="d-block fw-bold">
-                                {{ session.vehicleBrand || 'N/A' }}
-                                <span *ngIf="session.vehicleColor">({{ session.vehicleColor }})</span>
-                              </span>
-                              <small class="text-muted">{{ session.vehiclePlate || 'N/A' }}</small>
-                            </div>
-                          </td>
-                          <td>
-                            <span class="badge bg-info-light text-info">
-                              <i class="fas fa-concierge-bell me-1"></i>
-                              {{ getServiceName(session.serviceId) }}
-                            </span>
-                          </td>
-                          <td>
-                            <span class="d-block fw-bold">
-                               {{ getCentreName(session.centreId) }}
-                            </span>
-                          </td>
-                          <td>
-                            <span class="d-block">
-                              {{ session.updatedAt| date: 'dd/MM/yyyy HH:mm' }}
-                            </span>
-                          <td>
-                            <span class="fw-bold text-primary">
-                              {{ session.price }}
-                            </span>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                <div class="stats-mini">
+                  <div class="stat-mini">
+                    <div class="stat-mini-value" id="workingHoursDisplay">40</div>
+                    <div class="stat-mini-label">Heures/semaine</div>
                   </div>
-
-                  <!-- Pagination -->
-                  <div class="d-flex justify-content-between align-items-center mt-4"
-                    *ngIf="filteredSessions.length > 0">
-                    <div class="text-muted">
-                      Affichage de <span class="fw-bold">{{ (currentPage - 1) * itemsPerPage + 1 }}</span>
-                      à
-                      sur <span class="fw-bold">{{ totalItems }}</span> sessions
-                    </div>
-                    <nav aria-label="Page navigation">
-                      <ul class="pagination pagination-sm mb-0">
-                        <li class="page-item" [class.disabled]="currentPage === 1">
-                          <a class="page-link" (click)="pageChanged(currentPage - 1)" aria-label="Previous">
-                            <i class="fas fa-chevron-left"></i>
-                          </a>
-                        </li>
-                      </ul>
-                    </nav>
+                  <div class="stat-mini">
+                    <div class="stat-mini-value" id="hireDateDisplay">2 ans</div>
+                    <div class="stat-mini-label">Ancienneté</div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+        </div>
+
+        <!-- Formulaire avec onglets -->
+        <div class="form-container">
+          <div class="form-tabs">
+            <button class="tab-btn active">
+              <i class="fas fa-user"></i>
+              Informations Personnelles
+            </button>
+            <button class="tab-btn">
+              <i class="fas fa-briefcase"></i>
+              Informations Professionnelles
+            </button>
+            <button class="tab-btn">
+              <i class="fas fa-lock"></i>
+              Sécurité
+            </button>
+          </div>
+
+          <form id="userForm">
+            <!-- Onglet Informations Personnelles -->
+            <div class="tab-content active" id="personal">
+              <div id="successMessage" class="alert alert-success" style="display: none;">
+                <i class="fas fa-check-circle"></i>
+                <span>Profil mis à jour avec succès!</span>
+              </div>
+
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Prénom *</label>
+                  <input type="text" class="form-input" id="firstName" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Nom *</label>
+                  <input type="text" class="form-input" id="lastName" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Email *</label>
+                  <input type="email" class="form-input" id="email" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Téléphone</label>
+                  <input type="tel" class="form-input" id="phoneNumber">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Genre</label>
+                  <select class="form-select" id="gender">
+                    <option value="">Sélectionner</option>
+                    <option value="M">Masculin</option>
+                    <option value="F">Féminin</option>
+                    <option value="Other">Autre</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">État Civil</label>
+                  <select class="form-select" id="maritalStatus">
+                    <option value="">Sélectionner</option>
+                    <option value="Single">Célibataire</option>
+                    <option value="Married">Marié(e)</option>
+                    <option value="Divorced">Divorcé(e)</option>
+                    <option value="Widowed">Veuf/Veuve</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Nombre d'enfants</label>
+                  <input type="number" class="form-input" id="numberOfChildren" min="0">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Ville de résidence</label>
+                  <input type="text" class="form-input" id="residence">
+                </div>
+
+                <div class="form-group full-width">
+                  <label class="form-label">Adresse postale</label>
+                  <textarea class="form-textarea" id="postalAddress" rows="3"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Onglet Informations Professionnelles -->
+            <div class="tab-content" id="professional">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Date d'embauche</label>
+                  <input type="date" class="form-input" id="hireDate">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Type de contrat</label>
+                  <select class="form-select" id="contractType">
+                    <option value="">Sélectionner</option>
+                    <option value="CDI">CDI</option>
+                    <option value="CDD">CDD</option>
+                    <option value="Freelance">Freelance</option>
+                    <option value="Stage">Stage</option>
+                    <option value="Apprentissage">Apprentissage</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Heures de travail par semaine</label>
+                  <input type="number" class="form-input" id="workingHours" min="0" max="60">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Centre de lavage</label>
+                  <select class="form-select" id="centreId">
+                    <option value="">Sélectionner un centre</option>
+                    <option value="centre1">Centre Paris 15ème</option>
+                    <option value="centre2">Centre Lyon Bellecour</option>
+                    <option value="centre3">Centre Marseille Vieux Port</option>
+                    <option value="centre4">Centre Toulouse Capitole</option>
+                    <option value="centre5">Centre Nice Promenade</option>
+                  </select>
+                </div>
+
+                <div class="form-group full-width">
+                  <label class="form-label">Rôles et permissions</label>
+                  <div class="role-tags" id="roleTags">
+                    <!-- Les rôles seront ajoutés dynamiquement -->
+                  </div>
+                  <div class="add-role-section">
+                    <input type="text" class="add-role-input" id="newRole" placeholder="Ajouter un rôle">
+                    <button type="button" class="add-role-btn" onclick="addRole()">
+                      <i class="fas fa-plus"></i>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="checkbox-group">
+                  <input type="checkbox" class="checkbox-input" id="isPartTime">
+                  <label class="checkbox-label" for="isPartTime">Temps partiel</label>
+                </div>
+
+                <div class="checkbox-group">
+                  <input type="checkbox" class="checkbox-input" id="isEnabled" checked>
+                  <label class="checkbox-label" for="isEnabled">Compte actif</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Onglet Sécurité -->
+            <div class="tab-content" id="security">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Nouveau mot de passe</label>
+                  <div style="position: relative;">
+                    <input type="password" class="form-input" id="password"
+                      placeholder="Laisser vide pour ne pas changer">
+                    <i class="fas fa-eye password-toggle" onclick="togglePassword('password')"></i>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Confirmer le mot de passe</label>
+                  <div style="position: relative;">
+                    <input type="password" class="form-input" id="confirmPassword">
+                    <i class="fas fa-eye password-toggle" onclick="togglePassword('confirmPassword')"></i>
+                  </div>
+                </div>
+              </div>
+
+              <div class="alert alert-error" id="passwordError" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i>
+                <span>Les mots de passe ne correspondent pas</span>
+              </div>
+            </div>
+
+            <!-- Actions du formulaire -->
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary">
+                <i class="fas fa-times"></i>
+                Annuler
+              </button>
+              <button type="button" class="btn btn-danger" onclick="resetForm()">
+                <i class="fas fa-undo"></i>
+                Réinitialiser
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i>
+                Sauvegarder
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

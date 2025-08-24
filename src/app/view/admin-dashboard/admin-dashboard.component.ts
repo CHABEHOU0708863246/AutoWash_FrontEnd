@@ -5,10 +5,21 @@ import { UsersService } from '../../core/services/Users/users.service';
 import { Users } from '../../core/models/Users/Users';
 import { DomSanitizer } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
+import { DashboardAlert } from '../../core/models/Dashboards/DashboardAlert';
+import { DashboardKpiDto } from '../../core/models/Dashboards/DashboardKpiDto';
+import { DashboardSnapshot } from '../../core/models/Dashboards/DashboardSnapshot';
+import { WeeklyComparisonDto } from '../../core/models/Dashboards/WeeklyComparisonDto';
+import { DashboardsService } from '../../core/services/Dashboards/dashboards.service';
+import { FormsModule } from '@angular/forms';
+import { Centres } from '../../core/models/Centres/Centres';
+import { CentresService } from '../../core/services/Centres/centres.service';
+import { BehaviorSubject, debounceTime, distinctUntilChanged, forkJoin, Subscription } from 'rxjs';
+import { ServiceSettings } from '../../core/models/Settings/Services/ServiceSettings';
+import { ServiceSettingsService } from '../../core/services/ServiceSettings/service-settings.service';
 
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [RouterLink, CommonModule],
+  imports: [RouterLink, CommonModule, FormsModule],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.scss',
 })
@@ -19,24 +30,471 @@ export class AdminDashboardComponent implements OnInit {
   user: Users | null = null; // Informations sur l'utilisateur connecté.
   isSidebarCollapsed = false;
 
+  // Données du dashboard
+  dashboardData: DashboardSnapshot | null = null;
+  kpiData: DashboardKpiDto | null = null;
+  weeklyComparison: WeeklyComparisonDto | null = null;
+  activeAlerts: DashboardAlert[] = [];
+  last7DaysRevenue: number[] = [];
+  last7DaysWashCount: number[] = [];
+  centres: Centres[] = [];
+  services: ServiceSettings[] = [];
+
+  // États de chargement
+  loadingDashboard = false;
+  loadingKpis = false;
+  loadingAlerts = false;
+  loadingCharts = false;
+  loadingCentres = false;
+  loadingServices = false;
+
+  // Filtres
+  selectedCentreId = '';
+  selectedPeriod = 'today';
+  selectedService = 'all';
+  startDate: string = '';
+  endDate: string = '';
+
+  // Sujet pour le debounce des changements de filtre
+  private filterChangeSubject = new BehaviorSubject<void>(undefined);
+
+  // Souscriptions
+  private currentUserSubscription!: Subscription;
+  private filterSubscription!: Subscription;
+
   constructor(
     private sanitizer: DomSanitizer,
-    private usersService: UsersService, // Service pour interagir avec les utilisateurs.
-    private router: Router, // Service pour la navigation entre les routes.
-    private authService: AuthService // Service pour gérer l'authentification.
+    private usersService: UsersService,
+    private router: Router,
+    private authService: AuthService,
+    private centresService: CentresService,
+    private dashboardService: DashboardsService,
+    private serviceSettingsService: ServiceSettingsService
   ) {}
 
   ngOnInit(): void {
-    this.getUsers(); // Récupère les utilisateurs.
-    this.loadCurrentUser(); // Charge l'utilisateur connecté
+    this.getUsers();
+    this.loadCurrentUser();
+    this.loadCentres();
+    this.setupFilterListener();
 
     // S'abonner aux changements de l'utilisateur connecté
-    this.authService.currentUser$.subscribe((user) => {
+    this.currentUserSubscription = this.authService.currentUser$.subscribe((user) => {
       if (user && user !== this.currentUser) {
         this.currentUser = user;
         this.loadCurrentUserPhoto();
+
+        // Charger immédiatement les données si un centre est disponible
+        if (user.centreId && !this.selectedCentreId) {
+          this.selectedCentreId = user.centreId;
+          this.loadDashboardData();
+        }
       }
     });
+  }
+
+  ngOnDestroy(): void {
+    // Nettoyer les souscriptions
+    if (this.currentUserSubscription) {
+      this.currentUserSubscription.unsubscribe();
+    }
+    if (this.filterSubscription) {
+      this.filterSubscription.unsubscribe();
+    }
+  }
+
+  /**
+   * Configuration de l'écoute des changements de filtre avec debounce
+   */
+  private setupFilterListener(): void {
+    this.filterSubscription = this.filterChangeSubject
+      .pipe(
+        debounceTime(300), // Attendre 300ms après le dernier changement
+        distinctUntilChanged() // Éviter les appels inutiles
+      )
+      .subscribe(() => {
+        this.loadDashboardData();
+      });
+  }
+
+  /**
+   * Déclencher le rechargement des données avec debounce
+   */
+  private triggerFilterChange(): void {
+    this.filterChangeSubject.next();
+  }
+
+  /**
+   * Réinitialise les données du dashboard
+   */
+  private resetDashboardData(): void {
+    this.dashboardData = null;
+    this.kpiData = null;
+    this.weeklyComparison = null;
+    this.activeAlerts = [];
+    this.last7DaysRevenue = [];
+    this.last7DaysWashCount = [];
+  }
+
+  /**
+   * Charger tous les centres
+   */
+  loadCentres(): void {
+    this.loadingCentres = true;
+    this.centresService.getAllCentres()
+      .subscribe({
+        next: (centres) => {
+          this.centres = centres;
+          this.loadingCentres = false;
+
+          // Charger les services une fois les centres disponibles
+          this.loadAllServices();
+
+          // Sélectionner le centre de l'utilisateur par défaut si disponible
+          if (this.currentUser?.centreId && !this.selectedCentreId) {
+            this.selectedCentreId = this.currentUser.centreId;
+            this.loadDashboardData();
+          }
+        },
+        error: (error) => {
+          console.error('Erreur lors du chargement des centres:', error);
+          this.loadingCentres = false;
+        }
+      });
+  }
+
+  /**
+   * Charger tous les services
+   */
+  loadAllServices(): void {
+    this.loadingServices = true;
+    this.serviceSettingsService.getAllServices()
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.services = response.data;
+          }
+          this.loadingServices = false;
+        },
+        error: (error) => {
+          console.error('Erreur lors du chargement des services:', error);
+          this.loadingServices = false;
+        }
+      });
+  }
+
+  /**
+   * Charger toutes les données du dashboard en fonction des filtres
+   */
+  loadDashboardData(): void {
+    if (!this.selectedCentreId) {
+      this.resetDashboardData();
+      return;
+    }
+
+    this.loadingDashboard = true;
+    this.loadingKpis = true;
+    this.loadingAlerts = true;
+    this.loadingCharts = true;
+
+    // Réinitialiser les données avant de charger les nouvelles
+    this.resetDashboardData();
+
+    // Construire les paramètres de filtre
+    const filterParams = this.buildFilterParams();
+
+    // Charger toutes les données en parallèle avec les filtres
+    forkJoin({
+      snapshot: this.dashboardService.getDashboardSnapshot(this.selectedCentreId),
+      kpis: this.dashboardService.getMainKpis(this.selectedCentreId),
+      alerts: this.dashboardService.getActiveAlerts(this.selectedCentreId),
+      revenue: this.dashboardService.getLast7DaysRevenue(this.selectedCentreId),
+      washCount: this.dashboardService.getLast7DaysWashCount(this.selectedCentreId),
+      comparison: this.dashboardService.getWeeklyComparison(this.selectedCentreId)
+    }).subscribe({
+      next: (results) => {
+        if (results.snapshot.success) this.dashboardData = results.snapshot.data;
+        if (results.kpis.success) this.kpiData = results.kpis.data;
+        if (results.alerts.success) this.activeAlerts = results.alerts.data;
+        if (results.revenue.success) this.last7DaysRevenue = results.revenue.data;
+        if (results.washCount.success) this.last7DaysWashCount = results.washCount.data;
+        if (results.comparison.success) this.weeklyComparison = results.comparison.data;
+
+        this.loadingDashboard = false;
+        this.loadingKpis = false;
+        this.loadingAlerts = false;
+        this.loadingCharts = false;
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des données du dashboard:', error);
+        this.loadingDashboard = false;
+        this.loadingKpis = false;
+        this.loadingAlerts = false;
+        this.loadingCharts = false;
+      }
+    });
+  }
+
+  /**
+   * Construire les paramètres de filtre à partir des valeurs sélectionnées
+   */
+  private buildFilterParams(): any {
+    const params: any = {};
+
+    // Filtre de période
+    if (this.selectedPeriod && this.selectedPeriod !== 'today') {
+      params.period = this.selectedPeriod;
+    }
+
+    // Filtre de service
+    if (this.selectedService && this.selectedService !== 'all') {
+      params.serviceId = this.selectedService;
+    }
+
+    // Dates personnalisées
+    if (this.selectedPeriod === 'custom') {
+      if (this.startDate) {
+        params.startDate = this.startDate;
+      }
+      if (this.endDate) {
+        params.endDate = this.endDate;
+      }
+    } else {
+      // Calculer les dates en fonction de la période sélectionnée
+      const dateRange = this.calculateDateRange(this.selectedPeriod);
+      if (dateRange.startDate) {
+        params.startDate = dateRange.startDate;
+      }
+      if (dateRange.endDate) {
+        params.endDate = dateRange.endDate;
+      }
+    }
+
+    return params;
+  }
+
+
+  /**
+   * Calculer la plage de dates en fonction de la période sélectionnée
+   */
+  private calculateDateRange(period: string): { startDate?: string, endDate?: string } {
+    const today = new Date();
+    const endDate = today.toISOString().split('T')[0]; // Format YYYY-MM-DD
+    let startDate: string;
+
+    switch (period) {
+      case 'today':
+        startDate = endDate;
+        break;
+      case 'week':
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - 7);
+        startDate = weekStart.toISOString().split('T')[0];
+        break;
+      case 'month':
+        const monthStart = new Date(today);
+        monthStart.setMonth(today.getMonth() - 1);
+        startDate = monthStart.toISOString().split('T')[0];
+        break;
+      case 'quarter':
+        const quarterStart = new Date(today);
+        quarterStart.setMonth(today.getMonth() - 3);
+        startDate = quarterStart.toISOString().split('T')[0];
+        break;
+      case 'year':
+        const yearStart = new Date(today);
+        yearStart.setFullYear(today.getFullYear() - 1);
+        startDate = yearStart.toISOString().split('T')[0];
+        break;
+      default:
+        return {};
+    }
+
+    return { startDate, endDate };
+  }
+
+  /**
+   * Rafraîchir manuellement le dashboard
+   */
+  refreshDashboard(): void {
+    if (!this.selectedCentreId) return;
+
+    this.loadingDashboard = true;
+    const filterParams = this.buildFilterParams();
+
+    this.dashboardService.refreshDashboard(this.selectedCentreId)
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.dashboardData = response.data;
+            // Recharger les autres données avec les filtres
+            this.loadDashboardData();
+          }
+          this.loadingDashboard = false;
+        },
+        error: (error) => {
+          console.error('Erreur lors du rafraîchissement:', error);
+          this.loadingDashboard = false;
+        }
+      });
+  }
+
+  /**
+   * Gérer le changement de centre
+   */
+  onCentreChange(event: any): void {
+    const newCentreId = event.target.value;
+
+    // Si le centre a changé, réinitialiser les filtres aux valeurs par défaut
+    if (this.selectedCentreId !== newCentreId) {
+      this.selectedCentreId = newCentreId;
+
+      // Charger les services du nouveau centre si nécessaire
+      if (this.selectedCentreId) {
+        this.loadServicesForCentre(this.selectedCentreId);
+      }
+
+      this.triggerFilterChange();
+    }
+  }
+
+  /**
+   * Charger les services pour un centre spécifique
+   */
+  private loadServicesForCentre(centreId: string): void {
+    this.loadingServices = true;
+    this.serviceSettingsService.getServicesByCentre(centreId)
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.services = response.data;
+          }
+          this.loadingServices = false;
+        },
+        error: (error) => {
+          console.error('Erreur lors du chargement des services pour le centre:', error);
+          // En cas d'erreur, charger tous les services
+          this.loadAllServices();
+        }
+      });
+  }
+
+  /**
+   * Gérer le changement de période
+   */
+  onPeriodChange(event: any): void {
+    this.selectedPeriod = event.target.value;
+
+    // Réinitialiser les dates personnalisées si on change de période
+    if (this.selectedPeriod !== 'custom') {
+      this.startDate = '';
+      this.endDate = '';
+      this.triggerFilterChange();
+    }
+    // Pour la période personnalisée, attendre que les dates soient saisies
+  }
+
+  /**
+   * Gérer le changement de service
+   */
+  onServiceChange(event: any): void {
+    this.selectedService = event.target.value;
+    this.triggerFilterChange();
+  }
+
+  /**
+   * Gérer le changement des dates personnalisées
+   */
+  onDateChange(): void {
+    // Valider que la date de fin est postérieure à la date de début
+    if (this.startDate && this.endDate) {
+      const start = new Date(this.startDate);
+      const end = new Date(this.endDate);
+
+      if (end < start) {
+        // Échanger les dates si nécessaire
+        [this.startDate, this.endDate] = [this.endDate, this.startDate];
+      }
+    }
+
+    if (this.selectedPeriod === 'custom' && this.startDate && this.endDate) {
+      this.triggerFilterChange();
+    }
+  }
+
+
+  /**
+   * Réinitialiser tous les filtres aux valeurs par défaut
+   */
+  resetFilters(): void {
+    this.selectedPeriod = 'today';
+    this.selectedService = 'all';
+    this.startDate = '';
+    this.endDate = '';
+    this.triggerFilterChange();
+  }
+
+
+  /**
+   * Résoudre une alerte
+   */
+  resolveAlert(alertIndex: number): void {
+    if (!this.selectedCentreId) return;
+
+    this.dashboardService.resolveAlert(this.selectedCentreId, alertIndex)
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            // Mettre à jour localement l'alerte comme résolue
+            if (this.activeAlerts[alertIndex]) {
+              this.activeAlerts[alertIndex].isResolved = true;
+            }
+            // Optionnel: recharger les alertes
+            this.loadActiveAlerts();
+          }
+        },
+        error: (error) => {
+          console.error('Erreur lors de la résolution de l\'alerte:', error);
+        }
+      });
+  }
+
+  /**
+   * Charger uniquement les alertes actives
+   */
+  private loadActiveAlerts(): void {
+    if (!this.selectedCentreId) return;
+
+    this.loadingAlerts = true;
+    this.dashboardService.getActiveAlerts(this.selectedCentreId)
+      .subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.activeAlerts = response.data;
+          }
+          this.loadingAlerts = false;
+        },
+        error: (error) => {
+          console.error('Erreur lors du chargement des alertes:', error);
+          this.loadingAlerts = false;
+        }
+      });
+  }
+
+  /**
+   * Obtenir l'icône correspondant au type d'alerte
+   */
+  getAlertIcon(alertType: string): string {
+    switch (alertType) {
+      case 'Info':
+        return 'fas fa-info-circle';
+      case 'Warning':
+        return 'fas fa-exclamation-triangle';
+      case 'Critical':
+        return 'fas fa-exclamation-circle';
+      default:
+        return 'fas fa-bell';
+    }
   }
 
  /**
