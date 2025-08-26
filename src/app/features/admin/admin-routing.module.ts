@@ -37,10 +37,6 @@ const routes: Routes = [
     component: UsersCreateComponent
   },
   {
-    path: 'users-permissions',
-    component: UsersPermissionsComponent
-  },
-  {
     path: 'users-profil',
     component: UsersProfilComponent
   },

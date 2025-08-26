@@ -22,20 +22,24 @@
       <div class="logo-container">
         <svg class="car-wash-logo" viewBox="0 0 200 120" width="120" height="120">
           <g class="car">
-            <path class="car-body" d="M160,80 L130,50 L70,50 L40,80 L30,80 C25,80 20,85 20,90 L20,100 C20,105 25,110 30,110 L40,110 C40,100 50,90 60,90 C70,90 80,100 80,110 L120,110 C120,100 130,90 140,90 C150,90 160,100 160,110 L170,110 C175,110 180,105 180,100 L180,90 C180,85 175,80 170,80 L160,80 Z" fill="#3498db"/>
-            <circle class="wheel wheel-left" cx="60" cy="110" r="20" fill="#333"/>
-            <circle class="wheel wheel-right" cx="140" cy="110" r="20" fill="#333"/>
-            <rect class="window" x="80" y="55" width="40" height="15" rx="5" fill="#a8e6ff"/>
+            <path class="car-body"
+              d="M160,80 L130,50 L70,50 L40,80 L30,80 C25,80 20,85 20,90 L20,100 C20,105 25,110 30,110 L40,110 C40,100 50,90 60,90 C70,90 80,100 80,110 L120,110 C120,100 130,90 140,90 C150,90 160,100 160,110 L170,110 C175,110 180,105 180,100 L180,90 C180,85 175,80 170,80 L160,80 Z"
+              fill="#3498db" />
+            <circle class="wheel wheel-left" cx="60" cy="110" r="20" fill="#333" />
+            <circle class="wheel wheel-right" cx="140" cy="110" r="20" fill="#333" />
+            <rect class="window" x="80" y="55" width="40" height="15" rx="5" fill="#a8e6ff" />
           </g>
           <g class="water-drops">
-            <path class="drop drop-1" d="M60,30 Q60,20 70,30 Q80,40 70,45 Q60,40 60,30" fill="#a8e6ff"/>
-            <path class="drop drop-2" d="M100,20 Q100,10 110,20 Q120,30 110,35 Q100,30 100,20" fill="#a8e6ff"/>
-            <path class="drop drop-3" d="M140,30 Q140,20 150,30 Q160,40 150,45 Q140,40 140,30" fill="#a8e6ff"/>
+            <path class="drop drop-1" d="M60,30 Q60,20 70,30 Q80,40 70,45 Q60,40 60,30" fill="#a8e6ff" />
+            <path class="drop drop-2" d="M100,20 Q100,10 110,20 Q120,30 110,35 Q100,30 100,20" fill="#a8e6ff" />
+            <path class="drop drop-3" d="M140,30 Q140,20 150,30 Q160,40 150,45 Q140,40 140,30" fill="#a8e6ff" />
           </g>
         </svg>
       </div>
       <h1 class="title-3d">Autowash.CI</h1>
-      <p class="description">La solution complète pour la gestion de vos services de lavage auto. Contrôlez vos opérations quotidiennes, suivez vos laveurs, gérez vos finances et optimisez votre rentabilité en quelques clics.</p>
+      <p class="description">La solution complète pour la gestion de vos services de lavage auto. Contrôlez vos
+        opérations quotidiennes, suivez vos laveurs, gérez vos finances et optimisez votre rentabilité en quelques
+        clics.</p>
 
       <div class="features">
         <div class="feature">
@@ -54,70 +58,66 @@
     </div>
 
     <!-- Section formulaire -->
-<div class="form-panel">
-  <div class="form-container">
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-      <h2>Connexion</h2>
-      <p class="form-subtitle">Pas encore de compte ? <a href="#" class="link">S'inscrire</a></p>
+    <div class="form-panel">
+      <div class="form-container">
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+          <h2>Connexion</h2>
+          <p class="form-subtitle">Pas encore de compte ? <a href="#" class="link">S'inscrire</a></p>
 
-      <!-- Email -->
-      <div class="form-group">
-        <div class="input-icon-wrapper">
-          <i class="fas fa-envelope input-icon"></i>
-          <input
-            type="email"
-            formControlName="email"
-            placeholder="Email"
-            required>
-        </div>
-        <div class="validation-error" *ngIf="loginForm.get('email')?.invalid && (loginForm.get('email')?.dirty || loginForm.get('email')?.touched)">
-          Veuillez saisir un email valide
+          <!-- Email -->
+          <div class="form-group">
+            <div class="input-icon-wrapper">
+              <i class="fas fa-envelope input-icon"></i>
+              <input type="email" formControlName="email" placeholder="Email" required>
+            </div>
+            <div class="validation-error"
+              *ngIf="loginForm.get('email')?.invalid && (loginForm.get('email')?.dirty || loginForm.get('email')?.touched)">
+              Veuillez saisir un email valide
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div class="form-group">
+            <div class="input-icon-wrapper">
+              <i class="fas fa-lock input-icon"></i>
+              <input [type]="hidePassword ? 'password' : 'text'" formControlName="password" placeholder="Mot de passe"
+                required>
+              <i class="toggle-password fas" [ngClass]="hidePassword ? 'fa-eye' : 'fa-eye-slash'"
+                (click)="hidePassword = !hidePassword"></i>
+            </div>
+            <div class="validation-error"
+              *ngIf="loginForm.get('password')?.invalid && (loginForm.get('password')?.dirty || loginForm.get('password')?.touched)">
+              Le mot de passe est requis
+            </div>
+          </div>
+
+          <div class="form-options">
+            <div class="remember-me">
+              <input type="checkbox" id="rememberMe" formControlName="rememberMe">
+              <label for="rememberMe">Se souvenir de moi</label>
+            </div>
+            <a class="forgot-password" (click)="goToForgotPassword()">Mot de passe oublié?</a>
+          </div>
+
+          <button type="submit" class="login-button" [disabled]="isLoading || loginForm.invalid">
+            <span *ngIf="!isLoading">Connexion</span>
+            <div class="spinner" *ngIf="isLoading">
+              <i class="fas fa-spinner fa-spin"></i>
+            </div>
+          </button>
+        </form>
+
+        <div class="footer">
+          <p>Copyright © 2025 <span class="brand">Autowash</span></p>
         </div>
       </div>
-
-      <!-- Password -->
-      <div class="form-group">
-        <div class="input-icon-wrapper">
-          <i class="fas fa-lock input-icon"></i>
-          <input
-            [type]="hidePassword ? 'password' : 'text'"
-            formControlName="password"
-            placeholder="Mot de passe"
-            required>
-          <i class="toggle-password fas"
-            [ngClass]="hidePassword ? 'fa-eye' : 'fa-eye-slash'"
-            (click)="hidePassword = !hidePassword"></i>
-        </div>
-        <div class="validation-error" *ngIf="loginForm.get('password')?.invalid && (loginForm.get('password')?.dirty || loginForm.get('password')?.touched)">
-          Le mot de passe est requis
-        </div>
-      </div>
-
-      <div class="form-options">
-        <div class="remember-me">
-          <input type="checkbox" id="rememberMe" formControlName="rememberMe">
-          <label for="rememberMe">Se souvenir de moi</label>
-        </div>
-        <a href="#" class="forgot-password">Mot de passe oublié?</a>
-      </div>
-
-      <button type="submit" class="login-button" [disabled]="isLoading || loginForm.invalid">
-        <span *ngIf="!isLoading">Connexion</span>
-        <div class="spinner" *ngIf="isLoading">
-          <i class="fas fa-spinner fa-spin"></i>
-        </div>
-      </button>
-    </form>
-
-    <div class="footer">
-      <p>Copyright © 2025 <span class="brand">Autowash</span></p>
     </div>
-  </div>
-</div>
   </div>
 
   <!-- SVG wave animation au bas de la page -->
   <svg class="wave" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320">
-    <path fill="#ffffff" fill-opacity="0.8" d="M0,96L48,128C96,160,192,224,288,229.3C384,235,480,181,576,160C672,139,768,149,864,176C960,203,1056,245,1152,234.7C1248,224,1344,160,1392,128L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path>
+    <path fill="#ffffff" fill-opacity="0.8"
+      d="M0,96L48,128C96,160,192,224,288,229.3C384,235,480,181,576,160C672,139,768,149,864,176C960,203,1056,245,1152,234.7C1248,224,1344,160,1392,128L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z">
+    </path>
   </svg>
 </div>

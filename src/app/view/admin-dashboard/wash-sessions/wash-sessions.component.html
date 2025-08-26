@@ -24,11 +24,11 @@
     <div class="nav-menu">
       <!-- Dashboard -->
       <div class="dropdown dropdown-hover">
-      <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
-        <i class="fas fa-tachometer-alt"></i>
-        <span>Tableau de bord</span>
-      </a>
-    </div>
+        <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
 
       <!-- Gestion des Utilisateurs -->
       <div class="dropdown dropdown-hover">
@@ -42,8 +42,6 @@
               utilisateurs</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/users-create']"><i class="fas fa-user-plus"></i> Ajouter
               un utilisateur</a></li>
-          <li><a class="dropdown-item" [routerLink]="['/admin/users-permissions']"><i class="fas fa-user-shield"></i>
-              Permissions</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/users-attendance']"><i class="fas fa-user-clock"></i>
               Présences</a></li>
         </ul>
@@ -167,7 +165,8 @@
           <i class="fas fa-chevron-right dropdown-arrow"></i>
         </button>
         <ul class="dropdown-menu dropdown-menu-hover">
-        <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion dépenses</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion
+              dépenses</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/expenses-other']"><i class="fas fa-receipt"></i>
               Divers</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/expenses-profitability']"><i
@@ -223,7 +222,8 @@
             <i class="fas fa-chevron-down"></i>
           </button>
           <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
-            <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Mon profil</a></li>
+            <li><a class="dropdown-item" [routerLink]="['/admin/users-profil']"><i class="fas fa-user"></i> Mon
+                profil</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
             <li><a class="dropdown-item" (click)="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
@@ -244,13 +244,7 @@
                       <i class="fas fa-car me-2"></i> Historique des Sessions de Lavage
                     </h5>
                     <div class="d-flex">
-                      <div class="input-group me-3" style="width: 250px;">
-                        <span class="input-group-text bg-transparent">
-                          <i class="fas fa-search"></i>
-                        </span>
-                        <input type="text" class="form-control" placeholder="Rechercher..." [(ngModel)]="searchTerm">
-                      </div>
-                      <div class="dropdown me-3">
+                      <div class="dropdown me-1">
                         <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
                           aria-expanded="false">
                           <i class="fas fa-filter me-2"></i>Filtrer
@@ -340,7 +334,7 @@
                           </td>
                           <td>
                             <span class="d-block fw-bold">
-                               {{ getCentreName(session.centreId) }}
+                              {{ getCentreName(session.centreId) }}
                             </span>
                           </td>
                           <td>
@@ -363,13 +357,32 @@
                     <div class="text-muted">
                       Affichage de <span class="fw-bold">{{ (currentPage - 1) * itemsPerPage + 1 }}</span>
                       à
+                      <span class="fw-bold">{{ Math.min(currentPage * itemsPerPage, totalItems) }}</span>
                       sur <span class="fw-bold">{{ totalItems }}</span> sessions
                     </div>
+
                     <nav aria-label="Page navigation">
                       <ul class="pagination pagination-sm mb-0">
+                        <!-- Bouton Précédent -->
                         <li class="page-item" [class.disabled]="currentPage === 1">
-                          <a class="page-link" (click)="pageChanged(currentPage - 1)" aria-label="Previous">
+                          <a class="page-link" (click)="goToPage(currentPage - 1)" aria-label="Previous">
                             <i class="fas fa-chevron-left"></i>
+                          </a>
+                        </li>
+
+                        <!-- Numéros de page -->
+                        <li class="page-item" *ngFor="let page of getPages()" [class.active]="page === currentPage"
+                          [class.disabled]="page === '...'">
+                          <a class="page-link" (click)="goToPage(page)" *ngIf="page !== '...'">
+                            {{ page }}
+                          </a>
+                          <span class="page-link" *ngIf="page === '...'">...</span>
+                        </li>
+
+                        <!-- Bouton Suivant -->
+                        <li class="page-item" [class.disabled]="currentPage === totalPages">
+                          <a class="page-link" (click)="goToPage(currentPage + 1)" aria-label="Next">
+                            <i class="fas fa-chevron-right"></i>
                           </a>
                         </li>
                       </ul>

@@ -17,9 +17,14 @@ import { BehaviorSubject, debounceTime, distinctUntilChanged, forkJoin, Subscrip
 import { ServiceSettings } from '../../core/models/Settings/Services/ServiceSettings';
 import { ServiceSettingsService } from '../../core/services/ServiceSettings/service-settings.service';
 
+// 1. IMPORTS À AJOUTER dans admin-dashboard.component.ts
+import { BaseChartDirective } from 'ng2-charts';
+import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
+import { ApiResponseData } from '../../core/models/ApiResponseData';
+
 @Component({
   selector: 'app-admin-dashboard',
-  imports: [RouterLink, CommonModule, FormsModule],
+  imports: [RouterLink, CommonModule, FormsModule, BaseChartDirective],
   templateUrl: './admin-dashboard.component.html',
   styleUrl: './admin-dashboard.component.scss',
 })
@@ -55,6 +60,49 @@ export class AdminDashboardComponent implements OnInit {
   startDate: string = '';
   endDate: string = '';
 
+  // Configuration des graphiques
+  public lineChartData: ChartData<'line'> = {
+    labels: [],
+    datasets: []
+  };
+
+  public lineChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    plugins: {
+      legend: {
+        display: true,
+      }
+    },
+    scales: {
+      x: {
+        display: true
+      },
+      y: {
+        display: true,
+        beginAtZero: true
+      }
+    }
+  };
+
+  public pieChartData: ChartData<'pie'> = {
+    labels: [],
+    datasets: []
+  };
+
+  public pieChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top',
+      }
+    }
+  };
+
+  public lineChartType: ChartType = 'line';
+  public pieChartType: ChartType = 'pie';
+
+
+
   // Sujet pour le debounce des changements de filtre
   private filterChangeSubject = new BehaviorSubject<void>(undefined);
 
@@ -87,10 +135,85 @@ export class AdminDashboardComponent implements OnInit {
         // Charger immédiatement les données si un centre est disponible
         if (user.centreId && !this.selectedCentreId) {
           this.selectedCentreId = user.centreId;
+          this.loadServicesForCentre(this.selectedCentreId);
           this.loadDashboardData();
         }
       }
     });
+  }
+
+
+  private updateCharts(): void {
+    this.updateSalesChart();
+    this.updateRevenueChart();
+  }
+
+  private updateSalesChart(): void {
+    if (this.last7DaysRevenue.length > 0) {
+      // Générer les labels des 7 derniers jours
+      const labels = [];
+      const today = new Date();
+
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        labels.push(date.toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: '2-digit'
+        }));
+      }
+
+      this.lineChartData = {
+        labels: labels,
+        datasets: [
+          {
+            label: 'Revenus (€)',
+            data: this.last7DaysRevenue,
+            fill: true,
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 2,
+            tension: 0.4
+          },
+          {
+            label: 'Nombre de lavages',
+            data: this.last7DaysWashCount,
+            fill: false,
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 2,
+            tension: 0.4
+          }
+        ]
+      };
+    }
+  }
+
+  private updateRevenueChart(): void {
+    if (this.services.length > 0 && this.dashboardData) {
+      // Calculer les revenus par service (exemple basé sur vos données)
+      const serviceLabels = this.services.map(service => service.name);
+      const serviceData = this.services.map(service => {
+        // Ici vous devriez calculer le revenu réel par service
+        // Pour l'exemple, je génère des données aléatoires
+        return Math.floor(Math.random() * 1000) + 100;
+      });
+
+      this.pieChartData = {
+        labels: serviceLabels,
+        datasets: [{
+          data: serviceData,
+          backgroundColor: [
+            '#FF6384',
+            '#36A2EB',
+            '#FFCE56',
+            '#4BC0C0',
+            '#9966FF',
+            '#FF9F40'
+          ]
+        }]
+      };
+    }
   }
 
   ngOnDestroy(): void {
@@ -109,8 +232,8 @@ export class AdminDashboardComponent implements OnInit {
   private setupFilterListener(): void {
     this.filterSubscription = this.filterChangeSubject
       .pipe(
-        debounceTime(300), // Attendre 300ms après le dernier changement
-        distinctUntilChanged() // Éviter les appels inutiles
+        debounceTime(300),
+        distinctUntilChanged()
       )
       .subscribe(() => {
         this.loadDashboardData();
@@ -147,12 +270,10 @@ export class AdminDashboardComponent implements OnInit {
           this.centres = centres;
           this.loadingCentres = false;
 
-          // Charger les services une fois les centres disponibles
-          this.loadAllServices();
-
           // Sélectionner le centre de l'utilisateur par défaut si disponible
           if (this.currentUser?.centreId && !this.selectedCentreId) {
             this.selectedCentreId = this.currentUser.centreId;
+            this.loadServicesForCentre(this.selectedCentreId);
             this.loadDashboardData();
           }
         },
@@ -163,25 +284,6 @@ export class AdminDashboardComponent implements OnInit {
       });
   }
 
-  /**
-   * Charger tous les services
-   */
-  loadAllServices(): void {
-    this.loadingServices = true;
-    this.serviceSettingsService.getAllServices()
-      .subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-            this.services = response.data;
-          }
-          this.loadingServices = false;
-        },
-        error: (error) => {
-          console.error('Erreur lors du chargement des services:', error);
-          this.loadingServices = false;
-        }
-      });
-  }
 
   /**
    * Charger toutes les données du dashboard en fonction des filtres
@@ -219,6 +321,8 @@ export class AdminDashboardComponent implements OnInit {
         if (results.revenue.success) this.last7DaysRevenue = results.revenue.data;
         if (results.washCount.success) this.last7DaysWashCount = results.washCount.data;
         if (results.comparison.success) this.weeklyComparison = results.comparison.data;
+
+        this.updateCharts();
 
         this.loadingDashboard = false;
         this.loadingKpis = false;
@@ -343,41 +447,43 @@ export class AdminDashboardComponent implements OnInit {
    * Gérer le changement de centre
    */
   onCentreChange(event: any): void {
-    const newCentreId = event.target.value;
+  const newCentreId = event.target.value;
 
-    // Si le centre a changé, réinitialiser les filtres aux valeurs par défaut
-    if (this.selectedCentreId !== newCentreId) {
-      this.selectedCentreId = newCentreId;
+  if (this.selectedCentreId !== newCentreId) {
+    this.selectedCentreId = newCentreId;
+    this.selectedService = 'all'; // Réinitialiser le filtre service
 
-      // Charger les services du nouveau centre si nécessaire
-      if (this.selectedCentreId) {
-        this.loadServicesForCentre(this.selectedCentreId);
-      }
-
-      this.triggerFilterChange();
+    if (this.selectedCentreId) {
+      this.loadServicesForCentre(this.selectedCentreId);
     }
+
+    this.triggerFilterChange();
   }
+}
 
   /**
    * Charger les services pour un centre spécifique
    */
-  private loadServicesForCentre(centreId: string): void {
-    this.loadingServices = true;
-    this.serviceSettingsService.getServicesByCentre(centreId)
-      .subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-            this.services = response.data;
-          }
-          this.loadingServices = false;
-        },
-        error: (error) => {
-          console.error('Erreur lors du chargement des services pour le centre:', error);
-          // En cas d'erreur, charger tous les services
-          this.loadAllServices();
+  loadServicesForCentre(centreId: string): void {
+  this.loadingServices = true;
+  this.serviceSettingsService.getServicesByCentre(centreId)
+    .subscribe({
+      next: (response: ApiResponseData<ServiceSettings[]>) => {
+        if (response.success && response.data) {
+          this.services = response.data;
+        } else {
+          this.services = [];
+          console.warn('Aucun service trouvé pour ce centre');
         }
-      });
-  }
+        this.loadingServices = false;
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des services:', error);
+        this.services = [];
+        this.loadingServices = false;
+      }
+    });
+}
 
   /**
    * Gérer le changement de période
@@ -395,12 +501,17 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   /**
-   * Gérer le changement de service
-   */
-  onServiceChange(event: any): void {
-    this.selectedService = event.target.value;
+ * Gérer le changement de service
+ */
+onServiceChange(event: any): void {
+  const newServiceId = event.target.value;
+
+  // Si le service a changé, mettre à jour et déclencher le filtre
+  if (this.selectedService !== newServiceId) {
+    this.selectedService = newServiceId;
     this.triggerFilterChange();
   }
+}
 
   /**
    * Gérer le changement des dates personnalisées

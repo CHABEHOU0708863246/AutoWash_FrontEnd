@@ -40,6 +40,10 @@ export class LoginComponent implements OnInit {
     });
   }
 
+goToForgotPassword(): void {
+  this.router.navigate(['/auth/forgot-password']);
+}
+
   /**
    * Gère la soumission du formulaire de connexion.
    * Envoie les identifiants à AuthService et redirige en fonction du rôle de l'utilisateur.

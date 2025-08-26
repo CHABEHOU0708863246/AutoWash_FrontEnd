@@ -50,14 +50,6 @@ export class ServiceSettingsService {
     );
   }
 
-    /**
-   * Récupère tous les services
-   */
-  getAllServices(): Observable<ApiResponseData<ServiceSettings[]>> {
-    return this.http.get<ApiResponseData<ServiceSettings[]>>(
-      `${this.baseUrl}/all-services`
-    );
-  }
 
   /**
    * Récupère les services par catégorie pour un centre donné

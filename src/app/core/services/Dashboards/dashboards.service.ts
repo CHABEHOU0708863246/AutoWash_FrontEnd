@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Observable, catchError, throwError } from 'rxjs';
 import { environment } from '../../../../environments/environment.development';
 import { ApiResponseData } from '../../models/ApiResponseData';
@@ -16,6 +16,8 @@ export class DashboardsService {
 
   constructor(private http: HttpClient) { }
 
+
+
   //#region Endpoints Principaux
 
   /**
@@ -30,6 +32,23 @@ export class DashboardsService {
       catchError(this.handleError)
     );
   }
+
+  getRevenueByService(centreId: string, params?: any): Observable<ApiResponseData<{ serviceName: string, revenue: number }[]>> {
+  let queryParams = new HttpParams();
+
+  if (params) {
+    Object.keys(params).forEach(key => {
+      if (params[key]) {
+        queryParams = queryParams.append(key, params[key]);
+      }
+    });
+  }
+
+  return this.http.get<ApiResponseData<{ serviceName: string, revenue: number }[]>>(
+    `${this.baseUrl}/${centreId}/revenue-by-service`,
+    { params: queryParams }
+  );
+}
 
   /**
    * Force la mise à jour des données du dashboard pour un centre

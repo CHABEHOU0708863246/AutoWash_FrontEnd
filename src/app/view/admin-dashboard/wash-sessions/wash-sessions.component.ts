@@ -36,6 +36,7 @@ export class WashSessionsComponent implements OnInit {
   user: Users | null = null;
   isSidebarCollapsed = false;
   washForm!: FormGroup;
+  Math = Math;
 
   // Propriétés pour la gestion des sessions de lavage
   washSessions: WashSession[] = [];
@@ -96,27 +97,43 @@ export class WashSessionsComponent implements OnInit {
   }
 
   loadServices(): void {
-    if (this.selectedCentre) {
-      this.washService.getServicesByCentre(this.selectedCentre).subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-            this.services = response.data;
-          }
-        },
-        error: (error) => {
-          console.error(
-            'Erreur lors du chargement des services du centre',
-            error
-          );
-        },
-      });
-    }
+  if (this.selectedCentre) {
+    // Utilisez le bon service : serviceSettingsService au lieu de washService
+    this.serviceSettingsService.getServicesByCentre(this.selectedCentre).subscribe({
+      next: (response: ApiResponseData<ServiceSettings[]>) => {
+        if (response.success && response.data) {
+          this.services = response.data;
+          console.log('Services chargés:', this.services); // Debug
+        } else {
+          console.warn('Aucun service trouvé pour ce centre');
+          this.services = [];
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des services du centre', error);
+        this.services = [];
+      },
+    });
+  } else {
+    console.warn('Aucun centre sélectionné pour charger les services');
+    this.services = [];
   }
+}
 
   getServiceName(serviceId: string): string {
-    const service = this.services.find((s) => s.id === serviceId);
-    return service ? service.name : 'Service non trouvé';
+  if (!this.services || this.services.length === 0) {
+    return 'Chargement...';
   }
+
+  const service = this.services.find((s) => s.id === serviceId);
+
+  if (!service) {
+    console.warn('Service non trouvé pour ID:', serviceId, 'Services disponibles:', this.services);
+    return 'Service inconnu';
+  }
+
+  return service.name;
+}
 
   // Méthode pour récupérer le nom du centre par ID
   getCentreName(centreId: string): string {
@@ -125,22 +142,28 @@ export class WashSessionsComponent implements OnInit {
   }
 
   loadCentres(): void {
-    this.washService.getActiveCentres().subscribe({
-      next: (response) => {
-        console.log('Centres response:', response);
-        if (response.success && response.data) {
-          this.centres = response.data;
-          // Si aucun centre n'est sélectionné, prendre le premier
-          if (!this.selectedCentre && this.centres.length > 0) {
-            this.selectedCentre = this.centres[0].id || '';
-          }
+  this.washService.getActiveCentres().subscribe({
+    next: (response) => {
+      console.log('Centres response:', response);
+      if (response.success && response.data) {
+        this.centres = response.data;
+
+        // Si aucun centre n'est sélectionné, prendre le premier
+        if (!this.selectedCentre && this.centres.length > 0) {
+          this.selectedCentre = this.centres[0].id || '';
+          // Charger les services après avoir sélectionné le centre
+          this.loadServices();
         }
-      },
-      error: (error) => {
-        console.error('Erreur lors du chargement des centres', error);
-      },
-    });
-  }
+
+        // Charger les sessions après avoir les centres
+        this.loadWashSessions();
+      }
+    },
+    error: (error) => {
+      console.error('Erreur lors du chargement des centres', error);
+    },
+  });
+}
 
   loadWashSessions(): void {
     this.isLoading = true;
@@ -201,6 +224,48 @@ export class WashSessionsComponent implements OnInit {
   pageChanged(page: number): void {
     this.currentPage = page;
   }
+
+  // Ajoutez cette propriété pour calculer le nombre total de pages
+get totalPages(): number {
+  return Math.ceil(this.totalItems / this.itemsPerPage);
+}
+
+// Méthode pour générer les numéros de page avec élipsis
+getPages(): (number | string)[] {
+  const pages: (number | string)[] = [];
+  const maxVisiblePages = 5;
+
+  if (this.totalPages <= maxVisiblePages) {
+    // Afficher toutes les pages si moins de maxVisiblePages
+    for (let i = 1; i <= this.totalPages; i++) {
+      pages.push(i);
+    }
+  } else {
+    // Logique pour les élipsis
+    if (this.currentPage <= 3) {
+      pages.push(1, 2, 3, 4, '...', this.totalPages);
+    } else if (this.currentPage >= this.totalPages - 2) {
+      pages.push(1, '...', this.totalPages - 3, this.totalPages - 2, this.totalPages - 1, this.totalPages);
+    } else {
+      pages.push(1, '...', this.currentPage - 1, this.currentPage, this.currentPage + 1, '...', this.totalPages);
+    }
+  }
+
+  return pages;
+}
+
+// Méthode pour changer de page avec validation
+goToPage(page: number | string): void {
+  if (typeof page === 'number' && page >= 1 && page <= this.totalPages) {
+    this.currentPage = page;
+    this.scrollToTop();
+  }
+}
+
+// Méthode pour remonter en haut de la liste
+private scrollToTop(): void {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
   // Formatte le statut
   getStatusBadge(status: string): string {
