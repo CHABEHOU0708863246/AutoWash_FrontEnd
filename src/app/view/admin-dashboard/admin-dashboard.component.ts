@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/Auth/auth.service';
 import { UsersService } from '../../core/services/Users/users.service';
@@ -17,10 +17,18 @@ import { BehaviorSubject, debounceTime, distinctUntilChanged, forkJoin, Subscrip
 import { ServiceSettings } from '../../core/models/Settings/Services/ServiceSettings';
 import { ServiceSettingsService } from '../../core/services/ServiceSettings/service-settings.service';
 
-// 1. IMPORTS À AJOUTER dans admin-dashboard.component.ts
+import {
+  Chart,
+  ChartConfiguration,
+  ChartData,
+  ChartType,
+  registerables
+} from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
-import { ChartConfiguration, ChartData, ChartType } from 'chart.js';
 import { ApiResponseData } from '../../core/models/ApiResponseData';
+
+// Enregistrer tous les composants Chart.js
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -29,6 +37,12 @@ import { ApiResponseData } from '../../core/models/ApiResponseData';
   styleUrl: './admin-dashboard.component.scss',
 })
 export class AdminDashboardComponent implements OnInit {
+
+  @ViewChild('salesChart') salesChart?: ElementRef;
+  @ViewChild('revenueChart') revenueChart?: ElementRef;
+  @ViewChild(BaseChartDirective) chart?: BaseChartDirective;
+
+
   users: Users[] = []; // Liste complète des utilisateurs.
   displayedUsers: Users[] = []; // Liste des utilisateurs affichés sur la page actuelle.
   currentUser: Users | null = null; // Utilisateur actuellement connecté.
@@ -63,37 +77,125 @@ export class AdminDashboardComponent implements OnInit {
   // Configuration des graphiques
   public lineChartData: ChartData<'line'> = {
     labels: [],
-    datasets: []
+    datasets: [
+      {
+        label: 'Revenus (FCFA)',
+        data: [],
+        fill: true,
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 2,
+        tension: 0.4,
+        pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: 'rgba(54, 162, 235, 1)',
+        yAxisID: 'y'
+      },
+      {
+        label: 'Nombre de lavages',
+        data: [...this.last7DaysWashCount],
+        fill: true,
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        borderColor: 'rgba(255, 99, 132, 1)',
+        borderWidth: 2,
+        tension: 0.4,
+        pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: 'rgba(255, 99, 132, 1)',
+        yAxisID: 'y1'
+      }
+    ]
   };
 
   public lineChartOptions: ChartConfiguration['options'] = {
-    responsive: true,
-    plugins: {
-      legend: {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: true,
+      position: 'top'
+    },
+    tooltip: {
+      mode: 'index',
+      intersect: false
+    }
+  },
+  interaction: {
+    mode: 'nearest',
+    axis: 'x',
+    intersect: false
+  },
+  scales: {
+    x: {
+      display: true,
+      title: {
         display: true,
+        text: 'Date'
       }
     },
-    scales: {
-      x: {
-        display: true
-      },
-      y: {
+    y: {
+      display: true,
+      beginAtZero: true,
+      title: {
         display: true,
-        beginAtZero: true
+        text: 'Revenus (FCFA)'
+      },
+      position: 'left'
+    },
+    y1: {
+      display: true,
+      beginAtZero: true,
+      title: {
+        display: true,
+        text: 'Nombre de lavages'
+      },
+      position: 'right',
+      grid: {
+        drawOnChartArea: false
       }
     }
-  };
+  }
+};
 
-  public pieChartData: ChartData<'pie'> = {
+ public pieChartData: ChartData<'pie'> = {
     labels: [],
-    datasets: []
+    datasets: [{
+      data: [],
+      backgroundColor: [
+        '#FF6384',
+        '#36A2EB',
+        '#FFCE56',
+        '#4BC0C0',
+        '#9966FF'
+      ],
+      borderWidth: 2,
+      borderColor: '#fff'
+    }]
   };
 
   public pieChartOptions: ChartConfiguration['options'] = {
     responsive: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top',
+        position: 'right',
+        labels: {
+          usePointStyle: true,
+          padding: 20
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            const label = context.label || '';
+            const value = context.parsed;
+            const total = context.dataset.data.reduce((a: any, b: any) => a + b, 0);
+            const percentage = Math.round((value / total) * 100);
+            return `${label}: ${value}FCFA (${percentage}%)`;
+          }
+        }
       }
     }
   };
@@ -142,14 +244,39 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+  ngAfterViewInit(): void {
+    console.log('Dashboard ngAfterViewInit');
+    // Forcer la mise à jour des graphiques après l'initialisation de la vue
+    setTimeout(() => {
+      this.updateCharts();
+    }, 100);
+  }
+
+
+  private initializeCharts(): void {
+    console.log('Initializing charts with test data');
+
+    // Définir les données de test si elles n'existent pas
+    if (this.last7DaysRevenue.length === 0) {
+      this.last7DaysRevenue = [];
+      this.last7DaysWashCount = [];
+    }
+
+    // Mettre à jour immédiatement les graphiques
+    this.updateCharts();
+  }
+
 
   private updateCharts(): void {
+    console.log('Updating charts');
     this.updateSalesChart();
     this.updateRevenueChart();
   }
 
   private updateSalesChart(): void {
-    if (this.last7DaysRevenue.length > 0) {
+    console.log('Updating sales chart', this.last7DaysRevenue);
+
+    try {
       // Générer les labels des 7 derniers jours
       const labels = [];
       const today = new Date();
@@ -164,55 +291,80 @@ export class AdminDashboardComponent implements OnInit {
       }
 
       this.lineChartData = {
+        ...this.lineChartData,
         labels: labels,
         datasets: [
           {
-            label: 'Revenus (€)',
-            data: this.last7DaysRevenue,
+            label: 'Revenus (FCFA)',
+            data: [...this.last7DaysRevenue],
             fill: true,
             backgroundColor: 'rgba(54, 162, 235, 0.2)',
             borderColor: 'rgba(54, 162, 235, 1)',
             borderWidth: 2,
-            tension: 0.4
+            tension: 0.4,
+            pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgba(54, 162, 235, 1)',
+            yAxisID: 'y'
           },
           {
             label: 'Nombre de lavages',
-            data: this.last7DaysWashCount,
-            fill: false,
+            data: [...this.last7DaysWashCount],
+            fill: true,
             backgroundColor: 'rgba(255, 99, 132, 0.2)',
             borderColor: 'rgba(255, 99, 132, 1)',
             borderWidth: 2,
-            tension: 0.4
+            tension: 0.4,
+            pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgba(255, 99, 132, 1)',
+            yAxisID: 'y1'
           }
         ]
       };
+
+      console.log('Sales chart updated:', this.lineChartData);
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du graphique des ventes:', error);
     }
   }
 
   private updateRevenueChart(): void {
-    if (this.services.length > 0 && this.dashboardData) {
-      // Calculer les revenus par service (exemple basé sur vos données)
-      const serviceLabels = this.services.map(service => service.name);
-      const serviceData = this.services.map(service => {
-        // Ici vous devriez calculer le revenu réel par service
-        // Pour l'exemple, je génère des données aléatoires
-        return Math.floor(Math.random() * 1000) + 100;
-      });
+    console.log('Updating revenue chart', this.services);
 
-      this.pieChartData = {
-        labels: serviceLabels,
-        datasets: [{
-          data: serviceData,
-          backgroundColor: [
-            '#FF6384',
-            '#36A2EB',
-            '#FFCE56',
-            '#4BC0C0',
-            '#9966FF',
-            '#FF9F40'
-          ]
-        }]
-      };
+    try {
+      if (this.services.length > 0) {
+        const serviceLabels = this.services.map(service => service.name);
+        // Générer des données réalistes basées sur le prix du service
+        const serviceData = this.services.map(service => {
+          const baseRevenue = service.basePrice* 30; // Simuler 30 utilisation par service
+          return Math.floor(baseRevenue + (Math.random() * baseRevenue * 0.5));
+        });
+
+        this.pieChartData = {
+          ...this.pieChartData,
+          labels: serviceLabels,
+          datasets: [{
+            data: serviceData,
+            backgroundColor: [
+              '#FF6384',
+              '#36A2EB',
+              '#FFCE56',
+              '#4BC0C0',
+              '#9966FF',
+              '#FF9F40'
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
+          }]
+        };
+
+        console.log('Revenue chart updated:', this.pieChartData);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du graphique des revenus:', error);
     }
   }
 
@@ -446,18 +598,13 @@ export class AdminDashboardComponent implements OnInit {
   /**
    * Gérer le changement de centre
    */
-  onCentreChange(event: any): void {
-  const newCentreId = event.target.value;
-
-  if (this.selectedCentreId !== newCentreId) {
-    this.selectedCentreId = newCentreId;
-    this.selectedService = 'all'; // Réinitialiser le filtre service
-
-    if (this.selectedCentreId) {
-      this.loadServicesForCentre(this.selectedCentreId);
-    }
-
+  onCentreChange(): void {
+  if (this.selectedCentreId) {
+    this.loadServicesForCentre(this.selectedCentreId);
     this.triggerFilterChange();
+  } else {
+    this.services = [];
+    this.updateCharts();
   }
 }
 

@@ -7,28 +7,17 @@ import { Users } from '../../models/Users/Users';
 import { ChangePasswordRequest } from '../../models/Password/ChangePasswordRequest';
 import { ForgotPasswordRequest } from '../../models/Password/ForgotPasswordRequest';
 import { ResetPasswordRequest } from '../../models/Password/ResetPasswordRequest';
-import { environment } from '../../../../environments/environment.development';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
 
-  private apiUrl = `${environment.apiUrl}/api/Auth`;
+  private apiUrl = 'https://localhost:7139/api/Auth';
   private loginApiUrl = `${this.apiUrl}/login`;
 
-  // Clé sécurisée pour le stockage (générée dynamiquement)
-  private get tokenKey(): string {
-    return this.generateSecureStorageKey('auth_token');
-  }
-
-  private get userRoleKey(): string {
-    return this.generateSecureStorageKey('user_role');
-  }
-
-  private get userProfileKey(): string {
-    return this.generateSecureStorageKey('user_profile');
-  }
+  // Clé utilisée pour stocker le token dans le localStorage
+  private tokenKey = 'VGhpcyBpcyBhIG5pY2Ugc3VjY2Vzc2Z1bCB0aGF0IHNhaWQgb3V0IG15IGpldG9u';
 
   // Subject pour gérer l'état de l'utilisateur courant
   private currentUserSubject = new BehaviorSubject<Users | null>(null);
@@ -45,15 +34,6 @@ export class AuthService {
   }
 
   /**
-   * Génère une clé de stockage sécurisée
-   */
-  private generateSecureStorageKey(baseKey: string): string {
-    const appPrefix = 'app_secure_';
-    const envSuffix = environment.production ? 'prod' : 'dev';
-    return `${appPrefix}${baseKey}_${envSuffix}`;
-  }
-
-  /**
    * Vérifie si on est côté navigateur (pas SSR)
    */
   private isBrowser(): boolean {
@@ -61,45 +41,21 @@ export class AuthService {
   }
 
   /**
-   * Accès sécurisé au localStorage avec validation
+   * Accès sécurisé au localStorage
    */
   private getFromStorage(key: string): string | null {
-    if (!this.isBrowser()) return null;
-
-    try {
-      const item = localStorage.getItem(key);
-      return item && this.isValidStorageData(item) ? item : null;
-    } catch (error) {
-      console.error('Erreur accès localStorage:', error);
-      return null;
+    if (this.isBrowser()) {
+      return localStorage.getItem(key);
     }
-  }
-
-  /**
-   * Validation des données du localStorage
-   */
-  private isValidStorageData(data: string): boolean {
-    try {
-      // Vérifie que ce n'est pas une chaîne corrompue ou malformée
-      if (typeof data !== 'string' || data.length > 5000) return false;
-      return true;
-    } catch {
-      return false;
-    }
+    return null;
   }
 
   /**
    * Écriture sécurisée dans le localStorage
    */
   private setInStorage(key: string, value: string): void {
-    if (!this.isBrowser()) return;
-
-    try {
-      if (this.isValidStorageData(value)) {
-        localStorage.setItem(key, value);
-      }
-    } catch (error) {
-      console.error('Erreur écriture localStorage:', error);
+    if (this.isBrowser()) {
+      localStorage.setItem(key, value);
     }
   }
 
@@ -107,22 +63,9 @@ export class AuthService {
    * Suppression sécurisée du localStorage
    */
   private removeFromStorage(key: string): void {
-    if (!this.isBrowser()) return;
-
-    try {
+    if (this.isBrowser()) {
       localStorage.removeItem(key);
-    } catch (error) {
-      console.error('Erreur suppression localStorage:', error);
     }
-  }
-
-  /**
-   * Nettoyage complet des données d'authentification
-   */
-  private clearAuthStorage(): void {
-    this.removeFromStorage(this.tokenKey);
-    this.removeFromStorage(this.userRoleKey);
-    this.removeFromStorage(this.userProfileKey);
   }
 
   /**
@@ -132,55 +75,28 @@ export class AuthService {
    * @returns Observable contenant la réponse de l'API.
    */
   login(email: string, password: string): Observable<any> {
-    // Validation des entrées
-    if (!email || !password) {
-      return of({ success: false, message: 'Email et mot de passe requis' });
-    }
-
+    // Utilisation du bon endpoint pour le login
     return this.http.post<any>(this.loginApiUrl, { email, password }).pipe(
       tap(response => {
         if (response && response.token) {
-          // Validation du token avant stockage
-          if (this.isValidToken(response.token)) {
-            // Stocker le token JWT dans le localStorage
-            this.setInStorage(this.tokenKey, response.token);
+          // Stocker le token JWT dans le localStorage
+          this.setInStorage(this.tokenKey, response.token);
 
-            // Décoder le token pour récupérer le rôle utilisateur
-            const decodedToken = this.decodeToken(response.token);
-            if (decodedToken && decodedToken.role) {
-              this.setInStorage(this.userRoleKey, decodedToken.role);
-            }
-
-            // Charger le profil utilisateur après connexion réussie
-            this.getCurrentUserProfile().subscribe();
-          } else {
-            throw new Error('Token JWT invalide');
+          // Décoder le token pour récupérer le rôle utilisateur
+          const decodedToken = this.decodeToken(response.token);
+          if (decodedToken && decodedToken.role) {
+            this.setInStorage('userRole', decodedToken.role);
           }
+
+          // Charger le profil utilisateur après connexion réussie
+          this.getCurrentUserProfile().subscribe();
         }
       }),
       catchError((error) => {
         console.error('Erreur lors de la connexion:', error);
-        // Ne pas exposer les détails de l'erreur à l'utilisateur
-        return of({ success: false, message: 'Erreur d\'authentification' });
+        return of(null); // Retourne une Observable nulle en cas d'erreur
       })
     );
-  }
-
-  /**
-   * Vérifie la validité basique d'un token JWT
-   */
-  private isValidToken(token: string): boolean {
-    if (!token || typeof token !== 'string') return false;
-
-    try {
-      const parts = token.split('.');
-      if (parts.length !== 3) return false;
-
-      const decoded = this.decodeToken(token);
-      return decoded && typeof decoded === 'object';
-    } catch {
-      return false;
-    }
   }
 
   /**
@@ -191,22 +107,17 @@ export class AuthService {
   loadCurrentUserProfile(forceRefresh: boolean = false): Observable<Users | null> {
     // Si on force le refresh ou qu'on n'a pas de données en cache
     if (forceRefresh || !this.currentUserSubject.value) {
-      const cachedProfile = this.getFromStorage(this.userProfileKey);
+      const cachedProfile = this.getFromStorage('currentUserProfile');
 
       // Si on a des données en cache et qu'on ne force pas le refresh
       if (cachedProfile && !forceRefresh) {
         try {
           const user = JSON.parse(cachedProfile);
-          // Validation des données utilisateur
-          if (this.isValidUserData(user)) {
-            this.currentUserSubject.next(user);
-            return of(user);
-          } else {
-            this.removeFromStorage(this.userProfileKey);
-          }
+          this.currentUserSubject.next(user);
+          return of(user);
         } catch (error) {
           console.error('Erreur parsing cache profile:', error);
-          this.removeFromStorage(this.userProfileKey);
+          this.removeFromStorage('currentUserProfile');
         }
       }
 
@@ -219,28 +130,17 @@ export class AuthService {
   }
 
   /**
-   * Validation des données utilisateur
-   */
-  private isValidUserData(user: any): user is Users {
-    return user && typeof user === 'object' && user.id !== undefined;
-  }
-
-  /**
    * Charge l'utilisateur depuis le cache au démarrage de l'application
    */
   private loadUserFromCache(): void {
-    const cachedProfile = this.getFromStorage(this.userProfileKey);
+    const cachedProfile = this.getFromStorage('currentUserProfile');
     if (cachedProfile && this.isAuthenticated()) {
       try {
         const user = JSON.parse(cachedProfile);
-        if (this.isValidUserData(user)) {
-          this.currentUserSubject.next(user);
-        } else {
-          this.removeFromStorage(this.userProfileKey);
-        }
+        this.currentUserSubject.next(user);
       } catch (error) {
         console.error('Erreur lors du chargement du profil depuis le cache:', error);
-        this.removeFromStorage(this.userProfileKey);
+        this.removeFromStorage('currentUserProfile');
       }
     }
   }
@@ -265,9 +165,9 @@ export class AuthService {
 
     return this.http.get<Users>(`${this.apiUrl}/me`, { headers }).pipe(
       tap(user => {
-        if (user && this.isValidUserData(user)) {
+        if (user) {
           // Mise à jour du cache et du BehaviorSubject
-          this.setInStorage(this.userProfileKey, JSON.stringify(user));
+          this.setInStorage('currentUserProfile', JSON.stringify(user));
           this.currentUserSubject.next(user);
         }
       }),
@@ -297,7 +197,7 @@ export class AuthService {
       try {
         const decodedToken: any = this.decodeToken(token);
         const roleKey = 'http://schemas.microsoft.com/ws/2008/06/identity/claims/role';
-        return decodedToken[roleKey] || this.getFromStorage(this.userRoleKey);
+        return decodedToken[roleKey] || this.getFromStorage('userRole');
       } catch (error) {
         console.error('Erreur lors du décodage du token:', error);
         return null;
@@ -311,8 +211,10 @@ export class AuthService {
    * Supprime les données de session stockées localement.
    */
   logout(): void {
-    // Nettoyer le localStorage de manière sécurisée
-    this.clearAuthStorage();
+    // Nettoyer le localStorage
+    this.removeFromStorage(this.tokenKey);
+    this.removeFromStorage('userRole');
+    this.removeFromStorage('currentUserProfile');
 
     // Mettre à jour le BehaviorSubject
     this.currentUserSubject.next(null);
@@ -375,21 +277,8 @@ export class AuthService {
    * @returns Observable avec la réponse de l'API.
    */
   forgotPassword(email: string, redirectPath: string): Observable<any> {
-    // Validation de l'email
-    if (!email || !this.isValidEmail(email)) {
-      return of({ success: false, message: 'Email invalide' });
-    }
-
     const request: ForgotPasswordRequest = new ForgotPasswordRequest(email, redirectPath);
     return this.http.post<any>(`${this.apiUrl}/forgot-password`, request);
-  }
-
-  /**
-   * Validation basique d'email
-   */
-  private isValidEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
   }
 
   /**
@@ -400,15 +289,6 @@ export class AuthService {
    * @returns Observable avec la réponse de l'API.
    */
   resetPassword(email: string, token: string, password: string): Observable<any> {
-    // Validation des entrées
-    if (!email || !token || !password) {
-      return of({ success: false, message: 'Tous les champs sont requis' });
-    }
-
-    if (password.length < 8) {
-      return of({ success: false, message: 'Le mot de passe doit contenir au moins 8 caractères' });
-    }
-
     const request: ResetPasswordRequest = new ResetPasswordRequest(email, token, password);
     return this.http.post<any>(`${this.apiUrl}/reset-password`, request);
   }
@@ -423,15 +303,6 @@ export class AuthService {
     const token = this.getToken();
     if (!token) {
       return of({ success: false, message: 'Non authentifié' });
-    }
-
-    // Validation des mots de passe
-    if (!oldPassword || !newPassword) {
-      return of({ success: false, message: 'Les mots de passe sont requis' });
-    }
-
-    if (newPassword.length < 8) {
-      return of({ success: false, message: 'Le nouveau mot de passe doit contenir au moins 8 caractères' });
     }
 
     const headers = new HttpHeaders({
@@ -458,8 +329,8 @@ export class AuthService {
    * @param user - Les nouvelles informations de l'utilisateur
    */
   updateCurrentUser(user: Users): void {
-    if (this.getToken() && user && this.isValidUserData(user)) {
-      this.setInStorage(this.userProfileKey, JSON.stringify(user));
+    if (this.getToken() && user) {
+      this.setInStorage('currentUserProfile', JSON.stringify(user));
       this.currentUserSubject.next(user);
     }
   }
@@ -469,7 +340,7 @@ export class AuthService {
    */
   refreshUserProfile(): Observable<Users | null> {
     // On efface le cache avant de rafraîchir
-    this.removeFromStorage(this.userProfileKey);
+    this.removeFromStorage('currentUserProfile');
     return this.getCurrentUserProfile();
   }
 
