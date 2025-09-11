@@ -32,6 +32,11 @@ export class SettingsScheduleComponent implements OnInit {
   successMessage: string | null = null;
   currentSettings: ScheduleSettings | null = null;
 
+  // Nouvelles propriétés pour l'état de configuration
+  isConfigured: boolean = false;
+  configurationStatus: 'none' | 'configured' | 'loading' = 'none';
+  statusMessage: string = '';
+
   users: Users[] = [];
   displayedUsers: Users[] = [];
   currentUser: Users | null = null;
@@ -184,7 +189,6 @@ export class SettingsScheduleComponent implements OnInit {
   }
 
   onSubmit(): void {
-
     // Validation
     if (this.scheduleForm.invalid) {
       this.errorMessage = 'Veuillez corriger les erreurs du formulaire';
@@ -202,7 +206,7 @@ export class SettingsScheduleComponent implements OnInit {
 
     const formValue = this.scheduleForm.value;
 
-    // Convertir les jours sélectionnés en tableau DayOfWeek
+    // ... logique de création de l'objet settings (reste identique)
     const workingDays: DayOfWeek[] = [];
     this.daysOfWeek.forEach((day) => {
       if (formValue[day.controlName + 'Enabled']) {
@@ -210,7 +214,6 @@ export class SettingsScheduleComponent implements OnInit {
       }
     });
 
-    // Prendre les heures du premier jour activé comme heures générales
     let openingTime = '08:00:00';
     let closingTime = '18:00:00';
 
@@ -222,7 +225,6 @@ export class SettingsScheduleComponent implements OnInit {
       closingTime = formValue[firstActiveDay.controlName + 'End'] + ':00';
     }
 
-    // Créer l'objet settings
     const settings: ScheduleSettings = {
       id: this.currentSettings?.id || undefined,
       centreId: this.centreId,
@@ -257,12 +259,15 @@ export class SettingsScheduleComponent implements OnInit {
         this.isLoading = false;
 
         if (response.success) {
-          this.successMessage = 'Paramètres enregistrés avec succès';
+          const actionType = this.currentSettings ? 'modifiés' : 'créés';
+          this.successMessage = `Paramètres ${actionType} avec succès`;
           this.currentSettings = response.data;
+          this.isConfigured = true;
+          this.configurationStatus = 'configured';
+          this.statusMessage = 'Ce centre est maintenant configuré.';
           setTimeout(() => (this.successMessage = null), 5000);
         } else {
-          this.errorMessage =
-            response.message || 'Erreur lors de la sauvegarde';
+          this.errorMessage = response.message || 'Erreur lors de la sauvegarde';
         }
       },
       error: (error) => {
@@ -277,10 +282,15 @@ export class SettingsScheduleComponent implements OnInit {
   onReset(): void {
     if (this.currentSettings) {
       this.updateFormWithSettings(this.currentSettings);
+      this.statusMessage = 'Formulaire réinitialisé avec les paramètres sauvegardés.';
     } else {
       this.scheduleForm.reset();
       this.initForm();
+      this.statusMessage = 'Formulaire réinitialisé avec les valeurs par défaut.';
     }
+
+    // Masquer le message après 3 secondes
+    setTimeout(() => (this.statusMessage = ''), 3000);
   }
 
   togglePreview(): void {
@@ -550,8 +560,25 @@ export class SettingsScheduleComponent implements OnInit {
   onCentreChange(): void {
     if (this.selectedCentreId) {
       this.centreId = this.selectedCentreId;
-      this.loadScheduleSettings(); // Charger les paramètres du centre sélectionné
+
+      // Réinitialiser l'état avant de charger les nouveaux paramètres
+      this.resetConfigurationState();
+
+      // Charger les paramètres du centre sélectionné
+      this.loadScheduleSettings();
     }
+  }
+
+  /**
+   * Réinitialise l'état de configuration
+   */
+  private resetConfigurationState(): void {
+    this.isConfigured = false;
+    this.configurationStatus = 'none';
+    this.statusMessage = '';
+    this.currentSettings = null;
+    this.errorMessage = null;
+    this.successMessage = null;
   }
 
   /**
@@ -561,26 +588,41 @@ export class SettingsScheduleComponent implements OnInit {
   loadScheduleSettings(): void {
     if (!this.centreId) return;
 
+    this.configurationStatus = 'loading';
     this.isLoading = true;
+    this.statusMessage = '';
+    this.errorMessage = null;
+    this.successMessage = null;
 
-    // Utiliser getScheduleSettings au lieu de getScheduleSettingsByCentreId
     this.scheduleSettingsService.getScheduleSettings(this.centreId).subscribe({
       next: (response) => {
         this.isLoading = false;
+
         if (response.success && response.data) {
+          // Centre déjà configuré
           this.currentSettings = response.data;
+          this.isConfigured = true;
+          this.configurationStatus = 'configured';
+          this.statusMessage = 'Ce centre a déjà été configuré. ';
           this.updateFormWithSettings(response.data);
         } else {
-          // Aucun paramètre existant, utiliser les valeurs par défaut
+          // Centre pas encore configuré
           this.currentSettings = null;
+          this.isConfigured = false;
+          this.configurationStatus = 'none';
+          this.statusMessage = 'Ce centre n\'a pas encore été configuré.';
           this.initForm();
         }
       },
       error: (error) => {
         this.isLoading = false;
         console.error('Erreur chargement paramètres:', error);
-        // Pas d'erreur affichée, utiliser les valeurs par défaut
+
+        // En cas d'erreur, considérer comme non configuré
         this.currentSettings = null;
+        this.isConfigured = false;
+        this.configurationStatus = 'none';
+        this.statusMessage = 'Ce centre n\'a pas encore été configuré.';
         this.initForm();
       },
     });

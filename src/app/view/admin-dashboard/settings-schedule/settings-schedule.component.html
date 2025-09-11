@@ -27,11 +27,11 @@
     <div class="nav-menu">
       <!-- Dashboard -->
       <div class="dropdown dropdown-hover">
-      <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
-        <i class="fas fa-tachometer-alt"></i>
-        <span>Tableau de bord</span>
-      </a>
-    </div>
+        <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
 
       <!-- Gestion des Utilisateurs -->
       <div class="dropdown dropdown-hover">
@@ -168,7 +168,8 @@
           <i class="fas fa-chevron-right dropdown-arrow"></i>
         </button>
         <ul class="dropdown-menu dropdown-menu-hover">
-        <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion dépenses</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion
+              dépenses</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/expenses-profitability']"><i
                 class="fas fa-chart-line"></i> Rentabilité</a></li>
         </ul>
@@ -222,7 +223,8 @@
             <i class="fas fa-chevron-down"></i>
           </button>
           <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
-             <li><a class="dropdown-item" [routerLink]="['/admin/users-profil']"><i class="fas fa-user"></i> Mon profil</a></li>
+            <li><a class="dropdown-item" [routerLink]="['/admin/users-profil']"><i class="fas fa-user"></i> Mon
+                profil</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
             <li><a class="dropdown-item" (click)="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
@@ -270,13 +272,45 @@
           </div>
         </div>
 
+        <!-- Message de statut de configuration -->
+        <div *ngIf="statusMessage && (showCentreSelector && selectedCentreId || !showCentreSelector)" class="alert"
+          [ngClass]="{
+       'alert-info': configurationStatus === 'none',
+       'alert-warning': configurationStatus === 'configured',
+       'alert-secondary': configurationStatus === 'loading'
+     }">
+          <i class="fas" [ngClass]="{
+       'fa-info-circle': configurationStatus === 'none',
+       'fa-edit': configurationStatus === 'configured',
+       'fa-spinner fa-spin': configurationStatus === 'loading'
+     }"></i>
+          {{ statusMessage }}
+        </div>
+
         <!-- Formulaire de configuration des horaires -->
         <form class="form-wrapper" [formGroup]="scheduleForm" (ngSubmit)="onSubmit()"
           *ngIf="!showCentreSelector || selectedCentreId">
 
           <div class="form-section">
             <div class="section-title">
-              <h2><i class="fas fa-clock"></i> Configuration des horaires de travail</h2>
+              <h2>
+                <i class="fas fa-clock"></i>
+                Configuration des horaires de travail
+                <!-- Badge de statut -->
+                <span *ngIf="configurationStatus !== 'loading'" class="status-badge" [ngClass]="{
+                'badge-new': configurationStatus === 'none',
+                'badge-edit': configurationStatus === 'configured'
+              }">
+                  <i class="fas" [ngClass]="{
+               'fa-plus': configurationStatus === 'none',
+               'fa-edit': configurationStatus === 'configured'
+             }"></i>
+                  {{ configurationStatus === 'none' ? 'Nouvelle configuration' : 'Modification' }}
+                </span>
+                <span *ngIf="configurationStatus === 'loading'" class="status-badge badge-loading">
+                  <i class="fas fa-spinner fa-spin"></i> Chargement...
+                </span>
+              </h2>
             </div>
 
             <div class="form-grid">
@@ -386,13 +420,17 @@
           <!-- Boutons d'action -->
           <div class="form-actions">
             <button type="button" class="btn btn-secondary" (click)="onReset()" [disabled]="isLoading">
-              <i class="fas fa-undo"></i> {{isLoading ? 'Chargement...' : 'Réinitialiser'}}
+              <i class="fas fa-undo"></i>
+              {{ isLoading ? 'Chargement...' : (isConfigured ? 'Restaurer' : 'Réinitialiser') }}
             </button>
             <button type="submit" class="btn btn-primary" [disabled]="isLoading || scheduleForm.invalid">
-              <i class="fas fa-save"></i> {{isLoading ? 'Enregistrement...' : 'Enregistrer les paramètres'}}
+              <i class="fas" [ngClass]="{'fa-save': !isConfigured, 'fa-edit': isConfigured}"></i>
+              {{ isLoading ? 'Enregistrement...' : (isConfigured ? 'Modifier les paramètres' : 'Créer la configuration')
+              }}
             </button>
             <button type="button" class="btn btn-info" (click)="togglePreview()">
-              <i class="fas fa-eye"></i> {{showPreview ? 'Masquer' : 'Afficher'}} l'aperçu
+              <i class="fas fa-eye"></i>
+              {{ showPreview ? 'Masquer' : 'Afficher' }} l'aperçu
             </button>
           </div>
         </form>

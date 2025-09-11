@@ -66,31 +66,31 @@ export class UsersCreateComponent implements OnInit {
 
   //#region Initialisation du formulaire
   private initializeForm(): void {
-    this.userForm = this.formBuilder.group({
-      firstName: ['', Validators.required],
-      lastName: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      phoneNumber: ['', Validators.required],
-      password: ['', [Validators.required, Validators.minLength(8)]],
-      confirmPassword: ['', [Validators.required, Validators.minLength(8)]],
-      isEnabled: [true],
-      workingHours: [40, [Validators.required, Validators.min(0)]],
-      roles: [[], Validators.required],
-      isPartTime: [false],
-      hireDate: [new Date(), Validators.required],
-      gender: ['', Validators.required],
-      contractType: ['', Validators.required],
-      numberOfChildren: [0, [Validators.min(0)]],
-      maritalStatus: ['', Validators.required],
-      residence: ['', Validators.required],
-      postalAddress: ['', Validators.required],
-      centreId: [''],
-      photoUrl: [''],
-      photoFile: [null]
-    });
+  this.userForm = this.formBuilder.group({
+    firstName: ['', Validators.required],
+    lastName: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    phoneNumber: [''], // RENDU OPTIONNEL
+    password: ['', [Validators.required, Validators.minLength(8)]],
+    confirmPassword: ['', [Validators.required, Validators.minLength(8)]],
+    isEnabled: [true],
+    workingHours: [40], // RENDU OPTIONNEL
+    roles: [[], Validators.required],
+    isPartTime: [false],
+    hireDate: [''], // RENDU OPTIONNEL
+    gender: ['', Validators.required],
+    contractType: [''], // RENDU OPTIONNEL
+    numberOfChildren: [0, [Validators.min(0)]],
+    maritalStatus: ['', Validators.required],
+    residence: [''], // RENDU OPTIONNEL
+    postalAddress: [''], // RENDU OPTIONNEL
+    centreId: [''],
+    photoUrl: [''],
+    photoFile: [null]
+  });
 
-    this.selectedPhoto = null;
-  }
+  this.selectedPhoto = null;
+}
   //#endregion
 
   //#region Gestion des rôles

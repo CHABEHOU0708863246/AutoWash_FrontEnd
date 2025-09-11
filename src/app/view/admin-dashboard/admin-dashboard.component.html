@@ -208,15 +208,13 @@
             <div>
               <p class="dashboard-subtitle">Statistiques et analyses en temps réel</p>
             </div>
-            <div class="center-selector">
+            <div class="center-selector"> CHOISIR UN CENTRE :
               <select class="center-select" id="centerSelect" [(ngModel)]="selectedCentreId"
                 (change)="onCentreChange()" [disabled]="loadingCentres">
-                <option value="">Sélectionner un centre</option>
                 <option *ngFor="let centre of centres" [value]="centre.id">
                   {{ centre.name }} ({{ centre.location }})
                 </option>
               </select>
-              <i class="fas fa-chevron-down select-icon"></i>
               <div *ngIf="loadingCentres" class="loading-spinner-small">
                 <i class="fas fa-spinner fa-spin"></i>
               </div>

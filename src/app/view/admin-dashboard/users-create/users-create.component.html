@@ -27,11 +27,11 @@
     <div class="nav-menu">
       <!-- Dashboard -->
       <div class="dropdown dropdown-hover">
-      <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
-        <i class="fas fa-tachometer-alt"></i>
-        <span>Tableau de bord</span>
-      </a>
-    </div>
+        <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
 
       <!-- Gestion des Utilisateurs -->
       <div class="dropdown dropdown-hover">
@@ -168,7 +168,8 @@
           <i class="fas fa-chevron-right dropdown-arrow"></i>
         </button>
         <ul class="dropdown-menu dropdown-menu-hover">
-        <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion dépenses</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion
+              dépenses</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/expenses-profitability']"><i
                 class="fas fa-chart-line"></i> Rentabilité</a></li>
         </ul>
@@ -222,7 +223,8 @@
             <i class="fas fa-chevron-down"></i>
           </button>
           <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
-             <li><a class="dropdown-item" [routerLink]="['/admin/users-profil']"><i class="fas fa-user"></i> Mon profil</a></li>
+            <li><a class="dropdown-item" [routerLink]="['/admin/users-profil']"><i class="fas fa-user"></i> Mon
+                profil</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
@@ -290,13 +292,9 @@
 
               <!-- Téléphone -->
               <div class="form-group">
-                <label class="form-label">Téléphone <span class="required">*</span></label>
+                <label class="form-label">Téléphone</label>
                 <input type="tel" class="form-control" placeholder="+225 00 00 00 00 00" formControlName="phoneNumber">
                 <i class="fas fa-phone form-icon"></i>
-                <div class="form-error"
-                  *ngIf="userForm.get('phoneNumber')?.invalid && userForm.get('phoneNumber')?.touched">
-                  Le numéro de téléphone est obligatoire
-                </div>
               </div>
 
               <!-- Genre -->
@@ -342,24 +340,16 @@
 
               <!-- Résidence -->
               <div class="form-group">
-                <label class="form-label">Résidence <span class="required">*</span></label>
+                <label class="form-label">Résidence</label>
                 <input type="text" class="form-control" placeholder="Lieu de résidence" formControlName="residence">
                 <i class="fas fa-home form-icon"></i>
-                <div class="form-error"
-                  *ngIf="userForm.get('residence')?.invalid && userForm.get('residence')?.touched">
-                  La résidence est obligatoire
-                </div>
               </div>
 
               <!-- Adresse postale -->
               <div class="form-group">
-                <label class="form-label">Adresse postale <span class="required">*</span></label>
+                <label class="form-label">Adresse postale</label>
                 <input type="text" class="form-control" placeholder="Adresse postale" formControlName="postalAddress">
                 <i class="fas fa-map-marker-alt form-icon"></i>
-                <div class="form-error"
-                  *ngIf="userForm.get('postalAddress')?.invalid && userForm.get('postalAddress')?.touched">
-                  L'adresse postale est obligatoire
-                </div>
               </div>
             </div>
           </div>
@@ -373,17 +363,18 @@
             <div class="form-grid">
               <!-- Date d'embauche -->
               <div class="form-group">
-                <label class="form-label">Date d'embauche <span class="required">*</span></label>
+                <label class="form-label">Date d'embauche<span class="required">*</span></label>
                 <input type="date" class="form-control" formControlName="hireDate">
                 <i class="fas fa-calendar-alt form-icon"></i>
-                <div class="form-error" *ngIf="userForm.get('hireDate')?.invalid && userForm.get('hireDate')?.touched">
+                <div class="form-error"
+                  *ngIf="userForm.get('hireDate')?.invalid && userForm.get('hireDate')?.touched">
                   La date d'embauche est obligatoire
                 </div>
               </div>
 
               <!-- Type de contrat -->
               <div class="form-group custom-select">
-                <label class="form-label">Type de contrat <span class="required">*</span></label>
+                <label class="form-label">Type de contrat</label>
                 <select class="form-control" formControlName="contractType">
                   <option value="" selected disabled>Sélectionnez un type de contrat</option>
                   <!-- Contrats standards -->
@@ -391,33 +382,26 @@
                   <option value="CDD">CDD (Contrat à Durée Déterminée)</option>
                   <option value="CTT">CTT (Contrat de Travail Temporaire)</option>
                   <option value="INTERIM">Intérim</option>
-
                   <!-- Contrats pour jeunes/temporaires -->
                   <option value="APPRENTISSAGE">Contrat d'apprentissage</option>
                   <option value="PROFESSIONNALISATION">Contrat de professionnalisation</option>
                   <option value="STAGE">Stage</option>
                   <option value="ETUDIANT">Contrat étudiant</option>
-
                   <!-- Autres contrats spéciaux -->
                   <option value="SAISONNIER">Contrat saisonnier</option>
                   <option value="TEMPS PARTIEL">Temps partiel</option>
                   <option value="TEMPS PLEIN">Temps plein</option>
                   <option value="ALTERNANCE">Alternance</option>
-
                   <!-- Pour travailleurs indépendants -->
                   <option value="AUTOENTREPRENEUR">Auto-entrepreneur</option>
                   <option value="PRESTATION">Contrat de prestation</option>
                 </select>
                 <i class="fas fa-chevron-down select-icon"></i>
-                <div class="form-error"
-                  *ngIf="userForm.get('contractType')?.invalid && userForm.get('contractType')?.touched">
-                  Le type de contrat est obligatoire
-                </div>
               </div>
 
               <!-- Heures de travail -->
               <div class="form-group">
-                <label class="form-label">Heures de travail hebdomadaire <span class="required">*</span></label>
+                <label class="form-label">Heures de travail hebdomadaire</label>
                 <input type="number" class="form-control" placeholder="40" formControlName="workingHours" min="0">
                 <i class="fas fa-clock form-icon"></i>
               </div>

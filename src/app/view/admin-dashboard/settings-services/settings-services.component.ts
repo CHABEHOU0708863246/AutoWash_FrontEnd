@@ -90,37 +90,56 @@ export class SettingsServicesComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.loadCurrentUser();
-    this.getUsers();
-    this.loadCentres();
-    this.loadServices();
-    this.authService.currentUser$.subscribe((user) => {
-      if (user && user !== this.currentUser) {
-        this.currentUser = user;
-        this.loadCurrentUserPhoto();
+  this.loadCurrentUser();
+  this.getUsers();
+  this.loadCentres(); // Assure-vous que ceci se fait en premier
+
+  // Attendez que les centres soient chargés avant de charger les services
+  this.authService.currentUser$.subscribe((user) => {
+    if (user && user !== this.currentUser) {
+      this.currentUser = user;
+      this.loadCurrentUserPhoto();
+      // Chargez les services seulement après avoir l'utilisateur actuel
+      if (user.centreId) {
+        this.loadServices();
       }
-    });
-  }
+    }
+  });
+}
 
   onCentreChange(centreId: string): void {
-    if (centreId && this.isValidObjectId(centreId)) {
-      this.getServicesByCentre(centreId);
-    } else {
-      this.services = [];
-      this.filteredServices = [];
-    }
+  console.log('Centre sélectionné:', centreId); // Pour débugger
+
+  if (!centreId) {
+    this.services = [];
+    this.filteredServices = [];
+    return;
   }
+
+  if (this.isValidObjectId(centreId)) {
+    this.getServicesByCentre(centreId);
+  } else {
+    this.toastr.showError('ID de centre invalide');
+    this.services = [];
+    this.filteredServices = [];
+  }
+}
 
   centreIdValidator(control: any) {
-    const value = control.value;
-    if (!value) return null; // Let required validator handle empty values
+  const value = control.value;
+  if (!value) return null; // Let required validator handle empty values
 
-    if (!this.isValidObjectId(value)) {
-      return { invalidObjectId: true };
-    }
-
-    return null;
+  // Vérifier que this.centres existe avant d'utiliser isValidObjectId
+  if (!this.centres || this.centres.length === 0) {
+    return null; // Pas d'erreur si les centres ne sont pas encore chargés
   }
+
+  if (!this.isValidObjectId(value)) {
+    return { invalidObjectId: true };
+  }
+
+  return null;
+}
 
   get includedServicesFormArray(): FormArray {
     return this.serviceForm.get('includedServices') as FormArray;
@@ -133,19 +152,25 @@ export class SettingsServicesComponent implements OnInit {
    * Affiche un message d'erreur en cas d'échec du chargement.
    */
   loadCentres(): void {
-    this.isLoading = true;
-    this.centresService.getAllCentres().subscribe({
-      next: (centres) => {
-        // Modification ici - on reçoit directement le tableau
-        this.centres = centres; // Plus besoin de .data
-        this.isLoading = false;
-      },
-      error: (error) => {
-        this.toastr.showError('Erreur lors du chargement des centres');
-        this.isLoading = false;
-      },
-    });
-  }
+  this.isLoading = true;
+  this.centresService.getAllCentres().subscribe({
+    next: (centres: any) => {
+      console.log('Centres chargés:', centres); // Pour débugger
+      this.centres = Array.isArray(centres) ? centres : (centres && centres.data ? centres.data : []);
+      this.isLoading = false;
+    },
+    error: (error) => {
+      console.error('Erreur chargement centres:', error);
+      this.toastr.showError('Erreur lors du chargement des centres');
+      this.centres = []; // Initialiser avec un tableau vide
+      this.isLoading = false;
+    },
+  });
+}
+
+canSelectCentre(): boolean {
+  return !this.currentUser?.centreId || this.isEditing;
+}
 
   /**
    * Charge les services associés au centre de l'utilisateur actuel.
@@ -251,26 +276,26 @@ export class SettingsServicesComponent implements OnInit {
    * @returns L'objet contenant les données du service.
    */
   prepareFormData(): any {
-    const formValue = this.serviceForm.value;
-    const selectedServices = this.baseServices
-      .filter((_, i) => formValue.includedServices[i])
-      .map((service) => service);
+  const formValue = this.serviceForm.value;
+  const selectedServices = this.baseServices
+    .filter((_, i) => formValue.includedServices[i])
+    .map((service) => service);
 
-    // Validate and get centreId
-    let centreId = this.currentUser?.centreId || formValue.centreId;
+  // CORRECTION: Utiliser formValue.centreId au lieu de currentUser.centreId
+  let centreId = formValue.centreId || this.currentUser?.centreId;
 
-    // Validate centreId before sending
-    if (!centreId || !this.isValidObjectId(centreId)) {
-      this.toastr.showError('ID du centre invalide');
-      throw new Error('Invalid centreId');
-    }
-
-    return {
-      ...formValue,
-      includedServices: selectedServices,
-      centreId: formValue.centreId,
-    };
+  // Validate centreId before sending
+  if (!centreId || !this.isValidObjectId(centreId)) {
+    this.toastr.showError('ID du centre invalide');
+    throw new Error('Invalid centreId');
   }
+
+  return {
+    ...formValue,
+    includedServices: selectedServices,
+    centreId: centreId, // CORRECTION: Utiliser la variable centreId
+  };
+}
 
   /**
    * Marque tous les contrôles du formulaire comme touchés pour afficher les erreurs de validation.
@@ -291,23 +316,32 @@ export class SettingsServicesComponent implements OnInit {
    * Réinitialise également l'état d'édition et l'ID de l'élément en cours d'édition.
    */
   resetForm(): void {
-    this.serviceForm.reset({
-      centreId: this.currentUser?.centreId || '',
-      name: '',
-      category: '',
-      description: '',
-      duration: 30,
-      sortOrder: 0,
-      isActive: true,
-      requiresApproval: false,
-      includedServices: [],
-      basePrice: 0,
-      isAvailableOnline: true,
-      isAvailableInStore: true,
-    });
-    this.isEditing = false;
-    this.currentEditingId = null;
-  }
+  const currentCentreId = this.serviceForm.get('centreId')?.value || this.currentUser?.centreId || '';
+
+  this.serviceForm.reset({
+    centreId: currentCentreId, // Garder le centre sélectionné
+    name: '',
+    category: '',
+    description: '',
+    duration: 30,
+    sortOrder: 0,
+    isActive: true,
+    requiresApproval: false,
+    includedServices: [],
+    basePrice: 0,
+    isAvailableOnline: true,
+    isAvailableInStore: true,
+  });
+
+  // Réinitialiser les checkboxes
+  this.includedServicesFormArray.clear();
+  this.baseServices.forEach(() =>
+    this.includedServicesFormArray.push(new FormControl(false))
+  );
+
+  this.isEditing = false;
+  this.currentEditingId = null;
+}
 
   /**
    * Remplit le formulaire avec les données d'un service existant.
@@ -348,32 +382,21 @@ export class SettingsServicesComponent implements OnInit {
    * Affiche un message de succès ou d'erreur en fonction du résultat de l'opération.
    * @param serviceData Les données du service à créer.
    */
-  createService(serviceData: any): void {
-
-    this.serviceSettingsService.createService(serviceData).subscribe({
-      next: (response) => {
-        this.toastr.showSuccess('Service créé avec succès');
-        this.loadServices();
-        this.getServicesByCentre(serviceData.centreId);
-        this.resetForm();
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error creating service:', error);
-
-        // More specific error handling
-        if (error.error?.message?.includes('not a valid 24 digit hex string')) {
-          this.toastr.showError(
-            'ID du centre invalide. Veuillez sélectionner un centre valide.'
-          );
-        } else {
-          this.toastr.showError('Erreur lors de la création du service');
-        }
-
-        this.isLoading = false;
-      },
-    });
-  }
+  createService(formData: any): void {
+  this.serviceSettingsService.createService(formData).subscribe({
+    next: (response) => {
+      this.toastr.showSuccess('Service créé avec succès');
+      this.resetForm();
+      this.loadServices(); // Recharger la liste
+      this.isLoading = false;
+    },
+    error: (error) => {
+      console.error('Erreur création service:', error);
+      this.toastr.showError('Erreur lors de la création du service');
+      this.isLoading = false;
+    }
+  });
+}
 
   /**
    * Met à jour un service existant avec les données du formulaire.
