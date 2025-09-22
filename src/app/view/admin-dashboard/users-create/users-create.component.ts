@@ -65,32 +65,32 @@ export class UsersCreateComponent implements OnInit {
   //#endregion
 
   //#region Initialisation du formulaire
-  private initializeForm(): void {
-  this.userForm = this.formBuilder.group({
-    firstName: ['', Validators.required],
-    lastName: ['', Validators.required],
-    email: ['', [Validators.required, Validators.email]],
-    phoneNumber: [''], // RENDU OPTIONNEL
-    password: ['', [Validators.required, Validators.minLength(8)]],
-    confirmPassword: ['', [Validators.required, Validators.minLength(8)]],
-    isEnabled: [true],
-    workingHours: [40], // RENDU OPTIONNEL
-    roles: [[], Validators.required],
-    isPartTime: [false],
-    hireDate: [''], // RENDU OPTIONNEL
-    gender: ['', Validators.required],
-    contractType: [''], // RENDU OPTIONNEL
-    numberOfChildren: [0, [Validators.min(0)]],
-    maritalStatus: ['', Validators.required],
-    residence: [''], // RENDU OPTIONNEL
-    postalAddress: [''], // RENDU OPTIONNEL
-    centreId: [''],
-    photoUrl: [''],
-    photoFile: [null]
-  });
+private initializeForm(): void {
+    this.userForm = this.formBuilder.group({
+      firstName: ['', Validators.required],
+      lastName: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      phoneNumber: [''], // RENDU OPTIONNEL - pas de validators
+      password: ['', [Validators.required, Validators.minLength(8)]],
+      confirmPassword: ['', [Validators.required, Validators.minLength(8)]],
+      isEnabled: [true],
+      workingHours: [40], // RENDU OPTIONNEL
+      roles: [[], Validators.required],
+      isPartTime: [false],
+      hireDate: [''], // RENDU OPTIONNEL
+      gender: ['', Validators.required],
+      contractType: [''], // RENDU OPTIONNEL
+      numberOfChildren: [0, [Validators.min(0)]],
+      maritalStatus: ['', Validators.required],
+      residence: [''], // RENDU OPTIONNEL
+      postalAddress: [''], // RENDU OPTIONNEL
+      centreId: [''],
+      photoUrl: [''], // RENDU OPTIONNEL - pas de validators
+      photoFile: [null] // RENDU OPTIONNEL - pas de validators
+    });
 
-  this.selectedPhoto = null;
-}
+    this.selectedPhoto = null;
+  }
   //#endregion
 
   //#region Gestion des rôles
@@ -120,27 +120,39 @@ export class UsersCreateComponent implements OnInit {
   //#endregion
 
   //#region Gestion des photos
-  onPhotoSelected(event: Event): void {
+onPhotoSelected(event: Event): void {
   const input = event.target as HTMLInputElement;
 
-  if (!input.files || input.files.length === 0) return;
+  if (!input.files || input.files.length === 0) {
+    // Réinitialiser la preview si aucun fichier
+    this.selectedPhoto = null;
+    return;
+  }
 
   const file = input.files[0];
 
+  // Validation du type de fichier
   if (!file.type.match(/image\/(jpeg|png|gif|jpg)/)) {
     this.showPhotoError('Format incorrect', 'Veuillez sélectionner une image (JPEG, PNG, GIF)');
     input.value = '';
+    this.selectedPhoto = null; // Réinitialiser la preview
     return;
   }
 
+  // Validation de la taille
   if (file.size > 2 * 1024 * 1024) {
     this.showPhotoError('Fichier trop volumineux', 'La taille de l\'image ne doit pas dépasser 2MB');
     input.value = '';
+    this.selectedPhoto = null; // Réinitialiser la preview
     return;
   }
 
-  this.previewPhoto(file, input);
+  // Prévisualiser la photo
+  this.previewPhoto(file);
 }
+
+
+
 
   private showPhotoError(title: string, text: string): void {
     Swal.fire({
@@ -151,26 +163,44 @@ export class UsersCreateComponent implements OnInit {
     });
   }
 
-  previewPhoto(file: File, input: HTMLInputElement): void {
+previewPhoto(file: File): void {
   const reader = new FileReader();
 
   reader.onload = (e: ProgressEvent<FileReader>) => {
+    // CORRECTION : Mettre à jour selectedPhoto pour l'affichage
     this.selectedPhoto = e.target?.result as string;
-    // CORRECTION : Stocker le fichier dans une propriété séparée
+
+    // Mettre à jour le formulaire
     this.userForm.patchValue({
       photoFile: file,  // Pour le fichier physique
       photoUrl: ''      // Réinitialiser photoUrl
     });
+
+    // Déclencher la validation
     this.userForm.get('photoFile')?.updateValueAndValidity();
   };
 
   reader.onerror = () => {
     console.error('Erreur de lecture du fichier');
+    this.selectedPhoto = null; // Réinitialiser en cas d'erreur
     this.showPhotoError('Erreur', 'Impossible de lire le fichier sélectionné');
-    input.value = '';
   };
 
   reader.readAsDataURL(file);
+}
+
+removeSelectedPhoto(): void {
+  this.selectedPhoto = null;
+  this.userForm.patchValue({
+    photoFile: null,
+    photoUrl: ''
+  });
+
+  // Réinitialiser l'input file
+  const photoInput = document.getElementById('photo-upload') as HTMLInputElement;
+  if (photoInput) {
+    photoInput.value = '';
+  }
 }
 
 
@@ -236,61 +266,61 @@ export class UsersCreateComponent implements OnInit {
     }
   }
 
-  processUserCreation(): void {
-  const formData = this.userForm.value;
-  const user = new Users(
-    '',
-    formData.firstName,
-    formData.lastName,
-    formData.email,
-    formData.phoneNumber,
-    formData.isEnabled,
-    formData.roles,
-    formData.workingHours,
-    formData.isPartTime,
-    new Date(formData.hireDate),
-    formData.gender,
-    formData.contractType,
-    formData.numberOfChildren,
-    formData.maritalStatus,
-    formData.residence,
-    formData.postalAddress,
-    formData.centreId,
-    '', // photoUrl sera définie par le backend
-    formData.photoFile, // Le fichier photo
-    '', // photoUrl vide initialement
-    formData.password,
-    formData.confirmPassword
-  );
+processUserCreation(): void {
+    const formData = this.userForm.value;
+    const user = new Users(
+      '',
+      formData.firstName,
+      formData.lastName,
+      formData.email,
+      formData.phoneNumber || '', // Utilise une chaîne vide si null/undefined
+      formData.isEnabled,
+      formData.roles,
+      formData.workingHours,
+      formData.isPartTime,
+      new Date(formData.hireDate),
+      formData.gender,
+      formData.contractType,
+      formData.numberOfChildren,
+      formData.maritalStatus,
+      formData.residence,
+      formData.postalAddress,
+      formData.centreId,
+      '', // photoUrl sera définie par le backend
+      formData.photoFile, // Le fichier photo (peut être null)
+      '', // photoUrl vide initialement
+      formData.password,
+      formData.confirmPassword
+    );
 
-  if (this.selectedPhoto) {
-    this.registerUserWithPhoto(user);
-  } else {
-    this.registerWithoutPhoto(user);
+    // Vérifier s'il y a une photo sélectionnée
+    if (this.selectedPhoto && formData.photoFile) {
+      this.registerUserWithPhoto(user);
+    } else {
+      this.registerWithoutPhoto(user);
+    }
   }
-}
 
-  registerUserWithPhoto(user: Users): void {
-  const fileInput = document.getElementById('photo-upload') as HTMLInputElement;
-  if (fileInput?.files?.[0]) {
-    const photoFile = fileInput.files[0];
+registerUserWithPhoto(user: Users): void {
+    const fileInput = document.getElementById('photo-upload') as HTMLInputElement;
+    if (fileInput?.files?.[0]) {
+      const photoFile = fileInput.files[0];
 
-    this.usersService.registerUserWithPhoto(user, photoFile).subscribe({
-      next: (response) => {
-        console.log("Utilisateur créé avec succès", response);
-        this.handleSuccess();
-        // CORRECTION : Actualiser la liste des utilisateurs après création
-        this.refreshUsersList();
-      },
-      error: (error) => {
-        console.error("Erreur lors de la création de l'utilisateur", error);
-        this.handleError();
-      }
-    });
-  } else {
-    this.registerWithoutPhoto(user);
+      this.usersService.registerUserWithPhoto(user, photoFile).subscribe({
+        next: (response) => {
+          console.log("Utilisateur créé avec succès", response);
+          this.handleSuccess();
+          this.refreshUsersList();
+        },
+        error: (error) => {
+          console.error("Erreur lors de la création de l'utilisateur", error);
+          this.handleError();
+        }
+      });
+    } else {
+      this.registerWithoutPhoto(user);
+    }
   }
-}
 
 refreshUsersList(): void {
   this.getUsers();
@@ -300,20 +330,19 @@ refreshUsersList(): void {
   }, 500);
 }
 
-  registerWithoutPhoto(user: Users): void {
-  this.usersService.registerUser(user).subscribe({
-    next: (response) => {
-      console.log("Utilisateur créé avec succès", response);
-      this.handleSuccess();
-      // CORRECTION : Actualiser la liste des utilisateurs après création
-      this.refreshUsersList();
-    },
-    error: (error) => {
-      console.error("Erreur lors de la création de l'utilisateur", error);
-      this.handleError();
-    }
-  });
-}
+registerWithoutPhoto(user: Users): void {
+    this.usersService.registerUser(user).subscribe({
+      next: (response) => {
+        console.log("Utilisateur créé avec succès", response);
+        this.handleSuccess();
+        this.refreshUsersList();
+      },
+      error: (error) => {
+        console.error("Erreur lors de la création de l'utilisateur", error);
+        this.handleError();
+      }
+    });
+  }
   //#endregion
 
   //#region Gestion de l'utilisateur courant

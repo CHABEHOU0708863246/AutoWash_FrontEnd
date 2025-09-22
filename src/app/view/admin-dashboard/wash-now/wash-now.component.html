@@ -24,11 +24,11 @@
     <div class="nav-menu">
       <!-- Dashboard -->
       <div class="dropdown dropdown-hover">
-      <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
-        <i class="fas fa-tachometer-alt"></i>
-        <span>Tableau de bord</span>
-      </a>
-    </div>
+        <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
 
       <!-- Gestion des Utilisateurs -->
       <div class="dropdown dropdown-hover">
@@ -165,7 +165,8 @@
           <i class="fas fa-chevron-right dropdown-arrow"></i>
         </button>
         <ul class="dropdown-menu dropdown-menu-hover">
-        <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion dépenses</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion
+              dépenses</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/expenses-profitability']"><i
                 class="fas fa-chart-line"></i> Rentabilité</a></li>
         </ul>
@@ -219,7 +220,8 @@
             <i class="fas fa-chevron-down"></i>
           </button>
           <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
-             <li><a class="dropdown-item" [routerLink]="['/admin/users-profil']"><i class="fas fa-user"></i> Mon profil</a></li>
+            <li><a class="dropdown-item" [routerLink]="['/admin/users-profil']"><i class="fas fa-user"></i> Mon
+                profil</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
             <li><a class="dropdown-item" (click)="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
@@ -248,18 +250,15 @@
         <div class="container-fluid">
           <div class="row mb-3" *ngIf="errorMessages.length > 0 || successMessage">
             <div class="col-12">
-              <div class="alert alert-danger alert-dismissible fade show" *ngIf="errorMessages.length > 0">
-                <strong><i class="fas fa-exclamation-triangle me-2"></i>Erreur!</strong>
-                <ul class="mb-0 mt-2">
-                  <li *ngFor="let error of errorMessages">{{ error }}</li>
-                </ul>
-                <button type="button" class="btn-close" (click)="errorMessages = []"></button>
-              </div>
-
-              <div class="alert alert-success alert-dismissible fade show" *ngIf="successMessage">
-                <strong><i class="fas fa-check-circle me-2"></i>Succès!</strong>
-                {{ successMessage }}
-                <button type="button" class="btn-close" (click)="successMessage = ''"></button>
+              <!-- Message spécifique pour Mobile Money -->
+              <div class="alert alert-warning"
+                *ngIf="selectedPaymentMethod === PaymentMethod.MOBILE_MONEY && isSubmitting">
+                <i class="fas fa-mobile-alt me-2"></i>
+                <strong>Traitement Mobile Money en cours...</strong>
+                <div class="mt-2">
+                  <div class="spinner-border spinner-border-sm me-2"></div>
+                  Vérification du paiement, veuillez patienter...
+                </div>
               </div>
             </div>
           </div>
@@ -357,22 +356,23 @@
                       <!-- Champ Email client -->
                       <div class="col-md-6">
                         <div class="form-group">
-                          <label for="customerEmail" class="form-label">Email client <span
-                              class="text-danger">*</span></label>
+                          <label for="customerEmail" class="form-label">Email client</label>
+                          <!-- Supprimé l'astérisque rouge -->
                           <div class="input-group">
                             <span class="input-group-text"><i class="fas fa-envelope"></i></span>
                             <input type="email" id="customerEmail" class="form-control" formControlName="customerEmail"
-                              placeholder="Ex: client@example.com"
+                              placeholder="Ex: client@example.com (optionnel)"
                               [class.is-invalid]="washForm.get('customerEmail')?.invalid && washForm.get('customerEmail')?.touched">
                           </div>
-                          <div class="invalid-feedback"
-                            *ngIf="washForm.get('customerEmail')?.errors?.['required'] && washForm.get('customerEmail')?.touched">
-                            L'email est obligatoire
-                          </div>
+                          <!-- Supprimé le message d'erreur "required" -->
                           <div class="invalid-feedback"
                             *ngIf="washForm.get('customerEmail')?.errors?.['email'] && washForm.get('customerEmail')?.touched">
                             Veuillez entrer un email valide
                           </div>
+                          <small class="form-text text-muted">
+                            <i class="fas fa-info-circle"></i>
+                            L'email est facultatif mais recommandé pour les notifications
+                          </small>
                         </div>
                       </div>
 
@@ -492,7 +492,7 @@
                     </div>
 
                     <div class="row mb-4">
-                      <div class="col-md-6">
+                      <div class="col-md-12">
                         <div class="form-group">
                           <label class="form-label">Méthode de paiement <span class="text-danger">*</span></label>
                           <div class="btn-group w-100" role="group">
@@ -508,7 +508,6 @@
                               (click)="onPaymentMethodChange(PaymentMethod.MOBILE_MONEY)">
                               <i class="fas fa-mobile-alt me-2"></i> Mobile Money
                             </button>
-
                             <button type="button" class="btn"
                               [class.btn-primary]="selectedPaymentMethod === PaymentMethod.CREDIT_CARD"
                               [class.btn-outline-primary]="selectedPaymentMethod !== PaymentMethod.CREDIT_CARD"
@@ -516,24 +515,21 @@
                               <i class="fas fa-credit-card me-2"></i> Carte
                             </button>
                           </div>
-                        </div>
-                      </div>
 
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label for="transactionId" class="form-label">
-                            Référence transaction
-                            <span class="text-danger" *ngIf="selectedPaymentMethod !== PaymentMethod.CASH">*</span>
-                          </label>
-                          <input type="text" id="transactionId" class="form-control" formControlName="transactionId"
-                            placeholder="Ex: MM123456789"
-                            [class.is-invalid]="washForm.get('transactionId')?.invalid && washForm.get('transactionId')?.touched">
-                          <div class="invalid-feedback"
-                            *ngIf="washForm.get('transactionId')?.invalid && washForm.get('transactionId')?.touched">
-                            Référence de transaction requise pour ce mode de paiement
-                          </div>
+                          <!-- Message informatif pour les paiements non-cash -->
+                          <small class="form-text text-info mt-2" *ngIf="selectedPaymentMethod !== PaymentMethod.CASH">
+                            <i class="fas fa-info-circle"></i>
+                            La référence de transaction sera générée automatiquement après confirmation du paiement
+                          </small>
                         </div>
                       </div>
+                    </div>
+
+                    <!-- Messages de succès et d'erreur améliorés -->
+                    <div class="alert alert-success alert-dismissible fade show" *ngIf="successMessage">
+                      <i class="fas fa-check-circle me-2"></i>
+                      {{ successMessage }}
+                      <button type="button" class="btn-close" (click)="successMessage = ''"></button>
                     </div>
 
                     <div class="row mb-4">
@@ -713,7 +709,6 @@
                           <span class="badge bg-success mb-1">{{ wash.price }} FCFA</span>
                           <small class="badge"
                             [class]="wash.isCompleted ? 'bg-success' : wash.isCancelled ? 'bg-danger' : 'bg-warning'">
-                            {{ wash.isCompleted ? 'Terminé' : wash.isCancelled ? 'Annulé' : 'En cours' }}
                           </small>
                         </div>
                       </div>

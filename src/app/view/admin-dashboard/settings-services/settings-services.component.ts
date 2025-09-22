@@ -92,15 +92,17 @@ export class SettingsServicesComponent implements OnInit {
   ngOnInit(): void {
   this.loadCurrentUser();
   this.getUsers();
-  this.loadCentres(); // Assure-vous que ceci se fait en premier
 
-  // Attendez que les centres soient chargés avant de charger les services
+  // Charger d'abord les centres
+  this.loadCentres();
+
   this.authService.currentUser$.subscribe((user) => {
     if (user && user !== this.currentUser) {
       this.currentUser = user;
       this.loadCurrentUserPhoto();
-      // Chargez les services seulement après avoir l'utilisateur actuel
-      if (user.centreId) {
+
+      // Charger les services APRÈS avoir l'utilisateur et les centres
+      if (user.centreId && this.centres.length > 0) {
         this.loadServices();
       }
     }
@@ -108,7 +110,6 @@ export class SettingsServicesComponent implements OnInit {
 }
 
   onCentreChange(centreId: string): void {
-  console.log('Centre sélectionné:', centreId); // Pour débugger
 
   if (!centreId) {
     this.services = [];
@@ -230,34 +231,56 @@ canSelectCentre(): boolean {
 
   //#region GESTION DU FORMULAIRE
   onSubmit(): void {
-    if (this.serviceForm.invalid) {
-      this.markFormGroupTouched(this.serviceForm);
-      return;
-    }
+  console.log('Form submitted'); // Debug
+  console.log('Form valid:', this.serviceForm.valid); // Debug
+  console.log('Form value:', this.serviceForm.value); // Debug
 
-    // Validate centreId before processing
-    const centreId =
-      this.currentUser?.centreId || this.serviceForm.get('centreId')?.value;
-    if (!centreId || !this.isValidObjectId(centreId)) {
-      this.toastr.showError('Veuillez sélectionner un centre valide');
-      return;
-    }
-
-    this.isLoading = true;
-
-    try {
-      const formValue = this.prepareFormData();
-
-      if (this.isEditing && this.currentEditingId) {
-        this.updateService(this.currentEditingId, formValue);
-      } else {
-        this.createService(formValue);
+  if (this.serviceForm.invalid) {
+    console.log('Form invalid, marking touched'); // Debug
+    this.markFormGroupTouched(this.serviceForm);
+    // Afficher les erreurs spécifiques
+    Object.keys(this.serviceForm.controls).forEach(key => {
+      const control = this.serviceForm.get(key);
+      if (control?.invalid) {
+        console.log(`${key} is invalid:`, control.errors); // Debug
       }
-    } catch (error) {
-      this.isLoading = false;
-      console.error('Error preparing form data:', error);
-    }
+    });
+    return;
   }
+
+  // Vérification du centre
+  const centreId = this.serviceForm.get('centreId')?.value;
+  console.log('Selected centreId:', centreId); // Debug
+
+  if (!centreId) {
+    this.toastr.showError('Veuillez sélectionner un centre');
+    return;
+  }
+
+  if (!this.isValidObjectId(centreId)) {
+    this.toastr.showError('ID du centre invalide');
+    return;
+  }
+
+  this.isLoading = true;
+
+  try {
+    const formValue = this.prepareFormData();
+    console.log('Prepared form data:', formValue); // Debug
+
+    if (this.isEditing && this.currentEditingId) {
+      console.log('Updating service:', this.currentEditingId); // Debug
+      this.updateService(this.currentEditingId, formValue);
+    } else {
+      console.log('Creating new service'); // Debug
+      this.createService(formValue);
+    }
+  } catch (error) {
+    this.isLoading = false;
+    console.error('Error in onSubmit:', error);
+    this.toastr.showError('Erreur lors du traitement du formulaire');
+  }
+}
 
   /**
    * Vérifie si l'ID est un ObjectId valide de MongoDB.
@@ -275,26 +298,35 @@ canSelectCentre(): boolean {
    * Valide le centreId et construit l'objet à envoyer.
    * @returns L'objet contenant les données du service.
    */
-  prepareFormData(): any {
-  const formValue = this.serviceForm.value;
+prepareFormData(): any {
+  const formValue = { ...this.serviceForm.value }; // Clone pour éviter les mutations
+
+  // Traitement des services inclus
   const selectedServices = this.baseServices
     .filter((_, i) => formValue.includedServices[i])
     .map((service) => service);
 
-  // CORRECTION: Utiliser formValue.centreId au lieu de currentUser.centreId
-  let centreId = formValue.centreId || this.currentUser?.centreId;
+  // Utiliser le centreId du formulaire
+  const centreId = formValue.centreId;
 
-  // Validate centreId before sending
+  console.log('Preparing data with centreId:', centreId); // Debug
+
+  // Validation finale
   if (!centreId || !this.isValidObjectId(centreId)) {
-    this.toastr.showError('ID du centre invalide');
     throw new Error('Invalid centreId');
   }
 
-  return {
+  const preparedData = {
     ...formValue,
     includedServices: selectedServices,
-    centreId: centreId, // CORRECTION: Utiliser la variable centreId
+    centreId: centreId,
+    // Ajouter des champs obligatoires si manquants
+    createdBy: this.currentUser?.id,
+    createdAt: new Date().toISOString()
   };
+
+  console.log('Final prepared data:', preparedData); // Debug
+  return preparedData;
 }
 
   /**
@@ -382,17 +414,29 @@ canSelectCentre(): boolean {
    * Affiche un message de succès ou d'erreur en fonction du résultat de l'opération.
    * @param serviceData Les données du service à créer.
    */
-  createService(formData: any): void {
+createService(formData: any): void {
+  console.log('Calling service creation with:', formData); // Debug
+
   this.serviceSettingsService.createService(formData).subscribe({
     next: (response) => {
+      console.log('Service created successfully:', response); // Debug
       this.toastr.showSuccess('Service créé avec succès');
       this.resetForm();
-      this.loadServices(); // Recharger la liste
+      this.loadServices();
       this.isLoading = false;
     },
     error: (error) => {
-      console.error('Erreur création service:', error);
-      this.toastr.showError('Erreur lors de la création du service');
+      console.error('Erreur création service:', error); // Debug détaillé
+
+      // Affichage d'erreur plus spécifique
+      let errorMessage = 'Erreur lors de la création du service';
+      if (error.error?.message) {
+        errorMessage = error.error.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      this.toastr.showError(errorMessage);
       this.isLoading = false;
     }
   });

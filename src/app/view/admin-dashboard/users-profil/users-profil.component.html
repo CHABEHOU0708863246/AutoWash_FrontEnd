@@ -27,11 +27,11 @@
     <div class="nav-menu">
       <!-- Dashboard -->
       <div class="dropdown dropdown-hover">
-      <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
-        <i class="fas fa-tachometer-alt"></i>
-        <span>Tableau de bord</span>
-      </a>
-    </div>
+        <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
 
       <!-- Gestion des Utilisateurs -->
       <div class="dropdown dropdown-hover">
@@ -245,19 +245,26 @@
                 <div class="profile-photo" id="profilePhoto">
                   <i class="fas fa-user"></i>
                 </div>
-                <div class="photo-upload-btn">
+                <div class="photo-upload-btn" *ngIf="canEdit('canEditPhoto')">
                   <i class="fas fa-camera"></i>
                 </div>
                 <input type="file" id="photoInput" class="hidden-input" accept="image/*">
               </div>
               <div class="profile-info">
-                <h1 class="profile-name" id="profileName">Jean Dupont</h1>
-                <p class="profile-role" id="profileRole">Responsable Centre</p>
+                <h1 class="profile-name" id="profileName">
+                  {{ userEditableFields?.currentUser?.firstName || 'Prénom' }}
+                  {{ userEditableFields?.currentUser?.lastName || 'Nom' }}
+                </h1>
+                <p class="profile-role" id="profileRole">
+                  {{ userEditableFields?.currentUser?.roles?.join(', ') || 'Rôle' }}
+                </p>
                 <span class="profile-status" id="profileStatus">Actif</span>
 
                 <div class="stats-mini">
                   <div class="stat-mini">
-                    <div class="stat-mini-value" id="workingHoursDisplay">40</div>
+                    <div class="stat-mini-value" id="workingHoursDisplay">
+                      {{ userEditableFields?.currentUser?.workingHours || '40' }}
+                    </div>
                     <div class="stat-mini-label">Heures/semaine</div>
                   </div>
                   <div class="stat-mini">
@@ -272,53 +279,69 @@
 
         <!-- Formulaire avec onglets -->
         <div class="form-container">
+          <!-- Navigation des onglets -->
           <div class="form-tabs">
-            <button class="tab-btn active">
+            <button type="button" class="tab-btn" [class.active]="activeTab === 'personal'"
+              (click)="setActiveTab('personal')">
               <i class="fas fa-user"></i>
               Informations Personnelles
             </button>
-            <button class="tab-btn">
+            <button type="button" class="tab-btn" [class.active]="activeTab === 'professional'"
+              (click)="setActiveTab('professional')">
               <i class="fas fa-briefcase"></i>
               Informations Professionnelles
             </button>
-            <button class="tab-btn">
+            <button type="button" class="tab-btn" [class.active]="activeTab === 'security'"
+              *ngIf="canEdit('canChangePassword')" (click)="setActiveTab('security')">
               <i class="fas fa-lock"></i>
               Sécurité
             </button>
           </div>
 
-          <form id="userForm">
-            <!-- Onglet Informations Personnelles -->
-            <div class="tab-content active" id="personal">
-              <div id="successMessage" class="alert alert-success" style="display: none;">
-                <i class="fas fa-check-circle"></i>
-                <span>Profil mis à jour avec succès!</span>
-              </div>
+          <!-- Messages de succès/erreur globaux -->
+          <div id="successMessage" class="alert alert-success" *ngIf="updateMessageType === 'success'">
+            <i class="fas fa-check-circle"></i>
+            <span>{{ updateMessage }}</span>
+          </div>
 
+          <div id="errorMessage" class="alert alert-error" *ngIf="updateMessageType === 'error'">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>{{ updateMessage }}</span>
+          </div>
+
+          <!-- Formulaire principal -->
+          <form #profileFormRef="ngForm" (ngSubmit)="onSubmit()">
+
+            <!-- Onglet Informations Personnelles -->
+            <div class="tab-content" [class.active]="activeTab === 'personal'" *ngIf="activeTab === 'personal'">
               <div class="form-grid">
                 <div class="form-group">
                   <label class="form-label">Prénom *</label>
-                  <input type="text" class="form-input" id="firstName" required>
+                  <input type="text" class="form-input" [(ngModel)]="profileForm.firstName" name="firstName"
+                    [readonly]="!canEdit('canEditFirstName')" required>
                 </div>
 
                 <div class="form-group">
                   <label class="form-label">Nom *</label>
-                  <input type="text" class="form-input" id="lastName" required>
+                  <input type="text" class="form-input" [(ngModel)]="profileForm.lastName" name="lastName"
+                    [readonly]="!canEdit('canEditLastName')" required>
                 </div>
 
                 <div class="form-group">
                   <label class="form-label">Email *</label>
-                  <input type="email" class="form-input" id="email" required>
+                  <input type="email" class="form-input" [(ngModel)]="profileForm.email" name="email" readonly required>
                 </div>
 
                 <div class="form-group">
                   <label class="form-label">Téléphone</label>
-                  <input type="tel" class="form-input" id="phoneNumber">
+                  <input type="tel" class="form-input" [(ngModel)]="profileForm.phoneNumber" name="phoneNumber"
+                    [readonly]="!canEdit('canEditPhoneNumber')">
                 </div>
 
                 <div class="form-group">
                   <label class="form-label">Genre</label>
-                  <select class="form-select" id="gender">
+                  <select class="form-select" [(ngModel)]="profileForm.gender" name="gender"
+                    [disabled]="!canEdit('canEditGender')">
                     <option value="">Sélectionner</option>
                     <option value="M">Masculin</option>
                     <option value="F">Féminin</option>
@@ -328,7 +351,8 @@
 
                 <div class="form-group">
                   <label class="form-label">État Civil</label>
-                  <select class="form-select" id="maritalStatus">
+                  <select class="form-select" [(ngModel)]="profileForm.maritalStatus" name="maritalStatus"
+                    [disabled]="!canEdit('canEditMaritalStatus')">
                     <option value="">Sélectionner</option>
                     <option value="Single">Célibataire</option>
                     <option value="Married">Marié(e)</option>
@@ -339,32 +363,37 @@
 
                 <div class="form-group">
                   <label class="form-label">Nombre d'enfants</label>
-                  <input type="number" class="form-input" id="numberOfChildren" min="0">
+                  <input type="number" class="form-input" [(ngModel)]="profileForm.numberOfChildren"
+                    name="numberOfChildren" [readonly]="!canEdit('canEditNumberOfChildren')" min="0">
                 </div>
 
                 <div class="form-group">
                   <label class="form-label">Ville de résidence</label>
-                  <input type="text" class="form-input" id="residence">
+                  <input type="text" class="form-input" [(ngModel)]="profileForm.residence" name="residence"
+                    [readonly]="!canEdit('canEditResidence')">
                 </div>
 
                 <div class="form-group full-width">
                   <label class="form-label">Adresse postale</label>
-                  <textarea class="form-textarea" id="postalAddress" rows="3"></textarea>
+                  <textarea class="form-textarea" [(ngModel)]="profileForm.postalAddress" name="postalAddress"
+                    [readonly]="!canEdit('canEditPostalAddress')" rows="3"></textarea>
                 </div>
               </div>
             </div>
 
             <!-- Onglet Informations Professionnelles -->
-            <div class="tab-content" id="professional">
+            <div class="tab-content" [class.active]="activeTab === 'professional'" *ngIf="activeTab === 'professional'">
               <div class="form-grid">
                 <div class="form-group">
                   <label class="form-label">Date d'embauche</label>
-                  <input type="date" class="form-input" id="hireDate">
+                  <input type="date" class="form-input"
+                    [value]="userEditableFields?.currentUser?.hireDate | date:'yyyy-MM-dd'" readonly>
                 </div>
 
                 <div class="form-group">
                   <label class="form-label">Type de contrat</label>
-                  <select class="form-select" id="contractType">
+                  <select class="form-select" [(ngModel)]="profileForm.contractType" name="contractType"
+                    [disabled]="!canEdit('canEditContractType')">
                     <option value="">Sélectionner</option>
                     <option value="CDI">CDI</option>
                     <option value="CDD">CDD</option>
@@ -376,86 +405,81 @@
 
                 <div class="form-group">
                   <label class="form-label">Heures de travail par semaine</label>
-                  <input type="number" class="form-input" id="workingHours" min="0" max="60">
+                  <input type="number" class="form-input" min="0" max="60"
+                    [value]="userEditableFields?.currentUser?.workingHours || 35" readonly>
                 </div>
 
                 <div class="form-group">
                   <label class="form-label">Centre de lavage</label>
-                  <select class="form-select" id="centreId">
+                  <select class="form-select" [(ngModel)]="profileForm.centreId" name="centreId"
+                    [disabled]="!canEdit('canEditCentreId')">
                     <option value="">Sélectionner un centre</option>
-                    <option value="centre1">Centre Paris 15ème</option>
-                    <option value="centre2">Centre Lyon Bellecour</option>
-                    <option value="centre3">Centre Marseille Vieux Port</option>
-                    <option value="centre4">Centre Toulouse Capitole</option>
-                    <option value="centre5">Centre Nice Promenade</option>
                   </select>
                 </div>
 
                 <div class="form-group full-width">
                   <label class="form-label">Rôles et permissions</label>
-                  <div class="role-tags" id="roleTags">
-                    <!-- Les rôles seront ajoutés dynamiquement -->
-                  </div>
-                  <div class="add-role-section">
-                    <input type="text" class="add-role-input" id="newRole" placeholder="Ajouter un rôle">
-                    <button type="button" class="add-role-btn" onclick="addRole()">
-                      <i class="fas fa-plus"></i>
-                    </button>
+                  <div class="role-tags">
+                    <span class="role-tag" *ngFor="let role of userEditableFields?.currentUser?.roles">
+                      {{ role }}
+                    </span>
                   </div>
                 </div>
 
                 <div class="checkbox-group">
-                  <input type="checkbox" class="checkbox-input" id="isPartTime">
+                  <input type="checkbox" class="checkbox-input" id="isPartTime"
+                    [checked]="userEditableFields?.currentUser?.isPartTime" disabled>
                   <label class="checkbox-label" for="isPartTime">Temps partiel</label>
                 </div>
 
                 <div class="checkbox-group">
-                  <input type="checkbox" class="checkbox-input" id="isEnabled" checked>
+                  <input type="checkbox" class="checkbox-input" id="isEnabled"
+                    [checked]="userEditableFields?.currentUser?.isEnabled" readonly>
                   <label class="checkbox-label" for="isEnabled">Compte actif</label>
                 </div>
               </div>
             </div>
 
             <!-- Onglet Sécurité -->
-            <div class="tab-content" id="security">
+            <div class="tab-content" [class.active]="activeTab === 'security'"
+              *ngIf="activeTab === 'security' && canEdit('canChangePassword')">
               <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Mot de passe actuel</label>
+                  <div style="position: relative;">
+                    <input type="password" class="form-input" [(ngModel)]="profileForm.currentPassword"
+                      name="currentPassword" placeholder="Mot de passe actuel">
+                  </div>
+                </div>
+
                 <div class="form-group">
                   <label class="form-label">Nouveau mot de passe</label>
                   <div style="position: relative;">
-                    <input type="password" class="form-input" id="password"
-                      placeholder="Laisser vide pour ne pas changer">
-                    <i class="fas fa-eye password-toggle" onclick="togglePassword('password')"></i>
+                    <input type="password" class="form-input" [(ngModel)]="profileForm.newPassword" name="newPassword"
+                      placeholder="Nouveau mot de passe">
                   </div>
                 </div>
 
                 <div class="form-group">
                   <label class="form-label">Confirmer le mot de passe</label>
                   <div style="position: relative;">
-                    <input type="password" class="form-input" id="confirmPassword">
-                    <i class="fas fa-eye password-toggle" onclick="togglePassword('confirmPassword')"></i>
+                    <input type="password" class="form-input" [(ngModel)]="profileForm.confirmNewPassword"
+                      name="confirmPassword" placeholder="Confirmer le mot de passe">
                   </div>
                 </div>
-              </div>
-
-              <div class="alert alert-error" id="passwordError" style="display: none;">
-                <i class="fas fa-exclamation-triangle"></i>
-                <span>Les mots de passe ne correspondent pas</span>
               </div>
             </div>
 
             <!-- Actions du formulaire -->
             <div class="form-actions">
-              <button type="button" class="btn btn-secondary">
-                <i class="fas fa-times"></i>
-                Annuler
-              </button>
-              <button type="button" class="btn btn-danger" onclick="resetForm()">
+              <button type="button" class="btn btn-secondary" (click)="resetForm()">
                 <i class="fas fa-undo"></i>
                 Réinitialiser
               </button>
-              <button type="submit" class="btn btn-primary">
+              <button type="submit" class="btn btn-primary" [disabled]="isLoading">
                 <i class="fas fa-save"></i>
-                Sauvegarder
+                <span *ngIf="!isLoading">Sauvegarder</span>
+                <span *ngIf="isLoading">Sauvegarde...</span>
               </button>
             </div>
           </form>

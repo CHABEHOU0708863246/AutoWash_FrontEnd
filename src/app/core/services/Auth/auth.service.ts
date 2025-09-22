@@ -294,6 +294,16 @@ export class AuthService {
   }
 
   /**
+   * Valide un token de réinitialisation de mot de passe
+   * @param email - Email de l'utilisateur
+   * @param token - Token à valider
+   * @returns Observable<boolean>
+   */
+  validateResetToken(email: string, token: string): Observable<Response> {
+    return this.http.post<Response>(`${this.apiUrl}/validate-reset-token`, { email, token });
+  }
+
+  /**
    * Change le mot de passe de l'utilisateur.
    * @param oldPassword - Ancien mot de passe.
    * @param newPassword - Nouveau mot de passe.

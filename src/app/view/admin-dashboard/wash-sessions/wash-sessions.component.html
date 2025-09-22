@@ -247,12 +247,9 @@
                       <div class="dropdown me-1">
                         <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
                           aria-expanded="false">
-                          <i class="fas fa-filter me-2"></i>Filtrer
+                          <i class="fas fa-filter me-2"></i>Filtrer par centre
                         </button>
                         <ul class="dropdown-menu">
-                          <li>
-                            <h6 class="dropdown-header">Filtrer par centre</h6>
-                          </li>
                           <li *ngFor="let centre of centres">
                             <a class="dropdown-item" (click)="filterByCentre(centre.id? centre.id : ''  )">
                               {{ centre.name }}

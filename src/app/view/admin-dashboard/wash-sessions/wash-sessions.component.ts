@@ -43,7 +43,7 @@ export class WashSessionsComponent implements OnInit {
   filteredSessions: WashSession[] = [];
   isLoading = false;
   currentPage = 1;
-  itemsPerPage = 10;
+  itemsPerPage = 5;
   totalItems = 0;
   searchTerm = '';
   centres: Centres[] = [];

@@ -244,18 +244,33 @@
             </div>
 
             <div class="form-grid">
-              <!-- Photo de profil -->
+              <!-- Photo de profil - MAINTENANT OBLIGATOIRE -->
               <div class="form-group photo-upload">
-                <label class="form-label">Photo de profil</label>
+                <label class="form-label">Photo de profil <span class="required">*</span></label>
                 <div class="photo-preview">
+                  <!-- Icône par défaut quand aucune photo n'est sélectionnée -->
                   <i class="fas fa-user" *ngIf="!selectedPhoto"></i>
-                  <img id="preview-image" [src]="selectedPhoto || ''" alt="Preview" *ngIf="selectedPhoto">
+
+                  <!-- Preview de l'image sélectionnée -->
+                  <div class="image-container" *ngIf="selectedPhoto">
+                    <img id="preview-image" [src]="selectedPhoto" alt="Preview">
+                    <!-- Bouton pour supprimer la photo -->
+                    <button type="button" class="remove-photo-btn" (click)="removeSelectedPhoto()"
+                      title="Supprimer la photo">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
                 </div>
+
                 <label class="photo-upload-btn">
-                  <i class="fas fa-camera"></i> Choisir une photo
+                  <i class="fas fa-camera"></i>
+                  {{ selectedPhoto ? 'Changer la photo' : 'Choisir une photo' }}
                   <input type="file" id="photo-upload" accept="image/*" style="display: none;"
-                    (change)="onPhotoSelected($event)">
+                    (change)="onPhotoSelected($event)" required>
                 </label>
+                <div class="form-error" *ngIf="userForm.get('photo')?.invalid && userForm.get('photo')?.touched">
+                  La photo de profil est obligatoire
+                </div>
               </div>
 
               <!-- Nom -->
@@ -290,11 +305,16 @@
                 </div>
               </div>
 
-              <!-- Téléphone -->
+              <!-- Téléphone - MAINTENANT OBLIGATOIRE -->
               <div class="form-group">
-                <label class="form-label">Téléphone</label>
-                <input type="tel" class="form-control" placeholder="+225 00 00 00 00 00" formControlName="phoneNumber">
+                <label class="form-label">Téléphone <span class="required">*</span></label>
+                <input type="tel" class="form-control" placeholder="+225 00 00 00 00 00" formControlName="phoneNumber"
+                  required>
                 <i class="fas fa-phone form-icon"></i>
+                <div class="form-error"
+                  *ngIf="userForm.get('phoneNumber')?.invalid && userForm.get('phoneNumber')?.touched">
+                  Le numéro de téléphone est obligatoire
+                </div>
               </div>
 
               <!-- Genre -->
@@ -366,8 +386,7 @@
                 <label class="form-label">Date d'embauche<span class="required">*</span></label>
                 <input type="date" class="form-control" formControlName="hireDate">
                 <i class="fas fa-calendar-alt form-icon"></i>
-                <div class="form-error"
-                  *ngIf="userForm.get('hireDate')?.invalid && userForm.get('hireDate')?.touched">
+                <div class="form-error" *ngIf="userForm.get('hireDate')?.invalid && userForm.get('hireDate')?.touched">
                   La date d'embauche est obligatoire
                 </div>
               </div>

@@ -142,7 +142,7 @@ export class WashNowComponent implements OnInit {
         [Validators.required, Validators.pattern(/^\+?[0-9]{10,15}$/)],
       ],
       customerName: ['', Validators.required],
-      customerEmail: ['', [Validators.email]],
+      customerEmail: ['',],
       transactionId: [''],
       paymentMethod: [PaymentMethod.CASH, Validators.required],
       amountPaid: [0],
@@ -618,8 +618,9 @@ export class WashNowComponent implements OnInit {
 
   const customerRequest: CreateOrUpdateCustomerRequest = {
     phone: customerPhone,
-    name: customerName.trim(), // CORRECTION: Utiliser le nom saisi (sans espaces)
-    email: customerEmail || '',
+    name: customerName.trim(),
+    // MODIFICATION: Email vraiment optionnel - envoyer seulement s'il est fourni et valide
+    ...(customerEmail && customerEmail.trim() !== '' && { email: customerEmail.trim() }),
     vehicleType: vehicleTypeLabel,
     vehicleBrand: vehicleBrand || 'Non spécifié'
   };
@@ -659,8 +660,9 @@ export class WashNowComponent implements OnInit {
 
   const customerRequest: CreateOrUpdateCustomerRequest = {
     phone: formValue.customerPhone,
-    name: formValue.customerName.trim(), // CORRECTION: Utiliser le nom saisi
-    email: formValue.customerEmail || '',
+    name: formValue.customerName.trim(),
+    // MODIFICATION: Email vraiment optionnel - n'inclure que s'il est fourni et valide
+    ...(formValue.customerEmail && formValue.customerEmail.trim() !== '' && { email: formValue.customerEmail.trim() }),
     vehicleType: vehicleTypeLabel,
     vehicleBrand: formValue.vehicleBrand || 'Non spécifié'
   };

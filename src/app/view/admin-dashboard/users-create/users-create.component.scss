@@ -1171,55 +1171,102 @@ body {
 }
 
 .photo-upload {
+  // Centrage de tout le composant photo
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 20px;
-}
+  text-align: center;
 
-.photo-preview {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background-color: #f9fafc;
-  border: 2px dashed #e7ebf0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 15px;
-  overflow: hidden;
-  position: relative;
-}
+  .form-label {
+    margin-bottom: 10px;
+  }
 
-.photo-preview i {
-  font-size: 30px;
-  color: #b2bac3;
-}
+  .photo-preview {
+    width: 120px;
+    height: 120px;
+    border: 2px dashed #ccc;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 15px;
+    overflow: hidden;
+    position: relative;
+    transition: all 0.3s ease;
 
-.photo-preview img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: none;
-}
+    &:hover {
+      border-color: #007bff;
+    }
 
-.photo-upload-btn {
-  padding: 8px 15px;
-  background-color: #f9fafc;
-  border: 1px solid #e7ebf0;
-  border-radius: 6px;
-  font-size: 13px;
-  color: #505a64;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
+    // Icône par défaut centrée
+    i.fas.fa-user {
+      font-size: 48px;
+      color: #ccc;
+    }
 
-.photo-upload-btn:hover {
-  background-color: #e9ecf1;
-}
+    .image-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
 
-.photo-upload-btn i {
-  margin-right: 5px;
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        display: block;
+      }
+
+      .remove-photo-btn {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        width: 25px;
+        height: 25px;
+        border-radius: 50%;
+        background-color: #dc3545;
+        color: white;
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        cursor: pointer;
+        transition: background-color 0.3s ease;
+        z-index: 10;
+
+        &:hover {
+          background-color: #c82333;
+        }
+
+        i {
+          font-size: 10px;
+        }
+      }
+    }
+  }
+
+  .photo-upload-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    background-color: #007bff;
+    color: white;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-size: 14px;
+
+    &:hover {
+      background-color: #0056b3;
+    }
+
+    i {
+      margin-right: 8px;
+    }
+  }
 }
 
 /* Adaptation pour les écrans mobiles */

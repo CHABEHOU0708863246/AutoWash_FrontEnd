@@ -416,12 +416,19 @@
               </div>
 
               <div class="form-actions">
-                <button type="submit" class="btn btn-primary" [disabled]="isLoading || serviceForm.invalid">
+                <button type="submit" class="btn btn-primary" [disabled]="isLoading">
                   <i class="fas fa-spinner fa-spin" *ngIf="isLoading"></i>
                   <i class="fas fa-save" *ngIf="!isLoading"></i>
                   {{ isEditing ? 'Mettre à jour' : 'Créer la prestation' }}
                 </button>
+
+                <!-- Bouton annuler pour l'édition -->
+                <button type="button" class="btn btn-secondary ms-2" *ngIf="isEditing" (click)="resetForm()">
+                  <i class="fas fa-times"></i> Annuler
+                </button>
               </div>
+
+
             </form>
           </div>
         </div>
