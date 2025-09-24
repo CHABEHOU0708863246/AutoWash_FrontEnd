@@ -10,6 +10,9 @@ import { AuthService } from '../Auth/auth.service';
   providedIn: 'root'
 })
 export class UsersService {
+  createUser(userData: any) {
+    throw new Error('Method not implemented.');
+  }
 
   private baseUrl = 'https://localhost:7139/api/User';
 

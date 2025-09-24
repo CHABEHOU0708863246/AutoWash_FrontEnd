@@ -1414,3 +1414,43 @@ body {
     font-size: 14px;
   }
 }
+
+
+
+.loading-spinner-small {
+  text-align: center;
+  padding: 5px;
+
+  .fa-spinner {
+    color: #36A2EB;
+    font-size: 14px;
+  }
+}
+
+.refresh-btn {
+  background: #36A2EB;
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background 0.3s;
+
+  &:hover:not(:disabled) {
+    background: #2a8ac8;
+  }
+
+  &:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+}
+
+.filter-group {
+  position: relative;
+}
+
+// Indicateurs de statut
+.positive { color: #28a745; }
+.negative { color: #dc3545; }
+.neutral { color: #6c757d; }

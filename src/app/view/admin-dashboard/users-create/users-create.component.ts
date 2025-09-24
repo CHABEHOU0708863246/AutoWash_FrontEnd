@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { ReactiveFormsModule, FormsModule, FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormsModule, FormGroup, FormBuilder, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Users } from '../../../core/models/Users/Users';
 import { AuthService } from '../../../core/services/Auth/auth.service';
@@ -22,20 +22,34 @@ import { CentresService } from '../../../core/services/Centres/centres.service';
   styleUrl: './users-create.component.scss'
 })
 export class UsersCreateComponent implements OnInit {
-  //#region Propriétés
-  users: Users[] = []; // Liste des utilisateurs
-  userForm!: FormGroup; // Formulaire de création d'utilisateur
-  currentStep: number = 1; // Étape actuelle dans le processus
-  availableRoles: string[] = ['admin', 'manager', 'washer']; // Rôles disponibles
-  selectedPhoto: string | null = null; // Photo sélectionnée pour prévisualisation
-  centres: Centres[] = []; // Liste des centres disponibles
+  //#region PROPRIÉTÉS
+  // ====================================================================
 
-  displayedUsers: Users[] = []; // Utilisateurs affichés
-  currentUser: Users | null = null; // Utilisateur actuellement connecté
-  user: Users | null = null; // Information de l'utilisateur
+  // Liste des utilisateurs
+  users: Users[] = [];
+  displayedUsers: Users[] = [];
+  currentUser: Users | null = null;
+  user: Users | null = null;
+
+  // Formulaire et données
+  userForm!: FormGroup;
+  availableRoles: string[] = ['admin', 'manager', 'washer'];
+  centres: Centres[] = [];
+
+  // États et interface
+  currentStep: number = 1;
+  selectedPhoto: string | null = null;
+
+  // Gestion des erreurs améliorée
+  serverErrors: { [key: string]: string } = {};
+  isSubmitting: boolean = false;
+  submitAttempted: boolean = false;
+
   //#endregion
 
-  //#region Constructeur
+  //#region CONSTRUCTEUR
+  // ====================================================================
+
   constructor(
     private sanitizer: DomSanitizer,
     private centresService: CentresService,
@@ -46,9 +60,12 @@ export class UsersCreateComponent implements OnInit {
   ) {
     this.initializeForm();
   }
+
   //#endregion
 
-  //#region Méthodes du cycle de vie
+  //#region LIFECYCLE HOOKS
+  // ====================================================================
+
   ngOnInit(): void {
     this.getUsers();
     this.loadCurrentUser();
@@ -62,10 +79,13 @@ export class UsersCreateComponent implements OnInit {
       }
     });
   }
+
   //#endregion
 
-  //#region Initialisation du formulaire
-private initializeForm(): void {
+  //#region INITIALISATION DU FORMULAIRE
+  // ====================================================================
+
+  private initializeForm(): void {
     this.userForm = this.formBuilder.group({
       firstName: ['', Validators.required],
       lastName: ['', Validators.required],
@@ -90,10 +110,306 @@ private initializeForm(): void {
     });
 
     this.selectedPhoto = null;
+
+    // Écouter les changements pour supprimer les erreurs serveur
+    this.userForm.valueChanges.subscribe(() => {
+      this.clearServerErrors();
+    });
   }
+
   //#endregion
 
-  //#region Gestion des rôles
+  //#region MÉTHODES DE GESTION D'ERREURS
+  // ====================================================================
+
+  // Obtenir le message d'erreur pour un champ
+  getFieldError(fieldName: string): string | null {
+    const field = this.userForm.get(fieldName);
+
+    // Erreur serveur en priorité
+    if (this.serverErrors[fieldName]) {
+      return this.serverErrors[fieldName];
+    }
+
+    if (!field || !field.errors || (!field.touched && !this.submitAttempted)) {
+      return null;
+    }
+
+    const errors = field.errors;
+
+    // Messages d'erreur personnalisés par champ
+    switch (fieldName) {
+      case 'firstName':
+      case 'lastName':
+        if (errors['required']) return `Le ${fieldName === 'firstName' ? 'prénom' : 'nom'} est obligatoire`;
+        if (errors['invalidName']) return 'Seules les lettres, espaces, apostrophes et tirets sont autorisés';
+        if (errors['tooShort']) return 'Minimum 2 caractères requis';
+        break;
+
+      case 'email':
+        if (errors['required']) return 'L\'adresse email est obligatoire';
+        if (errors['email'] || errors['invalidEmailFormat']) return 'Format d\'email invalide (exemple: nom@domaine.com)';
+        break;
+
+      case 'phoneNumber':
+        if (errors['required']) return 'Le numéro de téléphone est obligatoire';
+        if (errors['invalidPhone']) return 'Format invalide (ex: +225 01 02 03 04 05 ou 01 02 03 04 05)';
+        break;
+
+      case 'password':
+        if (errors['required']) return 'Le mot de passe est obligatoire';
+        if (errors['tooShort']) return 'Le mot de passe doit contenir au moins 8 caractères';
+        if (errors['missingUppercase']) return 'Le mot de passe doit contenir au moins une majuscule';
+        if (errors['missingLowercase']) return 'Le mot de passe doit contenir au moins une minuscule';
+        if (errors['missingNumber']) return 'Le mot de passe doit contenir au moins un chiffre';
+        if (errors['missingSpecialChar']) return 'Le mot de passe doit contenir au moins un caractère spécial';
+        break;
+
+      case 'confirmPassword':
+        if (errors['required']) return 'Veuillez confirmer votre mot de passe';
+        if (errors['passwordMismatch']) return 'Les mots de passe ne correspondent pas';
+        break;
+
+      case 'hireDate':
+        if (errors['required']) return 'La date d\'embauche est obligatoire';
+        if (errors['tooFarInFuture']) return 'La date ne peut pas être supérieure à un an dans le futur';
+        break;
+
+      case 'photoFile':
+        if (errors['fileTooLarge']) return 'La photo ne doit pas dépasser 5MB';
+        if (errors['invalidFileType']) return 'Seuls les formats JPEG, PNG, GIF et WebP sont acceptés';
+        break;
+
+      case 'workingHours':
+        if (errors['min']) return 'Le nombre d\'heures doit être supérieur à 0';
+        if (errors['max']) return 'Le nombre d\'heures ne peut pas dépasser 60 par semaine';
+        break;
+
+      case 'numberOfChildren':
+        if (errors['min']) return 'Le nombre d\'enfants ne peut pas être négatif';
+        if (errors['max']) return 'Veuillez vérifier le nombre d\'enfants saisi';
+        break;
+
+      default:
+        if (errors['required']) return 'Ce champ est obligatoire';
+        break;
+    }
+
+    return 'Erreur de validation';
+  }
+
+  // Vérifier si un champ a une erreur
+  hasFieldError(fieldName: string): boolean {
+    return this.getFieldError(fieldName) !== null;
+  }
+
+  // Effacer les erreurs serveur
+  clearServerErrors(): void {
+    this.serverErrors = {};
+  }
+
+  // Traiter les erreurs de réponse du serveur
+  handleServerErrors(error: any): void {
+    this.isSubmitting = false;
+
+    if (error.error && error.error.errors) {
+      // Erreurs de validation du serveur
+      const serverErrors = error.error.errors;
+
+      for (const [field, messages] of Object.entries(serverErrors)) {
+        if (Array.isArray(messages) && messages.length > 0) {
+          this.serverErrors[field] = messages[0];
+        }
+      }
+
+      this.showErrorToast('Erreurs de validation', 'Veuillez corriger les erreurs signalées');
+    } else if (error.error && error.error.message) {
+      // Erreur générale avec message
+      const message = error.error.message;
+
+      // Traiter les messages d'erreur spécifiques
+      if (message.includes('email') && message.includes('already exists')) {
+        this.serverErrors['email'] = 'Cette adresse email est déjà utilisée';
+        this.showErrorToast('Email existant', 'Cette adresse email est déjà utilisée par un autre utilisateur');
+      } else if (message.includes('phone') && message.includes('already exists')) {
+        this.serverErrors['phoneNumber'] = 'Ce numéro de téléphone est déjà utilisé';
+        this.showErrorToast('Téléphone existant', 'Ce numéro de téléphone est déjà utilisé par un autre utilisateur');
+      } else {
+        this.showErrorToast('Erreur', message);
+      }
+    } else {
+      // Erreur générique
+      this.showErrorToast('Erreur serveur', 'Une erreur inattendue s\'est produite. Veuillez réessayer.');
+    }
+  }
+
+  // Afficher une notification d'erreur
+  showErrorToast(title: string, message: string): void {
+    Swal.fire({
+      icon: 'error',
+      title: title,
+      text: message,
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 5000,
+      timerProgressBar: true,
+      background: '#fff3cd',
+      color: '#856404'
+    });
+  }
+
+  // Afficher une notification de succès
+  showSuccessToast(title: string, message: string): void {
+    Swal.fire({
+      icon: 'success',
+      title: title,
+      text: message,
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 3000,
+      timerProgressBar: true
+    });
+  }
+
+  //#endregion
+
+  //#region VALIDATEURS PERSONNALISÉS
+  // ====================================================================
+
+  // Validateur pour les noms (pas de chiffres, caractères spéciaux minimaux)
+  nameValidator(control: AbstractControl): ValidationErrors | null {
+    if (!control.value) return null;
+
+    const nameRegex = /^[a-zA-ZÀ-ÿ\s'-]+$/;
+    if (!nameRegex.test(control.value)) {
+      return { invalidName: true };
+    }
+
+    if (control.value.length < 2) {
+      return { tooShort: true };
+    }
+
+    return null;
+  }
+
+  // Validateur d'email amélioré
+  emailFormatValidator(control: AbstractControl): ValidationErrors | null {
+    if (!control.value) return null;
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(control.value)) {
+      return { invalidEmailFormat: true };
+    }
+
+    return null;
+  }
+
+  // Validateur de téléphone
+  phoneValidator(control: AbstractControl): ValidationErrors | null {
+    if (!control.value) return null;
+
+    const phoneRegex = /^(\+225|0)[0-9\s-]{8,}$/;
+    if (!phoneRegex.test(control.value.replace(/\s/g, ''))) {
+      return { invalidPhone: true };
+    }
+
+    return null;
+  }
+
+  // Validateur de mot de passe renforcé
+  passwordStrengthValidator(control: AbstractControl): ValidationErrors | null {
+    if (!control.value) return null;
+
+    const password = control.value;
+    const errors: any = {};
+
+    if (password.length < 8) {
+      errors.tooShort = true;
+    }
+
+    if (!/[A-Z]/.test(password)) {
+      errors.missingUppercase = true;
+    }
+
+    if (!/[a-z]/.test(password)) {
+      errors.missingLowercase = true;
+    }
+
+    if (!/[0-9]/.test(password)) {
+      errors.missingNumber = true;
+    }
+
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+      errors.missingSpecialChar = true;
+    }
+
+    return Object.keys(errors).length > 0 ? errors : null;
+  }
+
+  // Validateur pour vérifier que les mots de passe correspondent
+  passwordMatchValidator(formGroup: AbstractControl): ValidationErrors | null {
+    const password = formGroup.get('password');
+    const confirmPassword = formGroup.get('confirmPassword');
+
+    if (!password || !confirmPassword) return null;
+
+    if (password.value !== confirmPassword.value) {
+      confirmPassword.setErrors({ passwordMismatch: true });
+      return { passwordMismatch: true };
+    }
+
+    if (confirmPassword.hasError('passwordMismatch')) {
+      delete confirmPassword.errors?.['passwordMismatch'];
+      confirmPassword.updateValueAndValidity({ onlySelf: true });
+    }
+
+    return null;
+  }
+
+  // Validateur pour la date d'embauche (pas dans le futur lointain)
+  futureDateValidator(control: AbstractControl): ValidationErrors | null {
+    if (!control.value) return null;
+
+    const selectedDate = new Date(control.value);
+    const today = new Date();
+    const maxFutureDate = new Date();
+    maxFutureDate.setFullYear(today.getFullYear() + 1);
+
+    if (selectedDate > maxFutureDate) {
+      return { tooFarInFuture: true };
+    }
+
+    return null;
+  }
+
+  // Validateur pour la photo
+  photoValidator(control: AbstractControl): ValidationErrors | null {
+    if (!control.value) return null;
+
+    const file = control.value;
+    if (file instanceof File) {
+      // Vérifier la taille (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        return { fileTooLarge: true };
+      }
+
+      // Vérifier le type
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        return { invalidFileType: true };
+      }
+    }
+
+    return null;
+  }
+
+  //#endregion
+
+  //#region GESTION DES RÔLES
+  // ====================================================================
+
   isWasherRoleSelected(): boolean {
     const selectedRoles = this.userForm.get('roles')?.value || [];
     return selectedRoles.includes('washer');
@@ -117,42 +433,42 @@ private initializeForm(): void {
 
     centreIdControl?.updateValueAndValidity();
   }
+
   //#endregion
 
-  //#region Gestion des photos
-onPhotoSelected(event: Event): void {
-  const input = event.target as HTMLInputElement;
+  //#region GESTION DES PHOTOS
+  // ====================================================================
 
-  if (!input.files || input.files.length === 0) {
-    // Réinitialiser la preview si aucun fichier
-    this.selectedPhoto = null;
-    return;
+  onPhotoSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+
+    if (!input.files || input.files.length === 0) {
+      // Réinitialiser la preview si aucun fichier
+      this.selectedPhoto = null;
+      return;
+    }
+
+    const file = input.files[0];
+
+    // Validation du type de fichier
+    if (!file.type.match(/image\/(jpeg|png|gif|jpg)/)) {
+      this.showPhotoError('Format incorrect', 'Veuillez sélectionner une image (JPEG, PNG, GIF)');
+      input.value = '';
+      this.selectedPhoto = null; // Réinitialiser la preview
+      return;
+    }
+
+    // Validation de la taille
+    if (file.size > 2 * 1024 * 1024) {
+      this.showPhotoError('Fichier trop volumineux', 'La taille de l\'image ne doit pas dépasser 2MB');
+      input.value = '';
+      this.selectedPhoto = null; // Réinitialiser la preview
+      return;
+    }
+
+    // Prévisualiser la photo
+    this.previewPhoto(file);
   }
-
-  const file = input.files[0];
-
-  // Validation du type de fichier
-  if (!file.type.match(/image\/(jpeg|png|gif|jpg)/)) {
-    this.showPhotoError('Format incorrect', 'Veuillez sélectionner une image (JPEG, PNG, GIF)');
-    input.value = '';
-    this.selectedPhoto = null; // Réinitialiser la preview
-    return;
-  }
-
-  // Validation de la taille
-  if (file.size > 2 * 1024 * 1024) {
-    this.showPhotoError('Fichier trop volumineux', 'La taille de l\'image ne doit pas dépasser 2MB');
-    input.value = '';
-    this.selectedPhoto = null; // Réinitialiser la preview
-    return;
-  }
-
-  // Prévisualiser la photo
-  this.previewPhoto(file);
-}
-
-
-
 
   private showPhotoError(title: string, text: string): void {
     Swal.fire({
@@ -163,46 +479,45 @@ onPhotoSelected(event: Event): void {
     });
   }
 
-previewPhoto(file: File): void {
-  const reader = new FileReader();
+  previewPhoto(file: File): void {
+    const reader = new FileReader();
 
-  reader.onload = (e: ProgressEvent<FileReader>) => {
-    // CORRECTION : Mettre à jour selectedPhoto pour l'affichage
-    this.selectedPhoto = e.target?.result as string;
+    reader.onload = (e: ProgressEvent<FileReader>) => {
+      // CORRECTION : Mettre à jour selectedPhoto pour l'affichage
+      this.selectedPhoto = e.target?.result as string;
 
-    // Mettre à jour le formulaire
+      // Mettre à jour le formulaire
+      this.userForm.patchValue({
+        photoFile: file,  // Pour le fichier physique
+        photoUrl: ''      // Réinitialiser photoUrl
+      });
+
+      // Déclencher la validation
+      this.userForm.get('photoFile')?.updateValueAndValidity();
+    };
+
+    reader.onerror = () => {
+      console.error('Erreur de lecture du fichier');
+      this.selectedPhoto = null; // Réinitialiser en cas d'erreur
+      this.showPhotoError('Erreur', 'Impossible de lire le fichier sélectionné');
+    };
+
+    reader.readAsDataURL(file);
+  }
+
+  removeSelectedPhoto(): void {
+    this.selectedPhoto = null;
     this.userForm.patchValue({
-      photoFile: file,  // Pour le fichier physique
-      photoUrl: ''      // Réinitialiser photoUrl
+      photoFile: null,
+      photoUrl: ''
     });
 
-    // Déclencher la validation
-    this.userForm.get('photoFile')?.updateValueAndValidity();
-  };
-
-  reader.onerror = () => {
-    console.error('Erreur de lecture du fichier');
-    this.selectedPhoto = null; // Réinitialiser en cas d'erreur
-    this.showPhotoError('Erreur', 'Impossible de lire le fichier sélectionné');
-  };
-
-  reader.readAsDataURL(file);
-}
-
-removeSelectedPhoto(): void {
-  this.selectedPhoto = null;
-  this.userForm.patchValue({
-    photoFile: null,
-    photoUrl: ''
-  });
-
-  // Réinitialiser l'input file
-  const photoInput = document.getElementById('photo-upload') as HTMLInputElement;
-  if (photoInput) {
-    photoInput.value = '';
+    // Réinitialiser l'input file
+    const photoInput = document.getElementById('photo-upload') as HTMLInputElement;
+    if (photoInput) {
+      photoInput.value = '';
+    }
   }
-}
-
 
   /**
    * Charge les photos des utilisateurs et les sécurise pour l'affichage.
@@ -223,9 +538,12 @@ removeSelectedPhoto(): void {
       }
     });
   }
+
   //#endregion
 
-  //#region Gestion des centres
+  //#region GESTION DES CENTRES
+  // ====================================================================
+
   getCentres(): void {
     this.centresService.getAllCentres().subscribe({
       next: (data) => {
@@ -238,9 +556,12 @@ removeSelectedPhoto(): void {
       }
     });
   }
+
   //#endregion
 
-  //#region Gestion des utilisateurs
+  //#region GESTION DES UTILISATEURS
+  // ====================================================================
+
   getUsers(): void {
     this.usersService.getAllUsers().subscribe(
       (data) => {
@@ -266,7 +587,7 @@ removeSelectedPhoto(): void {
     }
   }
 
-processUserCreation(): void {
+  processUserCreation(): void {
     const formData = this.userForm.value;
     const user = new Users(
       '',
@@ -301,7 +622,7 @@ processUserCreation(): void {
     }
   }
 
-registerUserWithPhoto(user: Users): void {
+  registerUserWithPhoto(user: Users): void {
     const fileInput = document.getElementById('photo-upload') as HTMLInputElement;
     if (fileInput?.files?.[0]) {
       const photoFile = fileInput.files[0];
@@ -322,15 +643,15 @@ registerUserWithPhoto(user: Users): void {
     }
   }
 
-refreshUsersList(): void {
-  this.getUsers();
-  // Attendre que les données soient chargées avant de charger les photos
-  setTimeout(() => {
-    this.loadUserPhotos();
-  }, 500);
-}
+  refreshUsersList(): void {
+    this.getUsers();
+    // Attendre que les données soient chargées avant de charger les photos
+    setTimeout(() => {
+      this.loadUserPhotos();
+    }, 500);
+  }
 
-registerWithoutPhoto(user: Users): void {
+  registerWithoutPhoto(user: Users): void {
     this.usersService.registerUser(user).subscribe({
       next: (response) => {
         console.log("Utilisateur créé avec succès", response);
@@ -343,9 +664,12 @@ registerWithoutPhoto(user: Users): void {
       }
     });
   }
+
   //#endregion
 
-  //#region Gestion de l'utilisateur courant
+  //#region GESTION DE L'UTILISATEUR COURANT
+  // ====================================================================
+
   private loadCurrentUser(): void {
     this.authService.loadCurrentUserProfile().subscribe({
       next: (user) => {
@@ -431,9 +755,12 @@ registerWithoutPhoto(user: Users): void {
     };
     return roleMapping[roleId] || 'Administrateur';
   }
+
   //#endregion
 
-  //#region Méthodes utilitaires
+  //#region MÉTHODES UTILITAIRES
+  // ====================================================================
+
   private markFormAsTouched(): void {
     Object.keys(this.userForm.controls).forEach(key => {
       this.userForm.get(key)?.markAsTouched();
@@ -495,5 +822,6 @@ registerWithoutPhoto(user: Users): void {
       this.router.navigate(['/auth/login']);
     }
   }
+
   //#endregion
 }

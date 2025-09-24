@@ -14,7 +14,7 @@ import { DomSanitizer } from '@angular/platform-browser';
   styleUrl: './users-list.component.scss',
 })
 export class UsersListComponent {
-  // SECTION 1: PROPRIÉTÉS DE CLASSE
+  //#region PROPRIÉTÉS DE CLASSE
   // ====================================================================
 
   // Liste des utilisateurs
@@ -35,6 +35,11 @@ export class UsersListComponent {
   // Recherche
   searchTerm: string = '';
 
+  //#endregion
+
+  //#region CONSTRUCTEUR
+  // ====================================================================
+
   constructor(
     private router: Router,
     private usersService: UsersService,
@@ -42,7 +47,9 @@ export class UsersListComponent {
     private sanitizer: DomSanitizer
   ) {}
 
-  // SECTION 2: LIFECYCLE HOOKS
+  //#endregion
+
+  //#region LIFECYCLE HOOKS
   // ====================================================================
 
   /**
@@ -70,7 +77,9 @@ export class UsersListComponent {
     });
   }
 
-  // SECTION 3: GESTION DE L'UTILISATEUR COURANT
+  //#endregion
+
+  //#region GESTION DE L'UTILISATEUR COURANT
   // ====================================================================
 
   /**
@@ -150,7 +159,9 @@ export class UsersListComponent {
     });
   }
 
-  // SECTION 4: GESTION DES PHOTOS
+  //#endregion
+
+  //#region GESTION DES PHOTOS
   // ====================================================================
 
   /**
@@ -194,7 +205,9 @@ export class UsersListComponent {
     });
   }
 
-  // SECTION 5: GESTION DES UTILISATEURS
+  //#endregion
+
+  //#region GESTION DES UTILISATEURS
   // ====================================================================
 
   /**
@@ -231,31 +244,33 @@ export class UsersListComponent {
     );
   }
 
-  // SECTION 6: FILTRAGE ET RECHERCHE
+  //#endregion
+
+  //#region FILTRAGE ET RECHERCHE
   // ====================================================================
 
   /**
    * Filtre les utilisateurs selon le terme de recherche
    */
   filterUsers(): void {
-  if (this.searchTerm) {
-    this.filteredUsers = this.users.filter(
-      (user) =>
-        (user.firstName?.toLowerCase() ?? '').includes(
-          this.searchTerm.toLowerCase()
-        ) ||
-        user.lastName
-          ?.toLowerCase()
-          .includes(this.searchTerm.toLowerCase()) ||
-        user.email?.toLowerCase().includes(this.searchTerm.toLowerCase())
-    );
-  } else {
-    this.filteredUsers = this.users;
+    if (this.searchTerm) {
+      this.filteredUsers = this.users.filter(
+        (user) =>
+          (user.firstName?.toLowerCase() ?? '').includes(
+            this.searchTerm.toLowerCase()
+          ) ||
+          user.lastName
+            ?.toLowerCase()
+            .includes(this.searchTerm.toLowerCase()) ||
+          user.email?.toLowerCase().includes(this.searchTerm.toLowerCase())
+      );
+    } else {
+      this.filteredUsers = this.users;
+    }
+    this.totalItems = this.filteredUsers.length;
+    this.calculateTotalPages();
+    this.updateDisplayedUsers(); // Cette méthode chargera maintenant automatiquement les photos
   }
-  this.totalItems = this.filteredUsers.length;
-  this.calculateTotalPages();
-  this.updateDisplayedUsers(); // Cette méthode chargera maintenant automatiquement les photos
-}
 
   /**
    * Applique le filtre de pagination
@@ -266,7 +281,9 @@ export class UsersListComponent {
     this.filteredUsers = this.users.slice(start, end);
   }
 
-  // SECTION 7: PAGINATION
+  //#endregion
+
+  //#region PAGINATION
   // ====================================================================
 
   /**
@@ -283,15 +300,15 @@ export class UsersListComponent {
    * Met à jour la liste des utilisateurs affichés
    */
   updateDisplayedUsers(): void {
-  const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-  const endIndex = Math.min(
-    startIndex + this.itemsPerPage,
-    this.filteredUsers.length
-  );
-  this.displayedUsers = this.filteredUsers.slice(startIndex, endIndex);
-  // Ajoutez cette ligne pour charger les photos à chaque mise à jour
-  this.loadUserPhotos();
-}
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    const endIndex = Math.min(
+      startIndex + this.itemsPerPage,
+      this.filteredUsers.length
+    );
+    this.displayedUsers = this.filteredUsers.slice(startIndex, endIndex);
+    // Ajoutez cette ligne pour charger les photos à chaque mise à jour
+    this.loadUserPhotos();
+  }
 
   /**
    * Page précédente
@@ -321,7 +338,9 @@ export class UsersListComponent {
     this.applyFilter();
   }
 
-  // SECTION 8: EXPORT ET DÉCONNEXION
+  //#endregion
+
+  //#region EXPORT ET DÉCONNEXION
   // ====================================================================
 
   /**
@@ -377,4 +396,6 @@ export class UsersListComponent {
       this.router.navigate(['/auth/login']);
     }
   }
+
+  //#endregion
 }

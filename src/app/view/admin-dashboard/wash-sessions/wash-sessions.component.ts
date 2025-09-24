@@ -30,15 +30,16 @@ import { CentresService } from '../../../core/services/Centres/centres.service';
   styleUrl: './wash-sessions.component.scss',
 })
 export class WashSessionsComponent implements OnInit {
+  //#region Properties
+  // Utilisateurs
   users: Users[] = [];
   displayedUsers: Users[] = [];
   currentUser: Users | null = null;
   user: Users | null = null;
   isSidebarCollapsed = false;
-  washForm!: FormGroup;
   Math = Math;
 
-  // Propriétés pour la gestion des sessions de lavage
+  // Sessions de lavage
   washSessions: WashSession[] = [];
   filteredSessions: WashSession[] = [];
   isLoading = false;
@@ -49,9 +50,15 @@ export class WashSessionsComponent implements OnInit {
   centres: Centres[] = [];
   selectedCentre = '';
 
+  // Services et types de véhicules
   services: ServiceSettings[] = [];
   vehicleTypes: VehicleTypeSettings[] = [];
 
+  // Formulaire
+  washForm!: FormGroup;
+  //#endregion
+
+  //#region Constructor
   constructor(
     private sanitizer: DomSanitizer,
     private usersService: UsersService,
@@ -63,6 +70,10 @@ export class WashSessionsComponent implements OnInit {
     private centresService: CentresService,
     private vehiclesSettingsService: VehiclesSettingsService
   ) {
+    this.initializeForm();
+  }
+
+  private initializeForm(): void {
     this.washForm = this.fb.group({
       centreId: ['', Validators.required],
       serviceId: ['', Validators.required],
@@ -77,12 +88,15 @@ export class WashSessionsComponent implements OnInit {
       isAdminOverride: [false],
     });
   }
+  //#endregion
 
+  //#region Lifecycle Hooks
   ngOnInit(): void {
     this.getUsers();
     this.loadCurrentUser();
     this.loadCentres();
     this.loadServices();
+
     // Charger les sessions après avoir chargé les centres
     setTimeout(() => {
       this.loadWashSessions();
@@ -95,76 +109,12 @@ export class WashSessionsComponent implements OnInit {
       }
     });
   }
+  //#endregion
 
-  loadServices(): void {
-  if (this.selectedCentre) {
-    // Utilisez le bon service : serviceSettingsService au lieu de washService
-    this.serviceSettingsService.getServicesByCentre(this.selectedCentre).subscribe({
-      next: (response: ApiResponseData<ServiceSettings[]>) => {
-        if (response.success && response.data) {
-          this.services = response.data;
-          console.log('Services chargés:', this.services); // Debug
-        } else {
-          console.warn('Aucun service trouvé pour ce centre');
-          this.services = [];
-        }
-      },
-      error: (error) => {
-        console.error('Erreur lors du chargement des services du centre', error);
-        this.services = [];
-      },
-    });
-  } else {
-    console.warn('Aucun centre sélectionné pour charger les services');
-    this.services = [];
-  }
-}
-
-  getServiceName(serviceId: string): string {
-  if (!this.services || this.services.length === 0) {
-    return 'Chargement...';
-  }
-
-  const service = this.services.find((s) => s.id === serviceId);
-
-  if (!service) {
-    console.warn('Service non trouvé pour ID:', serviceId, 'Services disponibles:', this.services);
-    return 'Service inconnu';
-  }
-
-  return service.name;
-}
-
-  // Méthode pour récupérer le nom du centre par ID
-  getCentreName(centreId: string): string {
-    const centre = this.centres.find((c) => c.id === centreId);
-    return centre ? centre.name : 'Centre non trouvé';
-  }
-
-  loadCentres(): void {
-  this.washService.getActiveCentres().subscribe({
-    next: (response) => {
-      console.log('Centres response:', response);
-      if (response.success && response.data) {
-        this.centres = response.data;
-
-        // Si aucun centre n'est sélectionné, prendre le premier
-        if (!this.selectedCentre && this.centres.length > 0) {
-          this.selectedCentre = this.centres[0].id || '';
-          // Charger les services après avoir sélectionné le centre
-          this.loadServices();
-        }
-
-        // Charger les sessions après avoir les centres
-        this.loadWashSessions();
-      }
-    },
-    error: (error) => {
-      console.error('Erreur lors du chargement des centres', error);
-    },
-  });
-}
-
+  //#region Wash Sessions Methods
+  /**
+   * Charge les sessions de lavage en fonction du centre sélectionné
+   */
   loadWashSessions(): void {
     this.isLoading = true;
     if (this.selectedCentre) {
@@ -188,13 +138,16 @@ export class WashSessionsComponent implements OnInit {
     }
   }
 
-  handleWashSessionsResponse(response: ApiResponseData<WashSession[]>): void {
+  /**
+   * Gère la réponse du chargement des sessions de lavage
+   */
+  private handleWashSessionsResponse(response: ApiResponseData<WashSession[]>): void {
     if (response.success && response.data) {
       this.washSessions = response.data;
       this.filteredSessions = [...this.washSessions];
       this.totalItems = this.filteredSessions.length;
 
-      // Optionnel: Trier par date (du plus récent au plus ancien)
+      // Trier par date (du plus récent au plus ancien)
       this.filteredSessions.sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -202,72 +155,24 @@ export class WashSessionsComponent implements OnInit {
     }
   }
 
-  handleWashSessionsError(error: any): void {
+  /**
+   * Gère les erreurs de chargement des sessions de lavage
+   */
+  private handleWashSessionsError(error: any): void {
     console.error('Erreur lors du chargement des sessions', error);
   }
 
+  /**
+   * Filtre les sessions par centre
+   */
   filterByCentre(centreId: string): void {
     this.selectedCentre = centreId;
     this.loadWashSessions();
   }
 
-  // Pagination
-  get paginatedSessions(): WashSession[] {
-    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-    return this.filteredSessions.slice(
-      startIndex,
-      startIndex + this.itemsPerPage
-    );
-  }
-
-  // Change de page
-  pageChanged(page: number): void {
-    this.currentPage = page;
-  }
-
-  // Ajoutez cette propriété pour calculer le nombre total de pages
-get totalPages(): number {
-  return Math.ceil(this.totalItems / this.itemsPerPage);
-}
-
-// Méthode pour générer les numéros de page avec élipsis
-getPages(): (number | string)[] {
-  const pages: (number | string)[] = [];
-  const maxVisiblePages = 5;
-
-  if (this.totalPages <= maxVisiblePages) {
-    // Afficher toutes les pages si moins de maxVisiblePages
-    for (let i = 1; i <= this.totalPages; i++) {
-      pages.push(i);
-    }
-  } else {
-    // Logique pour les élipsis
-    if (this.currentPage <= 3) {
-      pages.push(1, 2, 3, 4, '...', this.totalPages);
-    } else if (this.currentPage >= this.totalPages - 2) {
-      pages.push(1, '...', this.totalPages - 3, this.totalPages - 2, this.totalPages - 1, this.totalPages);
-    } else {
-      pages.push(1, '...', this.currentPage - 1, this.currentPage, this.currentPage + 1, '...', this.totalPages);
-    }
-  }
-
-  return pages;
-}
-
-// Méthode pour changer de page avec validation
-goToPage(page: number | string): void {
-  if (typeof page === 'number' && page >= 1 && page <= this.totalPages) {
-    this.currentPage = page;
-    this.scrollToTop();
-  }
-}
-
-// Méthode pour remonter en haut de la liste
-private scrollToTop(): void {
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-  // Formatte le statut
+  /**
+   * Formatte le statut pour l'affichage
+   */
   getStatusBadge(status: string): string {
     switch (status) {
       case 'Completed':
@@ -280,47 +185,160 @@ private scrollToTop(): void {
         return 'bg-secondary-light text-secondary';
     }
   }
+  //#endregion
+
+  //#region Pagination Methods
+  /**
+   * Retourne les sessions paginées pour la page actuelle
+   */
+  get paginatedSessions(): WashSession[] {
+    const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+    return this.filteredSessions.slice(
+      startIndex,
+      startIndex + this.itemsPerPage
+    );
+  }
 
   /**
-   * Charge les photos des utilisateurs et les sécurise pour l'affichage.
-   * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
+   * Change de page
    */
-  loadUserPhotos(): void {
-    this.displayedUsers.forEach((user) => {
-      if (user.photoUrl && typeof user.photoUrl === 'string') {
-        this.usersService.getUserPhoto(user.photoUrl).subscribe((blob) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            user.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
-              reader.result as string
-            );
-          };
-          reader.readAsDataURL(blob);
-        });
+  pageChanged(page: number): void {
+    this.currentPage = page;
+  }
+
+  /**
+   * Calcule le nombre total de pages
+   */
+  get totalPages(): number {
+    return Math.ceil(this.totalItems / this.itemsPerPage);
+  }
+
+  /**
+   * Génère les numéros de page avec élipsis
+   */
+  getPages(): (number | string)[] {
+    const pages: (number | string)[] = [];
+    const maxVisiblePages = 5;
+
+    if (this.totalPages <= maxVisiblePages) {
+      // Afficher toutes les pages si moins de maxVisiblePages
+      for (let i = 1; i <= this.totalPages; i++) {
+        pages.push(i);
       }
+    } else {
+      // Logique pour les élipsis
+      if (this.currentPage <= 3) {
+        pages.push(1, 2, 3, 4, '...', this.totalPages);
+      } else if (this.currentPage >= this.totalPages - 2) {
+        pages.push(1, '...', this.totalPages - 3, this.totalPages - 2, this.totalPages - 1, this.totalPages);
+      } else {
+        pages.push(1, '...', this.currentPage - 1, this.currentPage, this.currentPage + 1, '...', this.totalPages);
+      }
+    }
+
+    return pages;
+  }
+
+  /**
+   * Change de page avec validation
+   */
+  goToPage(page: number | string): void {
+    if (typeof page === 'number' && page >= 1 && page <= this.totalPages) {
+      this.currentPage = page;
+      this.scrollToTop();
+    }
+  }
+
+  /**
+   * Remonte en haut de la liste
+   */
+  private scrollToTop(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+  //#endregion
+
+  //#region Centre and Service Methods
+  /**
+   * Charge tous les centres actifs
+   */
+  loadCentres(): void {
+    this.washService.getActiveCentres().subscribe({
+      next: (response) => {
+        console.log('Centres response:', response);
+        if (response.success && response.data) {
+          this.centres = response.data;
+
+          // Si aucun centre n'est sélectionné, prendre le premier
+          if (!this.selectedCentre && this.centres.length > 0) {
+            this.selectedCentre = this.centres[0].id || '';
+            // Charger les services après avoir sélectionné le centre
+            this.loadServices();
+          }
+
+          // Charger les sessions après avoir les centres
+          this.loadWashSessions();
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des centres', error);
+      },
     });
   }
 
   /**
-   * Bascule l'état de la barre latérale entre "collapsée" et
-   * "étendue".
-   * Modifie les classes CSS pour ajuster l'affichage.
-   * Cette méthode est appelée lors du clic sur le bouton de
-   * basculement de la barre latérale.
+   * Charge les services pour le centre sélectionné
    */
-  toggleSidebar() {
-    this.isSidebarCollapsed = !this.isSidebarCollapsed;
-
-    // Ajoute/retire les classes nécessaires
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.querySelector('.main-content');
-
-    if (sidebar && mainContent) {
-      sidebar.classList.toggle('collapsed');
-      mainContent.classList.toggle('collapsed');
+  loadServices(): void {
+    if (this.selectedCentre) {
+      this.serviceSettingsService.getServicesByCentre(this.selectedCentre).subscribe({
+        next: (response: ApiResponseData<ServiceSettings[]>) => {
+          if (response.success && response.data) {
+            this.services = response.data;
+            console.log('Services chargés:', this.services);
+          } else {
+            console.warn('Aucun service trouvé pour ce centre');
+            this.services = [];
+          }
+        },
+        error: (error) => {
+          console.error('Erreur lors du chargement des services du centre', error);
+          this.services = [];
+        },
+      });
+    } else {
+      console.warn('Aucun centre sélectionné pour charger les services');
+      this.services = [];
     }
   }
 
+  /**
+   * Retourne le nom d'un service par son ID
+   */
+  getServiceName(serviceId: string): string {
+    if (!this.services || this.services.length === 0) {
+      return 'Chargement...';
+    }
+
+    const service = this.services.find((s) => s.id === serviceId);
+
+    if (!service) {
+      console.warn('Service non trouvé pour ID:', serviceId, 'Services disponibles:', this.services);
+      return 'Service inconnu';
+    }
+
+    return service.name;
+  }
+
+  /**
+   * Retourne le nom d'un centre par son ID
+   */
+  getCentreName(centreId: string): string {
+    const centre = this.centres.find((c) => c.id === centreId);
+    return centre ? centre.name : 'Centre non trouvé';
+  }
+  //#endregion
+
+  //#region User Management Methods
   /**
    * Récupère tous les utilisateurs et charge leurs photos.
    * Utilise le service UsersService pour obtenir la liste des utilisateurs.
@@ -380,6 +398,26 @@ private scrollToTop(): void {
           },
         });
       },
+    });
+  }
+
+  /**
+   * Charge les photos des utilisateurs et les sécurise pour l'affichage.
+   * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
+   */
+  loadUserPhotos(): void {
+    this.displayedUsers.forEach((user) => {
+      if (user.photoUrl && typeof user.photoUrl === 'string') {
+        this.usersService.getUserPhoto(user.photoUrl).subscribe((blob) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            user.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
+              reader.result as string
+            );
+          };
+          reader.readAsDataURL(blob);
+        });
+      }
     });
   }
 
@@ -465,8 +503,27 @@ private scrollToTop(): void {
 
     return roleMapping[roleId] || 'Administrateur';
   }
+  //#endregion
 
-  //#region Authentification
+  //#region UI Interaction Methods
+  /**
+   * Bascule l'état de la barre latérale entre "collapsée" et "étendue".
+   * Modifie les classes CSS pour ajuster l'affichage.
+   * Cette méthode est appelée lors du clic sur le bouton de basculement de la barre latérale.
+   */
+  toggleSidebar() {
+    this.isSidebarCollapsed = !this.isSidebarCollapsed;
+
+    // Ajoute/retire les classes nécessaires
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.querySelector('.main-content');
+
+    if (sidebar && mainContent) {
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('collapsed');
+    }
+  }
+
   /**
    * Déconnecte l'utilisateur
    */

@@ -53,19 +53,21 @@ import { VehicleTypeSettings } from '../../../core/models/Settings/Vehicles/Vehi
   styleUrl: './wash-now.component.scss',
 })
 export class WashNowComponent implements OnInit {
-  // Propriétés existantes
+  //#region Properties
+  // Utilisateurs
   users: Users[] = [];
   displayedUsers: Users[] = [];
   currentUser: Users | null = null;
   user: Users | null = null;
   isSidebarCollapsed = false;
   washForm!: FormGroup;
-  // Propriétés existantes...
+
+  // Laveurs
   washers: Users[] = []; // Liste complète des laveurs
   filteredWashers: Users[] = []; // Laveurs filtrés (par centre)
   isLoadingWashers = false; // État de chargement
 
-  // Nouvelles propriétés pour le service
+  // Centres, services et types de véhicules
   centres: Centres[] = [];
   services: ServiceSettings[] = [];
   vehicleTypes: VehicleTypeSettings[] = [];
@@ -83,14 +85,16 @@ export class WashNowComponent implements OnInit {
   selectedPaymentMethod: PaymentMethod = PaymentMethod.CASH;
   PaymentMethod = PaymentMethod; // Pour l'utiliser dans le template
 
-  // Messages d'erreur
+  // Messages
   errorMessages: string[] = [];
   successMessage = '';
 
+  // Compteur pour génération de numéros d'enregistrement
   private registrationCounter = 0;
-
   private destroy$ = new Subject<void>();
+  //#endregion
 
+  //#region Constructor
   constructor(
     private sanitizer: DomSanitizer,
     private usersService: UsersService,
@@ -106,7 +110,9 @@ export class WashNowComponent implements OnInit {
     this.initializeForm();
     this.setupFormSubscriptions();
   }
+  //#endregion
 
+  //#region Lifecycle Hooks
   ngOnInit(): void {
     this.initializeForm();
     this.setupFormSubscriptions();
@@ -127,8 +133,13 @@ export class WashNowComponent implements OnInit {
     this.destroy$.next();
     this.destroy$.complete();
   }
+  //#endregion
 
-  initializeForm(): void {
+  //#region Form Methods
+  /**
+   * Initialise le formulaire avec les contrôles et validateurs
+   */
+  private initializeForm(): void {
     this.washForm = this.fb.group({
       centreId: ['', Validators.required],
       serviceId: ['', Validators.required],
@@ -158,29 +169,10 @@ export class WashNowComponent implements OnInit {
     this.washForm.get('washerId')?.disable();
   }
 
-  debugFormValidation(): void {
-  console.log('Form valid:', this.washForm.valid);
-  console.log('Form status:', this.washForm.status);
-  console.log('Form errors:', this.washForm.errors);
-
-  // Vérification spéciale pour le nom du client
-  const customerName = this.washForm.get('customerName');
-  if (customerName?.invalid) {
-    console.log('Customer name errors:', customerName.errors);
-    if (customerName.errors?.['required']) {
-      console.log('Le nom du client est obligatoire');
-    }
-  }
-
-  Object.keys(this.washForm.controls).forEach(key => {
-    const control = this.washForm.get(key);
-    if (control?.invalid) {
-      console.log(`${key} errors:`, control.errors);
-    }
-  });
-}
-
-  setupFormSubscriptions(): void {
+  /**
+   * Configure les abonnements aux changements de valeur du formulaire
+   */
+  private setupFormSubscriptions(): void {
     // Surveillance des changements du centre
     this.washForm
       .get('centreId')
@@ -209,7 +201,7 @@ export class WashNowComponent implements OnInit {
               this.loadWashersByCentre(centreId),
             ]);
 
-            // CORRECTION: Activer les champs APRÈS avoir chargé les données
+            // Activer les champs APRÈS avoir chargé les données
             this.washForm.get('serviceId')?.enable();
             this.washForm.get('vehicleTypeId')?.enable();
             this.washForm.get('washerId')?.enable();
@@ -223,7 +215,7 @@ export class WashNowComponent implements OnInit {
         }
       });
 
-    // Reste des subscriptions...
+    // Surveillance de la méthode de paiement
     this.washForm
       .get('paymentMethod')
       ?.valueChanges.pipe(takeUntil(this.destroy$))
@@ -275,512 +267,44 @@ export class WashNowComponent implements OnInit {
     });
   }
 
-  async loadInitialData(): Promise<void> {
-    this.isLoading = true;
-    try {
-      await this.loadActiveCentres();
-    } catch (error) {
-      this.handleError(
-        'Erreur lors du chargement des données initiales',
-        error
-      );
-    } finally {
-      this.isLoading = false;
-    }
-  }
+  /**
+   * Débogue la validation du formulaire
+   */
+  debugFormValidation(): void {
+    console.log('Form valid:', this.washForm.valid);
+    console.log('Form status:', this.washForm.status);
+    console.log('Form errors:', this.washForm.errors);
 
-  async loadWashersByCentre(centreId: string): Promise<void> {
-    try {
-      this.isLoadingWashers = true;
-      this.washers = [];
-      this.filteredWashers = [];
-      this.cdr.detectChanges();
-
-      const response = await lastValueFrom(
-        this.washsService.getWashersByCentre(centreId).pipe(
-          takeUntil(this.destroy$),
-          catchError((error) => {
-            console.error('Error loading washers:', error);
-            this.handleError('Erreur lors du chargement des laveurs', error);
-            return of({ success: false, data: [] }); // Retourner un tableau vide en cas d'erreur
-          })
-        )
-      );
-
-      // Modifiez cette partie pour gérer directement le tableau
-      if (Array.isArray(response)) {
-        this.washers = response;
-        this.filteredWashers = [...response];
-      } else if (response?.data && Array.isArray(response.data)) {
-        this.washers = response.data;
-        this.filteredWashers = [...response.data];
-      } else {
-        this.washers = [];
-        this.filteredWashers = [];
+    // Vérification spéciale pour le nom du client
+    const customerName = this.washForm.get('customerName');
+    if (customerName?.invalid) {
+      console.log('Customer name errors:', customerName.errors);
+      if (customerName.errors?.['required']) {
+        console.log('Le nom du client est obligatoire');
       }
-
-    } catch (error) {
-      console.error('Unexpected error loading washers:', error);
-      this.washers = [];
-      this.filteredWashers = [];
-    } finally {
-      this.isLoadingWashers = false;
-      this.cdr.detectChanges();
     }
-  }
 
-  async loadActiveCentres(): Promise<void> {
-    this.centresService
-      .getAllCentres()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (centres) => {
-          this.centres = centres;
-        },
-        error: (error) =>
-          this.handleError('Erreur lors du chargement des centres', error),
-      });
-  }
-
-  async loadServicesByCentre(centreId: string): Promise<void> {
-    this.serviceSettingsService
-      .getServicesByCentre(centreId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-            this.services = response.data;
-          }
-        },
-        error: (error) =>
-          this.handleError('Erreur lors du chargement des services', error),
-      });
-  }
-
-  async loadVehicleTypesByCentre(centreId: string): Promise<void> {
-    this.vehiclesSettingsService
-      .getActiveVehicleTypesByCentre(centreId)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response) => {
-          // Normaliser la réponse
-          let vehicleTypesData: VehicleTypeSettings[] = [];
-
-          if (Array.isArray(response)) {
-            vehicleTypesData = response;
-          } else if (response && response.success && response.data) {
-            vehicleTypesData = response.data;
-          } else if (response && response.data) {
-            vehicleTypesData = response.data;
-          }
-
-          this.vehicleTypes = vehicleTypesData;
-        },
-        error: (error) => {
-          console.error(
-            'Erreur lors du chargement des types de véhicules:',
-            error
-          );
-          this.handleError(
-            'Erreur lors du chargement des types de véhicules',
-            error
-          );
-          this.vehicleTypes = [];
-        },
-      });
-  }
-
-  searchCustomerByPhone(phone: string) {
-  this.isSearchingCustomer = true;
-
-  return this.washsService.findCustomerByPhone(phone).pipe(
-    takeUntil(this.destroy$),
-    switchMap((response) => {
-      this.isSearchingCustomer = false;
-
-      if (response.success && response.data) {
-        this.currentCustomer = response.data;
-
-        // CORRECTION: Ne mettre à jour le nom que s'il est vide
-        const currentName = this.washForm.get('customerName')?.value;
-        if (!currentName || currentName.trim() === '') {
-          this.washForm.patchValue({
-            customerName: this.currentCustomer.name,
-          });
-        }
-
-        // Charger l'historique
-        this.loadCustomerHistory(phone);
-      } else {
-        // Réinitialiser si client non trouvé (mais garder le nom saisi)
-        this.currentCustomer = null;
-        this.customerHistory = [];
-        // NE PAS vider le nom si l'utilisateur l'a déjà saisi
+    Object.keys(this.washForm.controls).forEach(key => {
+      const control = this.washForm.get(key);
+      if (control?.invalid) {
+        console.log(`${key} errors:`, control.errors);
       }
-      return of(response);
-    })
-  );
-}
-
-  loadCustomerHistory(customerPhone: string): void {
-    this.washsService
-      .getCustomerWashHistory(customerPhone)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-            this.customerHistory = response.data.slice(0, 5);
-          } else {
-            this.customerHistory = [];
-          }
-        },
-        error: (error) => {
-          console.error("Erreur lors du chargement de l'historique:", error);
-          this.customerHistory = [];
-        },
-      });
-  }
-
-  calculatePrice(): void {
-    const { serviceId, vehicleTypeId, customerPhone } = this.washForm.value;
-
-    if (!serviceId || !vehicleTypeId) {
-      this.priceCalculation = null;
-      return;
-    }
-
-    // Vérifier que le numéro de téléphone est valide (au moins 10 chiffres)
-    const phoneValid = customerPhone && customerPhone.length >= 10;
-    const phoneToUse = phoneValid ? customerPhone : '';
-
-    this.isCalculatingPrice = true;
-    this.washsService
-      .calculateFinalPrice(serviceId, vehicleTypeId, phoneToUse)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response) => {
-          this.isCalculatingPrice = false;
-          if (response.success && response.data) {
-            this.priceCalculation = response.data;
-            // Mettre à jour le montant payé dans le formulaire
-            this.washForm.patchValue({
-              amountPaid: response.data.finalPrice,
-            });
-          } else {
-            console.error('Réponse API invalide:', response);
-            this.priceCalculation = null;
-          }
-        },
-        error: (error) => {
-          this.isCalculatingPrice = false;
-          this.priceCalculation = null;
-
-          // AJOUT : Fallback avec calcul local basique si l'API échoue
-          if (error.status === 404 || error.status === 500) {
-            this.calculatePriceFallback(serviceId, vehicleTypeId);
-          }
-        },
-      });
-  }
-
-  calculatePriceFallback(serviceId: string, vehicleTypeId: string): void {
-    // Trouver le service et le type de véhicule dans les données locales
-    const service = this.services.find((s) => s.id === serviceId);
-    const vehicleType = this.vehicleTypes.find((vt) => vt.id === vehicleTypeId);
-
-    if (service && vehicleType) {
-      // Calcul basique du prix selon la structure de PriceCalculationResult
-      const basePrice = service.basePrice || 0;
-      const vehicleMultiplier = vehicleType.defaultSizeMultiplier || 1;
-
-      // Créer une instance de PriceCalculationResult avec les bonnes propriétés
-      this.priceCalculation = new PriceCalculationResult({
-        basePrice: basePrice,
-        vehicleMultiplier: vehicleMultiplier,
-        loyaltyDiscount: 0,
-        loyaltyDiscountApplied: false,
-        customerWashCount: this.currentCustomer?.totalAmountSpent || 0,
-      });
-
-      // Le calcul se fait automatiquement dans le constructeur
-      this.washForm.patchValue({
-        amountPaid: this.priceCalculation.finalPrice,
-      });
-    }
-  }
-
-  resetPriceCalculation(): void {
-    this.priceCalculation = null;
-    this.washForm.patchValue({
-      serviceId: '',
-      vehicleTypeId: '',
     });
-  }
-
-  onPaymentMethodChange(method: PaymentMethod): void {
-    this.selectedPaymentMethod = method;
-
-    this.washForm.patchValue({
-      paymentMethod: method,
-    });
-
-    // Gérer la validation du transactionId
-    const transactionControl = this.washForm.get('transactionId');
-    if (method !== PaymentMethod.CASH) {
-      transactionControl?.setValidators([Validators.required]);
-    } else {
-      transactionControl?.clearValidators();
-      this.washForm.patchValue({ transactionId: '' });
-    }
-    transactionControl?.updateValueAndValidity();
-  }
-
-  getInvalidControls(): Array<{ name: string; errors: any }> {
-    const invalid = [];
-    const controls = this.washForm.controls;
-    for (const name in controls) {
-      if (controls[name].invalid) {
-        invalid.push({
-          name: name,
-          errors: controls[name].errors,
-        });
-      }
-    }
-    return invalid;
   }
 
   /**
-   *
-   * @returns Un numéro d'enregistrement unique basé sur la date et un compteur.
+   * Marque tous les contrôles du formulaire comme touchés
    */
-  generateRegistrationNumber(): string {
-    const timestamp = new Date().getTime().toString().slice(-6);
-    this.registrationCounter = (this.registrationCounter + 1) % 1000;
-    const counter = this.registrationCounter.toString().padStart(3, '0');
-    return `REG-${timestamp}-${counter}`;
-  }
-
-  async onSubmit(): Promise<void> {
-    this.debugFormValidation();
-    if (this.washForm.invalid) {
-      this.markFormGroupTouched(this.washForm);
-      return;
-    }
-
-    this.isSubmitting = true;
-    this.errorMessages = [];
-    this.successMessage = '';
-
-    try {
-      // 1. Générer le numéro d'enregistrement si non fourni
-      if (!this.washForm.value.registration) {
-        const autoRegistration = this.generateRegistrationNumber();
-        this.washForm.patchValue({ registration: autoRegistration });
-      }
-
-      // 2. Créer ou obtenir le client
-      const customer = await this.getOrCreateCustomer();
-
-      // 3. Préparer l'enregistrement avec le statut true (terminé)
-      const registration = this.prepareWashRegistration(customer);
-
-      // 4. Enregistrer le lavage
-      const washSession = await this.registerWash(registration);
-
-      // 5. Enregistrer le paiement si nécessaire
-      if (
-        this.selectedPaymentMethod !== PaymentMethod.CASH ||
-        this.washForm.value.transactionId
-      ) {
-        await this.registerPayment(washSession.id ? washSession.id : '');
-      }
-
-      this.successMessage = 'Lavage enregistré avec succès!';
-      this.resetForm();
-    } catch (error) {
-      this.handleError("Erreur lors de l'enregistrement du lavage", error);
-    } finally {
-      this.isSubmitting = false;
-    }
-  }
-
-  async getOrCreateCustomer(): Promise<Customer> {
-  const { customerPhone, customerName, customerEmail, vehicleBrand } = this.washForm.value;
-
-  // VALIDATION: Vérifier que le nom n'est pas vide
-  if (!customerName || customerName.trim() === '') {
-    throw new Error('Le nom du client est obligatoire');
-  }
-
-  // Récupérer le type de véhicule sélectionné
-  const selectedVehicleType = this.vehicleTypes.find(vt => vt.id === this.washForm.value.vehicleTypeId);
-  const vehicleTypeLabel = selectedVehicleType?.label || 'Non spécifié';
-
-  const customerRequest: CreateOrUpdateCustomerRequest = {
-    phone: customerPhone,
-    name: customerName.trim(),
-    // MODIFICATION: Email vraiment optionnel - envoyer seulement s'il est fourni et valide
-    ...(customerEmail && customerEmail.trim() !== '' && { email: customerEmail.trim() }),
-    vehicleType: vehicleTypeLabel,
-    vehicleBrand: vehicleBrand || 'Non spécifié'
-  };
-
-  return new Promise((resolve, reject) => {
-    this.washsService
-      .registerCustomer(customerRequest)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (response) => {
-          if (response.success && response.data) {
-            resolve(response.data);
-          } else {
-            reject(new Error('Impossible de créer/obtenir le client'));
-          }
-        },
-        error: reject,
-      });
-  });
-}
-
-  get isFormValid(): boolean {
-    return this.washForm.valid && !this.isSubmitting;
-  }
-
-  prepareWashRegistration(customer?: Customer): WashRegistration {
-  const formValue = this.washForm.value;
-
-  // VALIDATION: S'assurer que le nom n'est pas vide
-  if (!formValue.customerName || formValue.customerName.trim() === '') {
-    throw new Error('Le nom du client est obligatoire');
-  }
-
-  // Récupérer les labels des types de véhicule
-  const selectedVehicleType = this.vehicleTypes.find(vt => vt.id === formValue.vehicleTypeId);
-  const vehicleTypeLabel = selectedVehicleType?.label || 'Non spécifié';
-
-  const customerRequest: CreateOrUpdateCustomerRequest = {
-    phone: formValue.customerPhone,
-    name: formValue.customerName.trim(),
-    // MODIFICATION: Email vraiment optionnel - n'inclure que s'il est fourni et valide
-    ...(formValue.customerEmail && formValue.customerEmail.trim() !== '' && { email: formValue.customerEmail.trim() }),
-    vehicleType: vehicleTypeLabel,
-    vehicleBrand: formValue.vehicleBrand || 'Non spécifié'
-  };
-
-  return {
-    centreId: formValue.centreId,
-    serviceId: formValue.serviceId,
-    vehicleTypeId: formValue.vehicleTypeId,
-    WasherId: formValue.washerId || '',
-    vehiclePlate: formValue.vehiclePlate.toUpperCase(),
-    vehicleBrand: formValue.vehicleBrand || 'Non spécifié',
-    vehicleColor: formValue.vehicleColor || 'Non spécifié',
-    customer: customerRequest,
-    amountPaid: this.priceCalculation?.finalPrice || 0,
-    paymentMethod: Number(formValue.paymentMethod),
-    transactionId: formValue.transactionId || '',
-    applyLoyaltyDiscount: formValue.applyLoyaltyDiscount,
-    isAdminOverride: formValue.isAdminOverride,
-    performedByUserId: this.currentUser?.id || '',
-    registration: formValue.registration || this.generateRegistrationNumber(),
-    status: true
-  };
-}
-
-  getPaymentMethodString(method: PaymentMethod): string {
-    switch (method) {
-      case PaymentMethod.CASH:
-        return 'Espèces';
-      case PaymentMethod.CREDIT_CARD:
-        return 'Carte';
-      case PaymentMethod.MOBILE_MONEY:
-        return 'Mobile Money';
-      case PaymentMethod.BANK_TRANSFER:
-        return 'Virement';
-      default:
-        return 'Espèces';
-    }
-  }
-
-  async registerWash(registration: WashRegistration): Promise<WashSession> {
-    return new Promise((resolve, reject) => {
-      this.washsService
-        .registerWash(registration)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (response) => {
-            if (response.success && response.data) {
-              resolve(response.data);
-            } else {
-              reject(new Error("Échec de l'enregistrement du lavage"));
-            }
-          },
-          error: reject,
-        });
+  markFormGroupTouched(formGroup: FormGroup): void {
+    Object.keys(formGroup.controls).forEach((field) => {
+      const control = formGroup.get(field);
+      control?.markAsTouched({ onlySelf: true });
     });
   }
 
-  async registerPayment(washSessionId: string): Promise<void> {
-    const { transactionId, applyLoyaltyDiscount } = this.washForm.value;
-
-    // Generate transaction reference if needed
-    const transactionRef =
-      transactionId || (await this.generateTransactionReference());
-
-    // Create a proper PaymentInfo instance
-    const paymentInfo = new PaymentInfo({
-      method: this.selectedPaymentMethod,
-      amount: this.priceCalculation?.finalPrice || 0,
-      transactionId: transactionRef,
-      applyLoyaltyDiscount: applyLoyaltyDiscount || false,
-      receivedBy: this.currentUser?.id || '',
-      discountCode: '', // Add if required
-    });
-
-    // Validate the payment before sending
-    const validationErrors = paymentInfo.validate();
-    if (validationErrors.length > 0) {
-      return Promise.reject(new Error(validationErrors.join(', ')));
-    }
-
-    return new Promise((resolve, reject) => {
-      this.washsService
-        .registerPayment(washSessionId, paymentInfo)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (response) => {
-            if (response.success) {
-              resolve();
-            } else {
-              reject(new Error("Échec de l'enregistrement du paiement"));
-            }
-          },
-          error: reject,
-        });
-    });
-  }
-
-  async generateTransactionReference(): Promise<string> {
-    return new Promise((resolve, reject) => {
-      this.washsService
-        .generateTransactionReference(
-          this.selectedPaymentMethod,
-          this.currentUser?.firstName
-        )
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (response) => {
-            if (response.success && response.data) {
-              resolve(response.data);
-            } else {
-              reject(new Error('Impossible de générer la référence'));
-            }
-          },
-          error: reject,
-        });
-    });
-  }
-
+  /**
+   * Réinitialise le formulaire aux valeurs par défaut
+   */
   resetForm(): void {
     this.washForm.reset();
 
@@ -811,19 +335,577 @@ export class WashNowComponent implements OnInit {
     this.washForm.get('serviceId')?.disable();
     this.washForm.get('vehicleTypeId')?.disable();
   }
+  //#endregion
 
-  markFormGroupTouched(formGroup: FormGroup): void {
-    Object.keys(formGroup.controls).forEach((field) => {
-      const control = formGroup.get(field);
-      control?.markAsTouched({ onlySelf: true });
+  //#region Data Loading Methods
+  /**
+   * Charge les données initiales du composant
+   */
+  private async loadInitialData(): Promise<void> {
+    this.isLoading = true;
+    try {
+      await this.loadActiveCentres();
+    } catch (error) {
+      this.handleError(
+        'Erreur lors du chargement des données initiales',
+        error
+      );
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  /**
+   * Charge les centres actifs
+   */
+  private async loadActiveCentres(): Promise<void> {
+    this.centresService
+      .getAllCentres()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (centres) => {
+          this.centres = centres;
+        },
+        error: (error) =>
+          this.handleError('Erreur lors du chargement des centres', error),
+      });
+  }
+
+  /**
+   * Charge les laveurs par centre
+   */
+  async loadWashersByCentre(centreId: string): Promise<void> {
+    try {
+      this.isLoadingWashers = true;
+      this.washers = [];
+      this.filteredWashers = [];
+      this.cdr.detectChanges();
+
+      const response = await lastValueFrom(
+        this.washsService.getWashersByCentre(centreId).pipe(
+          takeUntil(this.destroy$),
+          catchError((error) => {
+            console.error('Error loading washers:', error);
+            this.handleError('Erreur lors du chargement des laveurs', error);
+            return of({ success: false, data: [] });
+          })
+        )
+      );
+
+      // Gérer la réponse
+      if (Array.isArray(response)) {
+        this.washers = response;
+        this.filteredWashers = [...response];
+      } else if (response?.data && Array.isArray(response.data)) {
+        this.washers = response.data;
+        this.filteredWashers = [...response.data];
+      } else {
+        this.washers = [];
+        this.filteredWashers = [];
+      }
+
+    } catch (error) {
+      console.error('Unexpected error loading washers:', error);
+      this.washers = [];
+      this.filteredWashers = [];
+    } finally {
+      this.isLoadingWashers = false;
+      this.cdr.detectChanges();
+    }
+  }
+
+  /**
+   * Charge les services par centre
+   */
+  private async loadServicesByCentre(centreId: string): Promise<void> {
+    this.serviceSettingsService
+      .getServicesByCentre(centreId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.services = response.data;
+          }
+        },
+        error: (error) =>
+          this.handleError('Erreur lors du chargement des services', error),
+      });
+  }
+
+  /**
+   * Charge les types de véhicules par centre
+   */
+  private async loadVehicleTypesByCentre(centreId: string): Promise<void> {
+    this.vehiclesSettingsService
+      .getActiveVehicleTypesByCentre(centreId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          let vehicleTypesData: VehicleTypeSettings[] = [];
+
+          if (Array.isArray(response)) {
+            vehicleTypesData = response;
+          } else if (response && response.success && response.data) {
+            vehicleTypesData = response.data;
+          } else if (response && response.data) {
+            vehicleTypesData = response.data;
+          }
+
+          this.vehicleTypes = vehicleTypesData;
+        },
+        error: (error) => {
+          console.error(
+            'Erreur lors du chargement des types de véhicules:',
+            error
+          );
+          this.handleError(
+            'Erreur lors du chargement des types de véhicules',
+            error
+          );
+          this.vehicleTypes = [];
+        },
+      });
+  }
+  //#endregion
+
+  //#region Customer Methods
+  /**
+   * Recherche un client par numéro de téléphone
+   */
+  private searchCustomerByPhone(phone: string) {
+    this.isSearchingCustomer = true;
+
+    return this.washsService.findCustomerByPhone(phone).pipe(
+      takeUntil(this.destroy$),
+      switchMap((response) => {
+        this.isSearchingCustomer = false;
+
+        if (response.success && response.data) {
+          this.currentCustomer = response.data;
+
+          // Ne mettre à jour le nom que s'il est vide
+          const currentName = this.washForm.get('customerName')?.value;
+          if (!currentName || currentName.trim() === '') {
+            this.washForm.patchValue({
+              customerName: this.currentCustomer.name,
+            });
+          }
+
+          // Charger l'historique
+          this.loadCustomerHistory(phone);
+        } else {
+          this.currentCustomer = null;
+          this.customerHistory = [];
+        }
+        return of(response);
+      })
+    );
+  }
+
+  /**
+   * Charge l'historique des lavages d'un client
+   */
+  private loadCustomerHistory(customerPhone: string): void {
+    this.washsService
+      .getCustomerWashHistory(customerPhone)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            this.customerHistory = response.data.slice(0, 5);
+          } else {
+            this.customerHistory = [];
+          }
+        },
+        error: (error) => {
+          console.error("Erreur lors du chargement de l'historique:", error);
+          this.customerHistory = [];
+        },
+      });
+  }
+
+  /**
+   * Crée ou récupère un client
+   */
+  private async getOrCreateCustomer(): Promise<Customer> {
+    const { customerPhone, customerName, customerEmail, vehicleBrand } = this.washForm.value;
+
+    // Validation du nom
+    if (!customerName || customerName.trim() === '') {
+      throw new Error('Le nom du client est obligatoire');
+    }
+
+    // Récupérer le type de véhicule sélectionné
+    const selectedVehicleType = this.vehicleTypes.find(vt => vt.id === this.washForm.value.vehicleTypeId);
+    const vehicleTypeLabel = selectedVehicleType?.label || 'Non spécifié';
+
+    const customerRequest: CreateOrUpdateCustomerRequest = {
+      phone: customerPhone,
+      name: customerName.trim(),
+      ...(customerEmail && customerEmail.trim() !== '' && { email: customerEmail.trim() }),
+      vehicleType: vehicleTypeLabel,
+      vehicleBrand: vehicleBrand || 'Non spécifié'
+    };
+
+    return new Promise((resolve, reject) => {
+      this.washsService
+        .registerCustomer(customerRequest)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (response) => {
+            if (response.success && response.data) {
+              resolve(response.data);
+            } else {
+              reject(new Error('Impossible de créer/obtenir le client'));
+            }
+          },
+          error: reject,
+        });
+    });
+  }
+  //#endregion
+
+  //#region Price Calculation Methods
+  /**
+   * Calcule le prix final du lavage
+   */
+  calculatePrice(): void {
+    const { serviceId, vehicleTypeId, customerPhone } = this.washForm.value;
+
+    if (!serviceId || !vehicleTypeId) {
+      this.priceCalculation = null;
+      return;
+    }
+
+    const phoneValid = customerPhone && customerPhone.length >= 10;
+    const phoneToUse = phoneValid ? customerPhone : '';
+
+    this.isCalculatingPrice = true;
+    this.washsService
+      .calculateFinalPrice(serviceId, vehicleTypeId, phoneToUse)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.isCalculatingPrice = false;
+          if (response.success && response.data) {
+            this.priceCalculation = response.data;
+            this.washForm.patchValue({
+              amountPaid: response.data.finalPrice,
+            });
+          } else {
+            console.error('Réponse API invalide:', response);
+            this.priceCalculation = null;
+          }
+        },
+        error: (error) => {
+          this.isCalculatingPrice = false;
+          this.priceCalculation = null;
+
+          // Fallback avec calcul local
+          if (error.status === 404 || error.status === 500) {
+            this.calculatePriceFallback(serviceId, vehicleTypeId);
+          }
+        },
+      });
+  }
+
+  /**
+   * Calcul de prix de secours en cas d'échec de l'API
+   */
+  private calculatePriceFallback(serviceId: string, vehicleTypeId: string): void {
+    const service = this.services.find((s) => s.id === serviceId);
+    const vehicleType = this.vehicleTypes.find((vt) => vt.id === vehicleTypeId);
+
+    if (service && vehicleType) {
+      const basePrice = service.basePrice || 0;
+      const vehicleMultiplier = vehicleType.defaultSizeMultiplier || 1;
+
+      this.priceCalculation = new PriceCalculationResult({
+        basePrice: basePrice,
+        vehicleMultiplier: vehicleMultiplier,
+        loyaltyDiscount: 0,
+        loyaltyDiscountApplied: false,
+        customerWashCount: this.currentCustomer?.totalAmountSpent || 0,
+      });
+
+      this.washForm.patchValue({
+        amountPaid: this.priceCalculation.finalPrice,
+      });
+    }
+  }
+
+  /**
+   * Réinitialise le calcul du prix
+   */
+  resetPriceCalculation(): void {
+    this.priceCalculation = null;
+    this.washForm.patchValue({
+      serviceId: '',
+      vehicleTypeId: '',
+    });
+  }
+  //#endregion
+
+  //#region Wash Registration Methods
+  /**
+   * Soumet le formulaire d'enregistrement de lavage
+   */
+  async onSubmit(): Promise<void> {
+    this.debugFormValidation();
+    if (this.washForm.invalid) {
+      this.markFormGroupTouched(this.washForm);
+      return;
+    }
+
+    this.isSubmitting = true;
+    this.errorMessages = [];
+    this.successMessage = '';
+
+    try {
+      // Générer le numéro d'enregistrement si non fourni
+      if (!this.washForm.value.registration) {
+        const autoRegistration = this.generateRegistrationNumber();
+        this.washForm.patchValue({ registration: autoRegistration });
+      }
+
+      // Créer ou obtenir le client
+      const customer = await this.getOrCreateCustomer();
+
+      // Préparer l'enregistrement
+      const registration = this.prepareWashRegistration(customer);
+
+      // Enregistrer le lavage
+      const washSession = await this.registerWash(registration);
+
+      // Enregistrer le paiement si nécessaire
+      if (
+        this.selectedPaymentMethod !== PaymentMethod.CASH ||
+        this.washForm.value.transactionId
+      ) {
+        await this.registerPayment(washSession.id ? washSession.id : '');
+      }
+
+      this.successMessage = 'Lavage enregistré avec succès!';
+      this.resetForm();
+    } catch (error) {
+      this.handleError("Erreur lors de l'enregistrement du lavage", error);
+    } finally {
+      this.isSubmitting = false;
+    }
+  }
+
+  /**
+   * Prépare l'objet d'enregistrement de lavage
+   */
+  private prepareWashRegistration(customer?: Customer): WashRegistration {
+    const formValue = this.washForm.value;
+
+    // Validation du nom
+    if (!formValue.customerName || formValue.customerName.trim() === '') {
+      throw new Error('Le nom du client est obligatoire');
+    }
+
+    // Récupérer le type de véhicule
+    const selectedVehicleType = this.vehicleTypes.find(vt => vt.id === formValue.vehicleTypeId);
+    const vehicleTypeLabel = selectedVehicleType?.label || 'Non spécifié';
+
+    const customerRequest: CreateOrUpdateCustomerRequest = {
+      phone: formValue.customerPhone,
+      name: formValue.customerName.trim(),
+      ...(formValue.customerEmail && formValue.customerEmail.trim() !== '' && { email: formValue.customerEmail.trim() }),
+      vehicleType: vehicleTypeLabel,
+      vehicleBrand: formValue.vehicleBrand || 'Non spécifié'
+    };
+
+    return {
+      centreId: formValue.centreId,
+      serviceId: formValue.serviceId,
+      vehicleTypeId: formValue.vehicleTypeId,
+      WasherId: formValue.washerId || '',
+      vehiclePlate: formValue.vehiclePlate.toUpperCase(),
+      vehicleBrand: formValue.vehicleBrand || 'Non spécifié',
+      vehicleColor: formValue.vehicleColor || 'Non spécifié',
+      customer: customerRequest,
+      amountPaid: this.priceCalculation?.finalPrice || 0,
+      paymentMethod: Number(formValue.paymentMethod),
+      transactionId: formValue.transactionId || '',
+      applyLoyaltyDiscount: formValue.applyLoyaltyDiscount,
+      isAdminOverride: formValue.isAdminOverride,
+      performedByUserId: this.currentUser?.id || '',
+      registration: formValue.registration || this.generateRegistrationNumber(),
+      status: true
+    };
+  }
+
+  /**
+   * Enregistre le lavage via l'API
+   */
+  private async registerWash(registration: WashRegistration): Promise<WashSession> {
+    return new Promise((resolve, reject) => {
+      this.washsService
+        .registerWash(registration)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (response) => {
+            if (response.success && response.data) {
+              resolve(response.data);
+            } else {
+              reject(new Error("Échec de l'enregistrement du lavage"));
+            }
+          },
+          error: reject,
+        });
+    });
+  }
+  //#endregion
+
+  //#region Payment Methods
+  /**
+   * Change la méthode de paiement sélectionnée
+   */
+  onPaymentMethodChange(method: PaymentMethod): void {
+    this.selectedPaymentMethod = method;
+
+    this.washForm.patchValue({
+      paymentMethod: method,
+    });
+
+    // Gérer la validation du transactionId
+    const transactionControl = this.washForm.get('transactionId');
+    if (method !== PaymentMethod.CASH) {
+      transactionControl?.setValidators([Validators.required]);
+    } else {
+      transactionControl?.clearValidators();
+      this.washForm.patchValue({ transactionId: '' });
+    }
+    transactionControl?.updateValueAndValidity();
+  }
+
+  /**
+   * Enregistre le paiement via l'API
+   */
+  private async registerPayment(washSessionId: string): Promise<void> {
+    const { transactionId, applyLoyaltyDiscount } = this.washForm.value;
+
+    const transactionRef = transactionId || (await this.generateTransactionReference());
+
+    const paymentInfo = new PaymentInfo({
+      method: this.selectedPaymentMethod,
+      amount: this.priceCalculation?.finalPrice || 0,
+      transactionId: transactionRef,
+      applyLoyaltyDiscount: applyLoyaltyDiscount || false,
+      receivedBy: this.currentUser?.id || '',
+      discountCode: '',
+    });
+
+    // Valider le paiement avant envoi
+    const validationErrors = paymentInfo.validate();
+    if (validationErrors.length > 0) {
+      return Promise.reject(new Error(validationErrors.join(', ')));
+    }
+
+    return new Promise((resolve, reject) => {
+      this.washsService
+        .registerPayment(washSessionId, paymentInfo)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (response) => {
+            if (response.success) {
+              resolve();
+            } else {
+              reject(new Error("Échec de l'enregistrement du paiement"));
+            }
+          },
+          error: reject,
+        });
     });
   }
 
-  handleError(message: string, error: any): void {
+  /**
+   * Génère une référence de transaction
+   */
+  private async generateTransactionReference(): Promise<string> {
+    return new Promise((resolve, reject) => {
+      this.washsService
+        .generateTransactionReference(
+          this.selectedPaymentMethod,
+          this.currentUser?.firstName
+        )
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (response) => {
+            if (response.success && response.data) {
+              resolve(response.data);
+            } else {
+              reject(new Error('Impossible de générer la référence'));
+            }
+          },
+          error: reject,
+        });
+    });
+  }
+
+  /**
+   * Retourne le libellé de la méthode de paiement
+   */
+  getPaymentMethodString(method: PaymentMethod): string {
+    switch (method) {
+      case PaymentMethod.CASH:
+        return 'Espèces';
+      case PaymentMethod.CREDIT_CARD:
+        return 'Carte';
+      case PaymentMethod.MOBILE_MONEY:
+        return 'Mobile Money';
+      case PaymentMethod.BANK_TRANSFER:
+        return 'Virement';
+      default:
+        return 'Espèces';
+    }
+  }
+  //#endregion
+
+  //#region Utility Methods
+  /**
+   * Génère un numéro d'enregistrement unique
+   */
+  private generateRegistrationNumber(): string {
+    const timestamp = new Date().getTime().toString().slice(-6);
+    this.registrationCounter = (this.registrationCounter + 1) % 1000;
+    const counter = this.registrationCounter.toString().padStart(3, '0');
+    return `REG-${timestamp}-${counter}`;
+  }
+
+  /**
+   * Gère les erreurs de l'application
+   */
+  private handleError(message: string, error: any): void {
     this.errorMessages = [message];
     if (error?.error?.message) {
       this.errorMessages.push(error.error.message);
     }
+  }
+
+  /**
+   * Récupère les contrôles invalides du formulaire
+   */
+  getInvalidControls(): Array<{ name: string; errors: any }> {
+    const invalid = [];
+    const controls = this.washForm.controls;
+    for (const name in controls) {
+      if (controls[name].invalid) {
+        invalid.push({
+          name: name,
+          errors: controls[name].errors,
+        });
+      }
+    }
+    return invalid;
+  }
+  //#endregion
+
+  //#region Getters
+  get isFormValid(): boolean {
+    return this.washForm.valid && !this.isSubmitting;
   }
 
   get totalPrice(): number {
@@ -852,10 +934,68 @@ export class WashNowComponent implements OnInit {
   get customerTotalSpent(): number {
     return this.currentCustomer?.totalAmountSpent || 0;
   }
+  //#endregion
+
+  //#region User Management Methods
+  /**
+   * Récupère tous les utilisateurs et charge leurs photos.
+   */
+  getUsers(): void {
+    this.usersService.getAllUsers().subscribe({
+      next: (data) => {
+        this.users = data;
+        this.loadUserPhotos();
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des utilisateurs', error);
+      },
+    });
+  }
+
+  /**
+   * Charge l'utilisateur actuellement connecté.
+   */
+  loadCurrentUser(): void {
+    this.authService.loadCurrentUserProfile().subscribe({
+      next: (user) => {
+        if (user) {
+          this.currentUser = user;
+          this.loadCurrentUserPhoto();
+        } else {
+          this.usersService.getCurrentUser().subscribe({
+            next: (user) => {
+              this.currentUser = user;
+              this.loadCurrentUserPhoto();
+            },
+            error: (error) => {
+              console.error(
+                "Erreur lors du chargement de l'utilisateur connecté",
+                error
+              );
+            },
+          });
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement du profil utilisateur', error);
+        this.usersService.getCurrentUser().subscribe({
+          next: (user) => {
+            this.currentUser = user;
+            this.loadCurrentUserPhoto();
+          },
+          error: (error) => {
+            console.error(
+              "Erreur lors du chargement de l'utilisateur connecté",
+              error
+            );
+          },
+        });
+      },
+    });
+  }
 
   /**
    * Charge les photos des utilisateurs et les sécurise pour l'affichage.
-   * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
    */
   loadUserPhotos(): void {
     this.displayedUsers.forEach((user) => {
@@ -874,91 +1014,7 @@ export class WashNowComponent implements OnInit {
   }
 
   /**
-   * Bascule l'état de la barre latérale entre "collapsée" et
-   * "étendue".
-   * Modifie les classes CSS pour ajuster l'affichage.
-   * Cette méthode est appelée lors du clic sur le bouton de
-   * basculement de la barre latérale.
-   */
-  toggleSidebar() {
-    this.isSidebarCollapsed = !this.isSidebarCollapsed;
-
-    // Ajoute/retire les classes nécessaires
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.querySelector('.main-content');
-
-    if (sidebar && mainContent) {
-      sidebar.classList.toggle('collapsed');
-      mainContent.classList.toggle('collapsed');
-    }
-  }
-
-  /**
-   * Récupère tous les utilisateurs et charge leurs photos.
-   * Utilise le service UsersService pour obtenir la liste des utilisateurs.
-   */
-  getUsers(): void {
-    this.usersService.getAllUsers().subscribe({
-      next: (data) => {
-        this.users = data;
-        this.loadUserPhotos();
-      },
-      error: (error) => {
-        console.error('Erreur lors du chargement des utilisateurs', error);
-      },
-    });
-  }
-
-  /**
-   * Charge l'utilisateur actuellement connecté.
-   * Essaie d'abord de récupérer l'utilisateur depuis le service d'authentification,
-   */
-  loadCurrentUser(): void {
-    // D'abord, essaie de récupérer depuis le service d'authentification
-    this.authService.loadCurrentUserProfile().subscribe({
-      next: (user) => {
-        if (user) {
-          this.currentUser = user;
-          this.loadCurrentUserPhoto();
-        } else {
-          // Si pas d'utilisateur depuis AuthService, utilise UsersService
-          this.usersService.getCurrentUser().subscribe({
-            next: (user) => {
-              this.currentUser = user;
-              this.loadCurrentUserPhoto();
-            },
-            error: (error) => {
-              console.error(
-                "Erreur lors du chargement de l'utilisateur connecté",
-                error
-              );
-            },
-          });
-        }
-      },
-      error: (error) => {
-        console.error('Erreur lors du chargement du profil utilisateur', error);
-        // Fallback vers UsersService
-        this.usersService.getCurrentUser().subscribe({
-          next: (user) => {
-            this.currentUser = user;
-            this.loadCurrentUserPhoto();
-          },
-          error: (error) => {
-            console.error(
-              "Erreur lors du chargement de l'utilisateur connecté",
-              error
-            );
-          },
-        });
-      },
-    });
-  }
-
-  /**
    * Charge la photo de l'utilisateur actuellement connecté.
-   *
-   * Utilise le service UsersService pour obtenir la photo de l'utilisateur.
    */
   loadCurrentUserPhoto(): void {
     if (!this.currentUser) return;
@@ -981,7 +1037,6 @@ export class WashNowComponent implements OnInit {
             'Erreur lors du chargement de la photo utilisateur',
             error
           );
-          // Image par défaut
           this.currentUser!.photoSafeUrl =
             this.sanitizer.bypassSecurityTrustUrl(
               'assets/images/default-avatar.png'
@@ -989,7 +1044,6 @@ export class WashNowComponent implements OnInit {
         },
       });
     } else {
-      // Si pas de photoUrl, utiliser une image par défaut
       this.currentUser.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
         'assets/images/default-avatar.png'
       );
@@ -998,7 +1052,6 @@ export class WashNowComponent implements OnInit {
 
   /**
    * Retourne le nom complet de l'utilisateur connecté
-   * @returns Le nom complet formaté ou un texte par défaut
    */
   getFullName(): string {
     if (this.currentUser) {
@@ -1011,18 +1064,14 @@ export class WashNowComponent implements OnInit {
 
   /**
    * Retourne le rôle de l'utilisateur connecté
-   * @returns Le rôle de l'utilisateur ou un texte par défaut
    */
   getUserRole(): string {
-    // Si pas d'utilisateur connecté
     if (!this.currentUser) return 'Rôle non défini';
 
-    // Si l'utilisateur a des rôles
     if (this.currentUser.roles && this.currentUser.roles.length > 0) {
       return this.mapRoleIdToName(this.currentUser.roles[0]);
     }
 
-    // Sinon, utilise le service d'authentification
     const role = this.authService.getUserRole();
     return role ? this.mapRoleIdToName(role) : 'Rôle non défini';
   }
@@ -1037,8 +1086,24 @@ export class WashNowComponent implements OnInit {
 
     return roleMapping[roleId] || 'Administrateur';
   }
+  //#endregion
 
-  //#region Authentification
+  //#region UI Interaction Methods
+  /**
+   * Bascule l'état de la barre latérale
+   */
+  toggleSidebar() {
+    this.isSidebarCollapsed = !this.isSidebarCollapsed;
+
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.querySelector('.main-content');
+
+    if (sidebar && mainContent) {
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('collapsed');
+    }
+  }
+
   /**
    * Déconnecte l'utilisateur
    */

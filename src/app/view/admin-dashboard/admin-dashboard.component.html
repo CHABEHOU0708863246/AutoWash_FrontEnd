@@ -7,166 +7,200 @@
 
 <body>
   <!-- Sidebar -->
-<div class="sidebar" id="sidebar">
-  <div class="logo">
-    <i class="fas fa-hashtag"></i> AUTOWASH
-  </div>
-  <div class="user-profile" *ngIf="currentUser">
-    <div class="user-photo-container">
-      <img *ngIf="currentUser.photoSafeUrl" [src]="currentUser.photoSafeUrl"
-        [alt]="'Photo de ' + (currentUser.firstName || 'Utilisateur')" class="user-avatar">
-      <div *ngIf="!currentUser.photoSafeUrl" class="user-initials">
-        {{ (currentUser.firstName?.charAt(0) || '') + (currentUser.lastName?.charAt(0) || '') }}
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fas fa-hashtag"></i> AUTOWASH
+    </div>
+    <div class="user-profile" *ngIf="currentUser">
+      <div class="user-photo-container">
+        <img *ngIf="currentUser.photoSafeUrl" [src]="currentUser.photoSafeUrl"
+          [alt]="'Photo de ' + (currentUser.firstName || 'Utilisateur')" class="user-avatar">
+        <div *ngIf="!currentUser.photoSafeUrl" class="user-initials">
+          {{ (currentUser.firstName?.charAt(0) || '') + (currentUser.lastName?.charAt(0) || '') }}
+        </div>
+      </div>
+      <div class="user-info">
+        <h4>{{ getFullName() }}</h4>
+        <p>{{ getUserRole() }}</p>
       </div>
     </div>
-    <div class="user-info">
-      <h4>{{ getFullName() }}</h4>
-      <p>{{ getUserRole() }}</p>
+    <div class="nav-menu">
+      <!-- Dashboard -->
+      <div class="dropdown dropdown-hover">
+        <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
+
+      <!-- Gestion des Utilisateurs -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-users-cog"></i>
+          <span>Utilisateurs</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-list']"><i class="fas fa-list"></i> Liste des
+              utilisateurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-create']"><i class="fas fa-user-plus"></i> Ajouter
+              un utilisateur</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-attendance']"><i class="fas fa-user-clock"></i>
+              Présences</a></li>
+        </ul>
+      </div>
+
+      <!-- Centres de Lavage -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fa-solid fa-car"></i>
+          <span>Centres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-list']"><i class="fas fa-list"></i> Tous les
+              centres</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-create']"><i class="fas fa-plus-circle"></i>
+              Nouveau centre</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-stock']"><i class="fas fa-boxes"></i> Stocks par
+              centre</a></li>
+        </ul>
+      </div>
+
+      <!-- Sessions de Lavage -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-car-side"></i>
+          <span>Lavages</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-sessions']"><i class="fas fa-list"></i> Toutes les
+              sessions</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-now']"><i class="fas fa-play-circle"></i> Nouveau
+              lavage</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-queue']"><i class="fas fa-clock"></i> File
+              d'attente</a></li>
+        </ul>
+      </div>
+
+      <!-- Paiements -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-money-bill-wave"></i>
+          <span>Paiements</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-washers']"><i class="fas fa-user-tie"></i>
+              Paiements laveurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-customers']"><i class="fas fa-users"></i>
+              Paiements clients</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-methods']"><i class="fas fa-credit-card"></i>
+              Méthodes de paiement</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-reports']"><i
+                class="fas fa-file-invoice-dollar"></i> Rapports</a></li>
+        </ul>
+      </div>
+
+      <!-- Stocks -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-box-open"></i>
+          <span>Stocks</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-list']"><i class="fas fa-boxes"></i> Inventaire</a>
+          </li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-alerts']"><i
+                class="fas fa-exclamation-triangle"></i> Alertes stock</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-movements']"><i class="fas fa-exchange-alt"></i>
+              Mouvements</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-suppliers']"><i class="fas fa-truck"></i>
+              Fournisseurs</a></li>
+        </ul>
+      </div>
+
+      <!-- Statistiques & Rapports -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-chart-pie"></i>
+          <span>Statistiques</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-daily']"><i class="fas fa-calendar-day"></i>
+              Journalier</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-weekly']"><i class="fas fa-calendar-week"></i>
+              Hebdomadaire</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-monthly']"><i class="fas fa-calendar-alt"></i>
+              Mensuel</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-comparison']"><i class="fas fa-balance-scale"></i>
+              Comparaison</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-export']"><i class="fas fa-file-export"></i>
+              Exports</a></li>
+        </ul>
+      </div>
+
+      <!-- Audit -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-clipboard-check"></i>
+          <span>Audit</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-logs']"><i class="fas fa-clipboard-list"></i>
+              Journal d'activité</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-changes']"><i class="fas fa-history"></i> Historique
+              modifications</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-security']"><i class="fas fa-shield-alt"></i>
+              Sécurité</a></li>
+        </ul>
+      </div>
+
+      <!-- Dépenses -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-file-invoice-dollar"></i>
+          <span>Dépenses</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion
+              dépenses</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-other']"><i class="fas fa-receipt"></i>
+              Divers</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-profitability']"><i
+                class="fas fa-chart-line"></i> Rentabilité</a></li>
+        </ul>
+      </div>
+
+      <!-- Paramètres -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-cogs"></i>
+          <span>Paramètres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-schedule']"><i class="fas fa-clock"></i>
+              Horaires</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-services']"><i class="fas fa-concierge-bell"></i>
+              Prestations</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-vehicles']"><i class="fas fa-car"></i> Types de
+              véhicules</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-notifications']"><i class="fas fa-bell"></i>
+              Notifications</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-system']"><i class="fas fa-sliders-h"></i>
+              Système</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-templates']"><i class="fas fa-file-alt"></i>
+              Modèles de paramètres</a></li>
+        </ul>
+      </div>
     </div>
   </div>
-  <div class="nav-menu">
-    <!-- Dashboard -->
-    <div class="dropdown dropdown-hover">
-      <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
-        <i class="fas fa-tachometer-alt"></i>
-        <span>Tableau de bord</span>
-      </a>
-    </div>
-
-    <!-- Gestion des Utilisateurs -->
-    <div class="dropdown dropdown-hover">
-      <button class="nav-item" data-mdb-dropdown-init>
-        <i class="fas fa-users-cog"></i>
-        <span>Utilisateurs</span>
-        <i class="fas fa-chevron-right dropdown-arrow"></i>
-      </button>
-      <ul class="dropdown-menu dropdown-menu-hover">
-        <li><a class="dropdown-item" [routerLink]="['/admin/users-list']"><i class="fas fa-list"></i> Liste des utilisateurs</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/users-create']"><i class="fas fa-user-plus"></i> Ajouter un utilisateur</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/users-attendance']"><i class="fas fa-user-clock"></i> Présences</a></li>
-      </ul>
-    </div>
-
-    <!-- Centres de Lavage -->
-    <div class="dropdown dropdown-hover">
-      <button class="nav-item" data-mdb-dropdown-init>
-        <i class="fa-solid fa-car"></i>
-        <span>Centres</span>
-        <i class="fas fa-chevron-right dropdown-arrow"></i>
-      </button>
-      <ul class="dropdown-menu dropdown-menu-hover">
-        <li><a class="dropdown-item" [routerLink]="['/admin/centres-list']"><i class="fas fa-list"></i> Tous les centres</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/centres-create']"><i class="fas fa-plus-circle"></i> Nouveau centre</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/centres-stock']"><i class="fas fa-boxes"></i> Stocks par centre</a></li>
-      </ul>
-    </div>
-
-    <!-- Sessions de Lavage -->
-    <div class="dropdown dropdown-hover">
-      <button class="nav-item" data-mdb-dropdown-init>
-        <i class="fas fa-car-side"></i>
-        <span>Lavages</span>
-        <i class="fas fa-chevron-right dropdown-arrow"></i>
-      </button>
-      <ul class="dropdown-menu dropdown-menu-hover">
-        <li><a class="dropdown-item" [routerLink]="['/admin/wash-sessions']"><i class="fas fa-list"></i> Toutes les sessions</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/wash-now']"><i class="fas fa-play-circle"></i> Nouveau lavage</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/wash-queue']"><i class="fas fa-clock"></i> File d'attente</a></li>
-      </ul>
-    </div>
-
-    <!-- Paiements -->
-    <div class="dropdown dropdown-hover">
-      <button class="nav-item" data-mdb-dropdown-init>
-        <i class="fas fa-money-bill-wave"></i>
-        <span>Paiements</span>
-        <i class="fas fa-chevron-right dropdown-arrow"></i>
-      </button>
-      <ul class="dropdown-menu dropdown-menu-hover">
-        <li><a class="dropdown-item" [routerLink]="['/admin/payments-washers']"><i class="fas fa-user-tie"></i> Paiements laveurs</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/payments-customers']"><i class="fas fa-users"></i> Paiements clients</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/payments-methods']"><i class="fas fa-credit-card"></i> Méthodes de paiement</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/payments-reports']"><i class="fas fa-file-invoice-dollar"></i> Rapports</a></li>
-      </ul>
-    </div>
-
-    <!-- Stocks -->
-    <div class="dropdown dropdown-hover">
-      <button class="nav-item" data-mdb-dropdown-init>
-        <i class="fas fa-box-open"></i>
-        <span>Stocks</span>
-        <i class="fas fa-chevron-right dropdown-arrow"></i>
-      </button>
-      <ul class="dropdown-menu dropdown-menu-hover">
-        <li><a class="dropdown-item" [routerLink]="['/admin/stocks-list']"><i class="fas fa-boxes"></i> Inventaire</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/stocks-alerts']"><i class="fas fa-exclamation-triangle"></i> Alertes stock</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/stocks-movements']"><i class="fas fa-exchange-alt"></i> Mouvements</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/stocks-suppliers']"><i class="fas fa-truck"></i> Fournisseurs</a></li>
-      </ul>
-    </div>
-
-    <!-- Statistiques & Rapports -->
-    <div class="dropdown dropdown-hover">
-      <button class="nav-item" data-mdb-dropdown-init>
-        <i class="fas fa-chart-pie"></i>
-        <span>Statistiques</span>
-        <i class="fas fa-chevron-right dropdown-arrow"></i>
-      </button>
-      <ul class="dropdown-menu dropdown-menu-hover">
-        <li><a class="dropdown-item" [routerLink]="['/admin/reports-daily']"><i class="fas fa-calendar-day"></i> Journalier</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/reports-weekly']"><i class="fas fa-calendar-week"></i> Hebdomadaire</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/reports-monthly']"><i class="fas fa-calendar-alt"></i> Mensuel</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/reports-comparison']"><i class="fas fa-balance-scale"></i> Comparaison</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/reports-export']"><i class="fas fa-file-export"></i> Exports</a></li>
-      </ul>
-    </div>
-
-    <!-- Audit -->
-    <div class="dropdown dropdown-hover">
-      <button class="nav-item" data-mdb-dropdown-init>
-        <i class="fas fa-clipboard-check"></i>
-        <span>Audit</span>
-        <i class="fas fa-chevron-right dropdown-arrow"></i>
-      </button>
-      <ul class="dropdown-menu dropdown-menu-hover">
-        <li><a class="dropdown-item" [routerLink]="['/admin/audit-logs']"><i class="fas fa-clipboard-list"></i> Journal d'activité</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/audit-changes']"><i class="fas fa-history"></i> Historique modifications</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/audit-security']"><i class="fas fa-shield-alt"></i> Sécurité</a></li>
-      </ul>
-    </div>
-
-    <!-- Dépenses -->
-    <div class="dropdown dropdown-hover">
-      <button class="nav-item" data-mdb-dropdown-init>
-        <i class="fas fa-file-invoice-dollar"></i>
-        <span>Dépenses</span>
-        <i class="fas fa-chevron-right dropdown-arrow"></i>
-      </button>
-      <ul class="dropdown-menu dropdown-menu-hover">
-        <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion dépenses</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/expenses-other']"><i class="fas fa-receipt"></i> Divers</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/expenses-profitability']"><i class="fas fa-chart-line"></i> Rentabilité</a></li>
-      </ul>
-    </div>
-
-    <!-- Paramètres -->
-    <div class="dropdown dropdown-hover">
-      <button class="nav-item" data-mdb-dropdown-init>
-        <i class="fas fa-cogs"></i>
-        <span>Paramètres</span>
-        <i class="fas fa-chevron-right dropdown-arrow"></i>
-      </button>
-      <ul class="dropdown-menu dropdown-menu-hover">
-        <li><a class="dropdown-item" [routerLink]="['/admin/settings-schedule']"><i class="fas fa-clock"></i> Horaires</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/settings-services']"><i class="fas fa-concierge-bell"></i> Prestations</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/settings-vehicles']"><i class="fas fa-car"></i> Types de véhicules</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/settings-notifications']"><i class="fas fa-bell"></i> Notifications</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/settings-system']"><i class="fas fa-sliders-h"></i> Système</a></li>
-        <li><a class="dropdown-item" [routerLink]="['/admin/settings-templates']"><i class="fas fa-file-alt"></i> Modèles de paramètres</a></li>
-      </ul>
-    </div>
-  </div>
-</div>
 
   <!-- Main Content -->
   <div class="main-content" id="main-content">
@@ -191,7 +225,8 @@
             <i class="fas fa-chevron-down"></i>
           </button>
           <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
-            <li><a class="dropdown-item" [routerLink]="['/admin/users-profil']"><i class="fas fa-user"></i> Mon profil</a></li>
+            <li><a class="dropdown-item" [routerLink]="['/admin/users-profil']"><i class="fas fa-user"></i> Mon
+                profil</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
             <li><a class="dropdown-item" (click)="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
@@ -209,8 +244,8 @@
               <p class="dashboard-subtitle">Statistiques et analyses en temps réel</p>
             </div>
             <div class="center-selector"> CHOISIR UN CENTRE :
-              <select class="center-select" id="centerSelect" [(ngModel)]="selectedCentreId"
-                (change)="onCentreChange()" [disabled]="loadingCentres">
+              <select class="center-select" id="centerSelect" [(ngModel)]="selectedCentreId" (change)="onCentreChange()"
+                [disabled]="loadingCentres">
                 <option *ngFor="let centre of centres" [value]="centre.id">
                   {{ centre.name }} ({{ centre.location }})
                 </option>
@@ -220,25 +255,34 @@
               </div>
             </div>
           </div>
-          <!-- Bouton d'actualisation déplacé ici -->
-          <a href="#" class="refresh-button" (click)="refreshDashboard(); $event.preventDefault()"
-            [class.disabled]="!selectedCentreId || loadingDashboard"
-            [title]="!selectedCentreId ? 'Veuillez d\'abord sélectionner un centre' : 'Actualiser les données du dashboard'">
-            <i class="fas fa-sync-alt" [class.fa-spin]="loadingDashboard"></i>
-            {{ !selectedCentreId ? 'Choisir un centre' : (loadingDashboard ? 'Actualisation...' : 'Actualiser les données')
-            }}
-          </a>
         </div>
 
 
-        <!-- Section de filtres -->
+        <!-- Section de filtres avec sécurité -->
         <div class="filters-section">
           <h2 class="filters-title">Filtres d'analyse</h2>
           <div class="filters-grid">
+
+            <!-- Filtre Centre avec restriction d'accès -->
+            <div class="filter-group">
+              <label class="filter-label">Centre</label>
+              <select class="filter-select" id="centreFilter" [(ngModel)]="selectedCentreId" (change)="onCentreChange()"
+                [disabled]="loadingCentres || centres.length === 0">
+                <option value="">Sélectionner un centre</option>
+                <option *ngFor="let centre of centres" [value]="centre.id">
+                  {{ centre.name }}
+                </option>
+              </select>
+              <div *ngIf="loadingCentres" class="loading-spinner-small">
+                <i class="fas fa-spinner fa-spin"></i>
+              </div>
+            </div>
+
+            <!-- Filtre Période avec validation -->
             <div class="filter-group">
               <label class="filter-label">Période</label>
               <select class="filter-select" id="periodFilter" [(ngModel)]="selectedPeriod"
-                (change)="onPeriodChange($event)">
+                (change)="onPeriodChange($event)" [disabled]="!selectedCentreId">
                 <option value="today">Aujourd'hui</option>
                 <option value="week">Cette semaine</option>
                 <option value="month">Ce mois</option>
@@ -248,10 +292,12 @@
               </select>
             </div>
 
+            <!-- Filtre Service avec validation -->
             <div class="filter-group">
               <label class="filter-label">Type de service</label>
               <select class="filter-select" id="serviceFilter" [(ngModel)]="selectedService"
-                      (change)="onServiceChange($event)" [disabled]="loadingServices || !selectedCentreId">
+                (change)="onServiceChange($event)"
+                [disabled]="loadingServices || !selectedCentreId || services.length === 0">
                 <option value="all">Tous les services</option>
                 <option *ngFor="let service of services" [value]="service.id">
                   {{ service.name }}
@@ -262,16 +308,25 @@
               </div>
             </div>
 
-            <div class="filter-group">
+            <!-- Dates personnalisées avec validation -->
+            <div class="filter-group" *ngIf="selectedPeriod === 'custom'">
               <label class="filter-label">Date de début</label>
               <input type="date" class="filter-input" id="startDate" [(ngModel)]="startDate" (change)="onDateChange()"
-                [disabled]="selectedPeriod !== 'custom'">
+                [max]="endDate || getCurrentDate()" [disabled]="!selectedCentreId">
             </div>
 
-            <div class="filter-group">
+            <div class="filter-group" *ngIf="selectedPeriod === 'custom'">
               <label class="filter-label">Date de fin</label>
               <input type="date" class="filter-input" id="endDate" [(ngModel)]="endDate" (change)="onDateChange()"
-                [disabled]="selectedPeriod !== 'custom'">
+                [min]="startDate" [max]="getCurrentDate()" [disabled]="!selectedCentreId">
+            </div>
+
+            <!-- Bouton de rafraîchissement sécurisé -->
+            <div class="filter-group">
+              <label class="filter-label">&nbsp;</label>
+              <button class="refresh-button" (click)="refreshDashboard()"
+                [disabled]="!selectedCentreId || loadingDashboard || loadingKpis">
+                <i class="fas fa-sync-alt"></i> Rafraîchir </button>
             </div>
           </div>
         </div>
@@ -354,16 +409,14 @@
           <div class="chart-card">
             <div class="chart-header">
               <div class="chart-title">Évolution des Ventes (7 derniers jours)</div>
-              <a href="#" class="chart-action" (click)="refreshDashboard(); $event.preventDefault()">
-                <i class="fas fa-sync-alt"></i> Actualiser
-              </a>
             </div>
             <div class="chart-content" #salesChart>
               <div *ngIf="loadingCharts" class="loading">
                 <div class="spinner"></div>
                 <span>Chargement des données...</span>
               </div>
-              <div *ngIf="!loadingCharts && (!last7DaysRevenue || last7DaysRevenue.length === 0)" class="chart-placeholder">
+              <div *ngIf="!loadingCharts && (!last7DaysRevenue || last7DaysRevenue.length === 0)"
+                class="chart-placeholder">
                 <i class="fas fa-chart-bar"></i>
                 <p>Aucune donnée disponible</p>
               </div>

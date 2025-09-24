@@ -13,19 +13,24 @@ import { UsersService } from '../../../core/services/Users/users.service';
   styleUrl: './payments-washers.component.scss'
 })
 export class PaymentsWashersComponent implements OnInit {
+  //#region Properties
   users: Users[] = []; // Liste complète des utilisateurs.
   displayedUsers: Users[] = []; // Liste des utilisateurs affichés sur la page actuelle.
   currentUser: Users | null = null; // Utilisateur actuellement connecté.
   user: Users | null = null; // Informations sur l'utilisateur connecté.
   isSidebarCollapsed = false;
+  //#endregion
 
+  //#region Constructor
   constructor(
     private sanitizer: DomSanitizer,
     private usersService: UsersService, // Service pour interagir avec les utilisateurs.
     private router: Router, // Service pour la navigation entre les routes.
     private authService: AuthService // Service pour gérer l'authentification.
   ) {}
+  //#endregion
 
+  //#region Lifecycle Methods
   ngOnInit(): void {
     this.getUsers(); // Récupère les utilisateurs.
     this.loadCurrentUser(); // Charge l'utilisateur connecté
@@ -38,48 +43,9 @@ export class PaymentsWashersComponent implements OnInit {
       }
     });
   }
+  //#endregion
 
- /**
-   * Charge les photos des utilisateurs et les sécurise pour l'affichage.
-   * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
-   */
-  loadUserPhotos(): void {
-    this.displayedUsers.forEach((user) => {
-      if (user.photoUrl && typeof user.photoUrl === 'string') {
-        this.usersService.getUserPhoto(user.photoUrl).subscribe((blob) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            user.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
-              reader.result as string
-            );
-          };
-          reader.readAsDataURL(blob);
-        });
-      }
-    });
-  }
-
-  /**
-   * Bascule l'état de la barre latérale entre "collapsée" et
-   * "étendue".
-   * Modifie les classes CSS pour ajuster l'affichage.
-   * Cette méthode est appelée lors du clic sur le bouton de
-   * basculement de la barre latérale.
-   */
-    toggleSidebar() {
-      this.isSidebarCollapsed = !this.isSidebarCollapsed;
-
-      // Ajoute/retire les classes nécessaires
-      const sidebar = document.getElementById('sidebar');
-      const mainContent = document.querySelector('.main-content');
-
-      if (sidebar && mainContent) {
-        sidebar.classList.toggle('collapsed');
-        mainContent.classList.toggle('collapsed');
-      }
-    }
-
-
+  //#region User Management Methods
   /**
    * Récupère tous les utilisateurs et charge leurs photos.
    * Utilise le service UsersService pour obtenir la liste des utilisateurs.
@@ -141,6 +107,28 @@ export class PaymentsWashersComponent implements OnInit {
       },
     });
   }
+  //#endregion
+
+  //#region Photo Management Methods
+  /**
+   * Charge les photos des utilisateurs et les sécurise pour l'affichage.
+   * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
+   */
+  loadUserPhotos(): void {
+    this.displayedUsers.forEach((user) => {
+      if (user.photoUrl && typeof user.photoUrl === 'string') {
+        this.usersService.getUserPhoto(user.photoUrl).subscribe((blob) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            user.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
+              reader.result as string
+            );
+          };
+          reader.readAsDataURL(blob);
+        });
+      }
+    });
+  }
 
   /**
    * Charge la photo de l'utilisateur actuellement connecté.
@@ -182,7 +170,9 @@ export class PaymentsWashersComponent implements OnInit {
       );
     }
   }
+  //#endregion
 
+  //#region User Info Methods
   /**
    * Retourne le nom complet de l'utilisateur connecté
    * @returns Le nom complet formaté ou un texte par défaut
@@ -224,7 +214,31 @@ export class PaymentsWashersComponent implements OnInit {
 
     return roleMapping[roleId] || 'Administrateur';
   }
+  //#endregion
 
+  //#region Sidebar Methods
+  /**
+   * Bascule l'état de la barre latérale entre "collapsée" et
+   * "étendue".
+   * Modifie les classes CSS pour ajuster l'affichage.
+   * Cette méthode est appelée lors du clic sur le bouton de
+   * basculement de la barre latérale.
+   */
+    toggleSidebar() {
+      this.isSidebarCollapsed = !this.isSidebarCollapsed;
+
+      // Ajoute/retire les classes nécessaires
+      const sidebar = document.getElementById('sidebar');
+      const mainContent = document.querySelector('.main-content');
+
+      if (sidebar && mainContent) {
+        sidebar.classList.toggle('collapsed');
+        mainContent.classList.toggle('collapsed');
+      }
+    }
+  //#endregion
+
+  //#region Auth Methods
   /**
    * Déconnecte l'utilisateur et le redirige vers la page de connexion.
    */
@@ -256,5 +270,5 @@ export class PaymentsWashersComponent implements OnInit {
       this.router.navigate(['/auth/login']);
     }
   }
+  //#endregion
 }
-

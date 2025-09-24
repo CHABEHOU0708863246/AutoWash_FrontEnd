@@ -16,20 +16,22 @@ import { FormsModule } from '@angular/forms';
   styleUrl: './users-profil.component.scss',
 })
 export class UsersProfilComponent implements OnInit {
+  //#region Properties
+  // Utilisateurs
   users: Users[] = []; // Liste complète des utilisateurs.
   displayedUsers: Users[] = []; // Liste des utilisateurs affichés sur la page actuelle.
   currentUser: Users | null = null; // Utilisateur actuellement connecté.
   user: Users | null = null; // Informations sur l'utilisateur connecté.
   isSidebarCollapsed = false;
 
-  // Propriétés pour la gestion du profil
+  // Gestion du profil
   userEditableFields: UserEditableFields | null = null;
   selectedPhotoFile: File | null = null;
   isLoading = false;
   updateMessage = '';
   updateMessageType: 'success' | 'error' | '' = '';
 
-  // Propriétés du formulaire
+  // Formulaire
   profileForm = {
     firstName: '',
     lastName: '',
@@ -47,16 +49,20 @@ export class UsersProfilComponent implements OnInit {
     confirmNewPassword: '',
   };
 
-  // Onglet actif
+  // Navigation
   activeTab: 'personal' | 'professional' | 'security' = 'personal';
+  //#endregion
 
+  //#region Constructor
   constructor(
     private sanitizer: DomSanitizer,
     private usersService: UsersService, // Service pour interagir avec les utilisateurs.
     private router: Router, // Service pour la navigation entre les routes.
     private authService: AuthService // Service pour gérer l'authentification.
   ) {}
+  //#endregion
 
+  //#region Lifecycle Hooks
   ngOnInit(): void {
     this.getUsers(); // Récupère les utilisateurs.
     this.loadCurrentUser(); // Charge l'utilisateur connecté
@@ -80,7 +86,9 @@ export class UsersProfilComponent implements OnInit {
       this.initializeDOMEvents();
     }, 100);
   }
+  //#endregion
 
+  //#region Profile Management Methods
   /**
    * Charge les informations du profil utilisateur et les champs modifiables
    */
@@ -120,12 +128,15 @@ export class UsersProfilComponent implements OnInit {
       confirmNewPassword: '',
     };
 
-    // ✅ Charger la photo de profil si elle existe
+    // Charger la photo de profil si elle existe
     if (user.photoUrl) {
       this.loadUserProfilePhoto(user.photoUrl.toString());
     }
   }
 
+  /**
+   * Charge la photo de profil depuis l'URL
+   */
   private loadUserProfilePhoto(photoUrl: string): void {
     this.usersService.getUserPhoto(photoUrl).subscribe({
       next: (photoBlob: Blob) => {
@@ -148,7 +159,7 @@ export class UsersProfilComponent implements OnInit {
   }
 
   /**
-   *  Active un onglet spécifique dans l'interface utilisateur.
+   * Active un onglet spécifique dans l'interface utilisateur.
    * @param tab L'onglet à activer ('personal', 'professional', 'security').
    */
   setActiveTab(tab: 'personal' | 'professional' | 'security'): void {
@@ -156,80 +167,14 @@ export class UsersProfilComponent implements OnInit {
   }
 
   /**
-   * Initialise les événements DOM
+   * Vérifie si un champ est modifiable
    */
-  private initializeDOMEvents(): void {
-    // Gestion des onglets
-    const tabButtons = document.querySelectorAll('.tab-btn');
-    const tabContents = document.querySelectorAll('.tab-content');
-
-    tabButtons.forEach((btn, index) => {
-      btn.addEventListener('click', () => {
-        tabButtons.forEach((b) => b.classList.remove('active'));
-        tabContents.forEach((c) => c.classList.remove('active'));
-
-        btn.classList.add('active');
-        tabContents[index]?.classList.add('active');
-
-        // Mettre à jour l'onglet actif
-        const tabs = ['personal', 'professional', 'security'] as const;
-        this.activeTab = tabs[index] || 'personal';
-      });
-    });
-
-    // Gestion de l'upload de photo
-    const photoInput = document.getElementById(
-      'photoInput'
-    ) as HTMLInputElement;
-    const photoUploadBtn = document.querySelector('.photo-upload-btn');
-
-    if (photoUploadBtn) {
-      photoUploadBtn.addEventListener('click', () => {
-        photoInput?.click();
-      });
-    }
-
-    if (photoInput) {
-      photoInput.addEventListener('change', (event) => {
-        this.handlePhotoChange(event);
-      });
-    }
-
-    // Gestion de la soumission du formulaire
-    const form = document.getElementById('userForm') as HTMLFormElement;
-    if (form) {
-      form.addEventListener('submit', (event) => {
-        event.preventDefault();
-        this.onSubmit();
-      });
-    }
+  canEdit(field: keyof UserEditableFields): boolean {
+    return this.userEditableFields?.[field] === true;
   }
+  //#endregion
 
-  /**
-   * Gère le changement de photo
-   */
-  handlePhotoChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-
-    if (file) {
-      this.selectedPhotoFile = file;
-
-      // Prévisualisation de l'image
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const profilePhoto = document.getElementById('profilePhoto');
-        if (profilePhoto && e.target?.result) {
-          profilePhoto.style.backgroundImage = `url(${e.target.result})`;
-          profilePhoto.style.backgroundSize = 'cover';
-          profilePhoto.style.backgroundPosition = 'center';
-          profilePhoto.innerHTML = ''; // Enlever l'icône
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  }
-
+  //#region Form Methods
   /**
    * Soumission du formulaire
    */
@@ -248,7 +193,7 @@ export class UsersProfilComponent implements OnInit {
     this.isLoading = true;
     this.updateMessage = '';
 
-    // ✅ Créer la requête avec les bonnes valeurs du formulaire Angular (pas du DOM)
+    // Créer la requête avec les bonnes valeurs du formulaire
     const updateRequest = new UpdateProfileRequest(
       this.profileForm.firstName,
       this.profileForm.lastName,
@@ -278,10 +223,10 @@ export class UsersProfilComponent implements OnInit {
         this.profileForm.confirmNewPassword = '';
         this.clearPasswordFields();
 
-        // ✅ Recharger le profil pour avoir les données à jour
+        // Recharger le profil pour avoir les données à jour
         this.loadUserProfile();
 
-        // ✅ Mettre à jour l'affichage immédiatement
+        // Mettre à jour l'affichage immédiatement
         this.updateProfileDisplay();
       },
       error: (error) => {
@@ -295,25 +240,22 @@ export class UsersProfilComponent implements OnInit {
     });
   }
 
-  private updateProfileDisplay(): void {
+  /**
+   * Réinitialise le formulaire
+   */
+  resetForm(): void {
     if (this.userEditableFields?.currentUser) {
-      // Mettre à jour le nom affiché en haut
-      const profileNameElement = document.getElementById('profileName');
-      if (profileNameElement) {
-        profileNameElement.textContent = `${
-          this.userEditableFields.currentUser.firstName || 'Prénom'
-        } ${this.userEditableFields.currentUser.lastName || 'Nom'}`;
-      }
+      this.populateForm(this.userEditableFields.currentUser);
 
-      // Mettre à jour d'autres éléments d'affichage si nécessaire
-      const workingHoursElement = document.getElementById(
-        'workingHoursDisplay'
-      );
-      if (workingHoursElement) {
-        workingHoursElement.textContent =
-          this.userEditableFields.currentUser.workingHours?.toString() || '40';
-      }
+      // Forcer la mise à jour des champs dans le DOM
+      setTimeout(() => {
+        this.updateDOMFields();
+      }, 0);
     }
+
+    this.selectedPhotoFile = null;
+    this.updateMessage = '';
+    this.updateMessageType = '';
   }
 
   /**
@@ -328,49 +270,8 @@ export class UsersProfilComponent implements OnInit {
   }
 
   /**
-   * Affiche un message de succès ou d'erreur
+   * Met à jour les champs du DOM avec les valeurs du formulaire
    */
-  private showMessage(message: string, type: 'success' | 'error'): void {
-    this.updateMessage = message;
-    this.updateMessageType = type;
-
-    // Afficher le message dans le DOM
-    const successElement = document.getElementById('successMessage');
-    const errorElement = document.getElementById('passwordError');
-
-    if (type === 'success' && successElement) {
-      successElement.style.display = 'block';
-      successElement.querySelector('span')!.textContent = message;
-      setTimeout(() => {
-        successElement.style.display = 'none';
-      }, 5000);
-    } else if (type === 'error' && errorElement) {
-      errorElement.style.display = 'block';
-      errorElement.querySelector('span')!.textContent = message;
-      setTimeout(() => {
-        errorElement.style.display = 'none';
-      }, 5000);
-    }
-  }
-
-  /**
-   * Réinitialise le formulaire
-   */
-  resetForm(): void {
-    if (this.userEditableFields?.currentUser) {
-      this.populateForm(this.userEditableFields.currentUser);
-
-      // ✅ Forcer la mise à jour des champs dans le DOM
-      setTimeout(() => {
-        this.updateDOMFields();
-      }, 0);
-    }
-
-    this.selectedPhotoFile = null;
-    this.updateMessage = '';
-    this.updateMessageType = '';
-  }
-
   private updateDOMFields(): void {
     const updateField = (id: string, value: any) => {
       const element = document.getElementById(id) as
@@ -397,54 +298,154 @@ export class UsersProfilComponent implements OnInit {
     // Vider les champs de mot de passe
     this.clearPasswordFields();
   }
+  //#endregion
 
+  //#region DOM Event Methods
   /**
-   * Vérifie si un champ est modifiable
+   * Initialise les événements DOM
    */
-  canEdit(field: keyof UserEditableFields): boolean {
-    return this.userEditableFields?.[field] === true;
+  private initializeDOMEvents(): void {
+    this.initializeTabs();
+    this.initializePhotoUpload();
+    this.initializeFormSubmit();
   }
 
   /**
-   * Charge les photos des utilisateurs et les sécurise pour l'affichage.
-   * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
+   * Initialise la gestion des onglets
    */
-  loadUserPhotos(): void {
-    this.displayedUsers.forEach((user) => {
-      if (user.photoUrl && typeof user.photoUrl === 'string') {
-        this.usersService.getUserPhoto(user.photoUrl).subscribe((blob) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            user.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
-              reader.result as string
-            );
-          };
-          reader.readAsDataURL(blob);
-        });
-      }
+  private initializeTabs(): void {
+    const tabButtons = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+
+    tabButtons.forEach((btn, index) => {
+      btn.addEventListener('click', () => {
+        tabButtons.forEach((b) => b.classList.remove('active'));
+        tabContents.forEach((c) => c.classList.remove('active'));
+
+        btn.classList.add('active');
+        tabContents[index]?.classList.add('active');
+
+        // Mettre à jour l'onglet actif
+        const tabs = ['personal', 'professional', 'security'] as const;
+        this.activeTab = tabs[index] || 'personal';
+      });
     });
   }
 
   /**
-   * Bascule l'état de la barre latérale entre "collapsée" et
-   * "étendue".
-   * Modifie les classes CSS pour ajuster l'affichage.
-   * Cette méthode est appelée lors du clic sur le bouton de
-   * basculement de la barre latérale.
+   * Initialise l'upload de photo
    */
-  toggleSidebar() {
-    this.isSidebarCollapsed = !this.isSidebarCollapsed;
+  private initializePhotoUpload(): void {
+    const photoInput = document.getElementById(
+      'photoInput'
+    ) as HTMLInputElement;
+    const photoUploadBtn = document.querySelector('.photo-upload-btn');
 
-    // Ajoute/retire les classes nécessaires
-    const sidebar = document.getElementById('sidebar');
-    const mainContent = document.querySelector('.main-content');
+    if (photoUploadBtn) {
+      photoUploadBtn.addEventListener('click', () => {
+        photoInput?.click();
+      });
+    }
 
-    if (sidebar && mainContent) {
-      sidebar.classList.toggle('collapsed');
-      mainContent.classList.toggle('collapsed');
+    if (photoInput) {
+      photoInput.addEventListener('change', (event) => {
+        this.handlePhotoChange(event);
+      });
     }
   }
 
+  /**
+   * Initialise la soumission du formulaire
+   */
+  private initializeFormSubmit(): void {
+    const form = document.getElementById('userForm') as HTMLFormElement;
+    if (form) {
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        this.onSubmit();
+      });
+    }
+  }
+
+  /**
+   * Gère le changement de photo
+   */
+  private handlePhotoChange(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+
+    if (file) {
+      this.selectedPhotoFile = file;
+
+      // Prévisualisation de l'image
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const profilePhoto = document.getElementById('profilePhoto');
+        if (profilePhoto && e.target?.result) {
+          profilePhoto.style.backgroundImage = `url(${e.target.result})`;
+          profilePhoto.style.backgroundSize = 'cover';
+          profilePhoto.style.backgroundPosition = 'center';
+          profilePhoto.innerHTML = ''; // Enlever l'icône
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  /**
+   * Met à jour l'affichage du profil dans le DOM
+   */
+  private updateProfileDisplay(): void {
+    if (this.userEditableFields?.currentUser) {
+      // Mettre à jour le nom affiché en haut
+      const profileNameElement = document.getElementById('profileName');
+      if (profileNameElement) {
+        profileNameElement.textContent = `${
+          this.userEditableFields.currentUser.firstName || 'Prénom'
+        } ${this.userEditableFields.currentUser.lastName || 'Nom'}`;
+      }
+
+      // Mettre à jour les heures de travail
+      const workingHoursElement = document.getElementById(
+        'workingHoursDisplay'
+      );
+      if (workingHoursElement) {
+        workingHoursElement.textContent =
+          this.userEditableFields.currentUser.workingHours?.toString() || '40';
+      }
+    }
+  }
+  //#endregion
+
+  //#region Message Methods
+  /**
+   * Affiche un message de succès ou d'erreur
+   */
+  private showMessage(message: string, type: 'success' | 'error'): void {
+    this.updateMessage = message;
+    this.updateMessageType = type;
+
+    // Afficher le message dans le DOM
+    const successElement = document.getElementById('successMessage');
+    const errorElement = document.getElementById('passwordError');
+
+    if (type === 'success' && successElement) {
+      successElement.style.display = 'block';
+      successElement.querySelector('span')!.textContent = message;
+      setTimeout(() => {
+        successElement.style.display = 'none';
+      }, 5000);
+    } else if (type === 'error' && errorElement) {
+      errorElement.style.display = 'block';
+      errorElement.querySelector('span')!.textContent = message;
+      setTimeout(() => {
+        errorElement.style.display = 'none';
+      }, 5000);
+    }
+  }
+  //#endregion
+
+  //#region User Management Methods
   /**
    * Récupère tous les utilisateurs et charge leurs photos.
    * Utilise le service UsersService pour obtenir la liste des utilisateurs.
@@ -504,6 +505,26 @@ export class UsersProfilComponent implements OnInit {
           },
         });
       },
+    });
+  }
+
+  /**
+   * Charge les photos des utilisateurs et les sécurise pour l'affichage.
+   * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
+   */
+  loadUserPhotos(): void {
+    this.displayedUsers.forEach((user) => {
+      if (user.photoUrl && typeof user.photoUrl === 'string') {
+        this.usersService.getUserPhoto(user.photoUrl).subscribe((blob) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            user.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
+              reader.result as string
+            );
+          };
+          reader.readAsDataURL(blob);
+        });
+      }
     });
   }
 
@@ -589,6 +610,26 @@ export class UsersProfilComponent implements OnInit {
 
     return roleMapping[roleId] || 'Administrateur';
   }
+  //#endregion
+
+  //#region UI Interaction Methods
+  /**
+   * Bascule l'état de la barre latérale entre "collapsée" et "étendue".
+   * Modifie les classes CSS pour ajuster l'affichage.
+   * Cette méthode est appelée lors du clic sur le bouton de basculement de la barre latérale.
+   */
+  toggleSidebar() {
+    this.isSidebarCollapsed = !this.isSidebarCollapsed;
+
+    // Ajoute/retire les classes nécessaires
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.querySelector('.main-content');
+
+    if (sidebar && mainContent) {
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('collapsed');
+    }
+  }
 
   /**
    * Déconnecte l'utilisateur et le redirige vers la page de connexion.
@@ -618,4 +659,5 @@ export class UsersProfilComponent implements OnInit {
       this.router.navigate(['/auth/login']);
     }
   }
+  //#endregion
 }

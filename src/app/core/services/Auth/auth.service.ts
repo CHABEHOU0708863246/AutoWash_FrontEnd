@@ -282,26 +282,39 @@ export class AuthService {
   }
 
   /**
-   * Réinitialise le mot de passe de l'utilisateur.
-   * @param email - Adresse e-mail de l'utilisateur.
-   * @param token - Token de réinitialisation.
-   * @param password - Nouveau mot de passe.
-   * @returns Observable avec la réponse de l'API.
-   */
-  resetPassword(email: string, token: string, password: string): Observable<any> {
-    const request: ResetPasswordRequest = new ResetPasswordRequest(email, token, password);
-    return this.http.post<any>(`${this.apiUrl}/reset-password`, request);
-  }
+ * Réinitialise le mot de passe de l'utilisateur.
+ * @param email - Adresse e-mail de l'utilisateur.
+ * @param token - Token de réinitialisation.
+ * @param password - Nouveau mot de passe.
+ * @returns Observable avec la réponse de l'API.
+ */
+resetPassword(email: string, token: string, password: string): Observable<any> {
+  const decodedToken = decodeURIComponent(token);
+  const request: ResetPasswordRequest = new ResetPasswordRequest(email, decodedToken, password);
+  return this.http.post<any>(`${this.apiUrl}/reset-password`, request);
+}
 
   /**
-   * Valide un token de réinitialisation de mot de passe
-   * @param email - Email de l'utilisateur
-   * @param token - Token à valider
-   * @returns Observable<boolean>
-   */
-  validateResetToken(email: string, token: string): Observable<Response> {
-    return this.http.post<Response>(`${this.apiUrl}/validate-reset-token`, { email, token });
-  }
+ * Valide un token de réinitialisation de mot de passe
+ * @param email - Email de l'utilisateur
+ * @param token - Token à valider
+ * @returns Observable<any> - Correction du type de retour
+ */
+validateResetToken(email: string, token: string): Observable<any> {
+  // Décoder le token avant l'envoi
+  const decodedToken = decodeURIComponent(token);
+  const request = {
+    email: email,
+    token: decodedToken
+  };
+
+  console.log('Validation token - Email:', email);
+  console.log('Validation token - Token length:', decodedToken.length);
+
+  return this.http.post<any>(`${this.apiUrl}/validate-reset-token`, request);
+}
+
+
 
   /**
    * Change le mot de passe de l'utilisateur.

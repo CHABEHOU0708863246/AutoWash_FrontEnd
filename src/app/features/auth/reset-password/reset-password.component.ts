@@ -65,29 +65,65 @@ export class ResetPasswordComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  private validateToken(): void {
-    this.authService.validateResetToken(this.email, this.token)
-      .pipe(
-        takeUntil(this.destroy$),
-        catchError(error => {
-          this.handleTokenValidationError(error);
-          return throwError(() => error);
-        })
-      )
-      .subscribe({
-        next: (response) => {
-          this.isValidating = false;
-          if (response.status === 200) {
-            this.tokenValid = true;
-          } else {
-            this.errorMessage = response.statusText || 'Token invalide ou expiré.';
-          }
-        },
-        error: () => {
-          // Erreur déjà gérée dans catchError
+private validateToken(): void {
+  this.authService.validateResetToken(this.email, this.token)
+    .pipe(
+      takeUntil(this.destroy$),
+      catchError(error => {
+        this.handleTokenValidationError(error);
+        return throwError(() => error);
+      })
+    )
+    .subscribe({
+      next: (response) => {
+        this.isValidating = false;
+        console.log('Réponse validation token:', response); // Debug
+
+        // Vérifier la structure de la réponse
+        if (response.success === true || response.isSuccess === true) {
+          this.tokenValid = true;
+          this.errorMessage = ''; // Effacer les erreurs précédentes
+        } else {
+          this.tokenValid = false;
+          this.errorMessage = response.message || 'Token invalide ou expiré.';
         }
-      });
-  }
+      },
+      error: (error) => {
+        //console.error('Erreur validation token:', error);
+        this.handleTokenValidationError(error);
+      }
+    });
+}
+
+// Méthodes pour l'affichage en temps réel de la force du mot de passe
+getPasswordStrengthClass(): string {
+  const password = this.newPassword?.value;
+  if (!password) return 'strength-0';
+
+  let strength = 0;
+  if (password.length >= 6) strength++;
+  if (this.hasUpperCase()) strength++;
+  if (this.hasLowerCase()) strength++;
+  if (this.hasNumber()) strength++;
+
+  return `strength-${strength}`;
+}
+
+hasUpperCase(): boolean {
+  return /[A-Z]/.test(this.newPassword?.value || '');
+}
+
+hasLowerCase(): boolean {
+  return /[a-z]/.test(this.newPassword?.value || '');
+}
+
+hasNumber(): boolean {
+  return /[0-9]/.test(this.newPassword?.value || '');
+}
+
+hasSpecialChar(): boolean {
+  return /[#?!@$%^&*-]/.test(this.newPassword?.value || '');
+}
 
   private handleTokenValidationError(error: any): void {
     this.isValidating = false;
@@ -103,38 +139,39 @@ export class ResetPasswordComponent implements OnInit, OnDestroy {
   }
 
   onSubmit(): void {
-    if (this.resetPasswordForm.valid && !this.isLoading && this.tokenValid) {
-      this.isLoading = true;
-      this.errorMessage = '';
-      this.successMessage = '';
+  if (this.resetPasswordForm.valid && !this.isLoading && this.tokenValid) {
+    this.isLoading = true;
+    this.errorMessage = '';
+    this.successMessage = '';
 
-      const { newPassword, confirmPassword } = this.resetPasswordForm.value;
+    const { newPassword } = this.resetPasswordForm.value;
 
-      this.authService.resetPassword(this.email, this.token, newPassword,)
-        .pipe(
-          takeUntil(this.destroy$),
-          catchError(error => {
-            this.handleResetError(error);
-            return throwError(() => error);
-          })
-        )
-        .subscribe({
-          next: (response) => {
-            this.isLoading = false;
-            if (response.isSuccess) {
-              this.handleResetSuccess(response.message);
-            } else {
-              this.errorMessage = response.message;
-            }
-          },
-          error: () => {
-            // Erreur déjà gérée dans catchError
+    // Correction: passer directement le token sans modification
+    this.authService.resetPassword(this.email, this.token, newPassword)
+      .pipe(
+        takeUntil(this.destroy$),
+        catchError(error => {
+          this.handleResetError(error);
+          return throwError(() => error);
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          this.isLoading = false;
+          if (response.isSuccess) {
+            this.handleResetSuccess(response.message);
+          } else {
+            this.errorMessage = response.message;
           }
-        });
-    } else {
-      this.resetPasswordForm.markAllAsTouched();
-    }
+        },
+        error: () => {
+          // Erreur déjà gérée dans catchError
+        }
+      });
+  } else {
+    this.resetPasswordForm.markAllAsTouched();
   }
+}
 
   private handleResetSuccess(message: string): void {
     this.successMessage = message;

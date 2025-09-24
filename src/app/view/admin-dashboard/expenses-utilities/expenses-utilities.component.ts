@@ -2,16 +2,20 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+
+// Models
 import { Users } from '../../../core/models/Users/Users';
-import { AuthService } from '../../../core/services/Auth/auth.service';
-import { UsersService } from '../../../core/services/Users/users.service';
 import { Expense } from '../../../core/models/Expenses/Expense';
 import { ExpenseRequest } from '../../../core/models/Expenses/ExpenseRequest';
-import { ExpensesService } from '../../../core/services/Expenses/expenses.service';
-import { FormsModule } from '@angular/forms';
 import { ApiResponseData } from '../../../core/models/ApiResponseData';
 import { Centres } from '../../../core/models/Centres/Centres';
 import { PaginatedResponse } from '../../../core/models/Paginate/PaginatedResponse';
+
+// Services
+import { AuthService } from '../../../core/services/Auth/auth.service';
+import { UsersService } from '../../../core/services/Users/users.service';
+import { ExpensesService } from '../../../core/services/Expenses/expenses.service';
 import { CentresService } from '../../../core/services/Centres/centres.service';
 
 @Component({
@@ -21,13 +25,15 @@ import { CentresService } from '../../../core/services/Centres/centres.service';
   styleUrl: './expenses-utilities.component.scss'
 })
 export class ExpensesUtilitiesComponent implements OnInit {
-  users: Users[] = []; // Liste complète des utilisateurs.
-  displayedUsers: Users[] = []; // Liste des utilisateurs affichés sur la page actuelle.
-  currentUser: Users | null = null; // Utilisateur actuellement connecté.
-  user: Users | null = null; // Informations sur l'utilisateur connecté.
+  //#region Properties
+  // Propriétés utilisateurs
+  users: Users[] = [];
+  displayedUsers: Users[] = [];
+  currentUser: Users | null = null;
+  user: Users | null = null;
   isSidebarCollapsed = false;
 
-  // Propriétés pour la gestion des dépenses
+  // Propriétés dépenses
   expenses: Expense[] = [];
   loading = false;
   submitting = false;
@@ -46,8 +52,10 @@ export class ExpensesUtilitiesComponent implements OnInit {
     date: new Date(),
     centreId: ''
   };
+  //#endregion
 
- constructor(
+  //#region Constructor
+  constructor(
     private sanitizer: DomSanitizer,
     private usersService: UsersService,
     private router: Router,
@@ -55,7 +63,9 @@ export class ExpensesUtilitiesComponent implements OnInit {
     private expensesService: ExpensesService,
     private centresService: CentresService
   ) {}
+  //#endregion
 
+  //#region Lifecycle Methods
   ngOnInit(): void {
     this.getUsers();
     this.loadCurrentUser();
@@ -75,8 +85,9 @@ export class ExpensesUtilitiesComponent implements OnInit {
       }
     });
   }
+  //#endregion
 
-  // Charger tous les centres
+  //#region Centres Methods
   loadCentres(): void {
     this.centresService.getAllCentres()
       .subscribe({
@@ -95,10 +106,11 @@ export class ExpensesUtilitiesComponent implements OnInit {
         }
       });
   }
+  //#endregion
 
-
+  //#region Expense Types Methods
   loadExpenseTypes(): void {
-    if (this.selectedCentreId) { // Utiliser selectedCentreId au lieu de currentUser.centreId
+    if (this.selectedCentreId) {
       console.log('Chargement des types pour le centre:', this.selectedCentreId);
 
       this.expensesService.getExpenseTypes(this.selectedCentreId)
@@ -106,7 +118,6 @@ export class ExpensesUtilitiesComponent implements OnInit {
           next: (response) => {
             console.log('Réponse des types:', response);
 
-            // CORRECTION: Utiliser response.succeeded au lieu de response.success
             if (response.success) {
               this.expenseTypes = response.data;
               console.log('Types chargés:', this.expenseTypes);
@@ -148,8 +159,9 @@ export class ExpensesUtilitiesComponent implements OnInit {
       console.warn('Aucun centre sélectionné pour charger les types');
     }
   }
+  //#endregion
 
-  // Charger les dépenses
+  //#region Expenses Methods
   loadExpenses(): void {
     if (this.selectedCentreId) {
       this.loading = true;
@@ -181,7 +193,6 @@ export class ExpensesUtilitiesComponent implements OnInit {
     }
   }
 
-  // Gérer la réponse des dépenses
   private handleExpensesResponse(response: ApiResponseData<PaginatedResponse<Expense>>): void {
     if (response.success) {
       this.expenses = response.data.items;
@@ -192,36 +203,51 @@ export class ExpensesUtilitiesComponent implements OnInit {
     this.loading = false;
   }
 
-  // Gérer les erreurs de chargement des dépenses
   private handleExpensesError(error: any): void {
     console.error('Erreur API:', error);
     this.expenses = [];
     this.loading = false;
   }
 
-  // Lorsque les filtres changent
+  getTotalAmount(): number {
+    return this.expenses.reduce((total, expense) => total + expense.amount, 0);
+  }
+
+  formatAmount(amount: number): string {
+    return new Intl.NumberFormat('fr-FR', {
+      style: 'currency',
+      currency: 'XOF'
+    }).format(amount);
+  }
+
+  formatDate(date: Date | string): string {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return new Intl.DateTimeFormat('fr-FR').format(dateObj);
+  }
+  //#endregion
+
+  //#region Filter Methods
   onFiltersChange(): void {
     this.loadExpenseTypes();
     this.loadExpenses();
   }
 
-  // Lorsque le centre sélectionné change
   onCentreChange(): void {
     this.expenseForm.centreId = this.selectedCentreId;
     this.onFiltersChange();
   }
 
-  // Lorsque le type sélectionné change
   onTypeChange(): void {
     this.onFiltersChange();
   }
 
-  // Réinitialiser les filtres
   resetFilters(): void {
     this.selectedType = '';
     this.onFiltersChange();
   }
+  //#endregion
 
+  //#region Form Methods
   onSubmit(): void {
     if (!this.isFormValid()) {
       alert('Veuillez remplir tous les champs obligatoires');
@@ -236,7 +262,7 @@ export class ExpensesUtilitiesComponent implements OnInit {
           if (response.success) {
             alert('Dépense enregistrée avec succès!');
             this.resetForm();
-            this.loadExpenses(); // Recharger la liste avec les filtres actuels
+            this.loadExpenses();
           } else {
             alert('Erreur: ' + response.message);
           }
@@ -250,9 +276,6 @@ export class ExpensesUtilitiesComponent implements OnInit {
       });
   }
 
-
-
-  // Valider le formulaire
   isFormValid(): boolean {
     return !!this.expenseForm.type &&
            !!this.expenseForm.centreId &&
@@ -261,7 +284,6 @@ export class ExpensesUtilitiesComponent implements OnInit {
            !!this.expenseForm.date;
   }
 
-  // Réinitialiser le formulaire
   resetForm(): void {
     this.expenseForm = {
       type: '',
@@ -271,30 +293,9 @@ export class ExpensesUtilitiesComponent implements OnInit {
       centreId: ''
     };
   }
+  //#endregion
 
-  // Calculer le total des montants
-getTotalAmount(): number {
-  return this.expenses.reduce((total, expense) => total + expense.amount, 0);
-}
-
-  // Formater le montant
-  formatAmount(amount: number): string {
-    return new Intl.NumberFormat('fr-FR', {
-      style: 'currency',
-      currency: 'XOF'
-    }).format(amount);
-  }
-
-  // Formater la date
-  formatDate(date: Date | string): string {
-    const dateObj = typeof date === 'string' ? new Date(date) : date;
-    return new Intl.DateTimeFormat('fr-FR').format(dateObj);
-  }
-
- /**
-   * Charge les photos des utilisateurs et les sécurise pour l'affichage.
-   * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
-   */
+  //#region User Methods
   loadUserPhotos(): void {
     this.displayedUsers.forEach((user) => {
       if (user.photoUrl && typeof user.photoUrl === 'string') {
@@ -311,36 +312,11 @@ getTotalAmount(): number {
     });
   }
 
-  /**
-   * Bascule l'état de la barre latérale entre "collapsée" et
-   * "étendue".
-   * Modifie les classes CSS pour ajuster l'affichage.
-   * Cette méthode est appelée lors du clic sur le bouton de
-   * basculement de la barre latérale.
-   */
-    toggleSidebar() {
-      this.isSidebarCollapsed = !this.isSidebarCollapsed;
-
-      // Ajoute/retire les classes nécessaires
-      const sidebar = document.getElementById('sidebar');
-      const mainContent = document.querySelector('.main-content');
-
-      if (sidebar && mainContent) {
-        sidebar.classList.toggle('collapsed');
-        mainContent.classList.toggle('collapsed');
-      }
-    }
-
-
-  /**
-   * Récupère tous les utilisateurs et charge leurs photos.
-   * Utilise le service UsersService pour obtenir la liste des utilisateurs.
-   */
   getUsers(): void {
     this.usersService.getAllUsers().subscribe({
       next: (data) => {
         this.users = data;
-        this.loadUserPhotos(); // Charge les photos après avoir reçu les utilisateurs
+        this.loadUserPhotos();
       },
       error: (error) => {
         console.error('Erreur lors du chargement des utilisateurs', error);
@@ -348,19 +324,13 @@ getTotalAmount(): number {
     });
   }
 
-  /**
-   * Charge l'utilisateur actuellement connecté.
-   * Essaie d'abord de récupérer l'utilisateur depuis le service d'authentification,
-   */
   loadCurrentUser(): void {
-    // D'abord, essaie de récupérer depuis le service d'authentification
     this.authService.loadCurrentUserProfile().subscribe({
       next: (user) => {
         if (user) {
           this.currentUser = user;
           this.loadCurrentUserPhoto();
         } else {
-          // Si pas d'utilisateur depuis AuthService, utilise UsersService
           this.usersService.getCurrentUser().subscribe({
             next: (user) => {
               this.currentUser = user;
@@ -377,7 +347,6 @@ getTotalAmount(): number {
       },
       error: (error) => {
         console.error('Erreur lors du chargement du profil utilisateur', error);
-        // Fallback vers UsersService
         this.usersService.getCurrentUser().subscribe({
           next: (user) => {
             this.currentUser = user;
@@ -394,18 +363,10 @@ getTotalAmount(): number {
     });
   }
 
-  /**
-   * Charge la photo de l'utilisateur actuellement connecté.
-   *
-   * Utilise le service UsersService pour obtenir la photo de l'utilisateur.
-   */
   loadCurrentUserPhoto(): void {
     if (!this.currentUser) return;
 
-    if (
-      this.currentUser.photoUrl &&
-      typeof this.currentUser.photoUrl === 'string'
-    ) {
+    if (this.currentUser.photoUrl && typeof this.currentUser.photoUrl === 'string') {
       this.usersService.getUserPhoto(this.currentUser.photoUrl).subscribe({
         next: (blob) => {
           const reader = new FileReader();
@@ -416,29 +377,18 @@ getTotalAmount(): number {
           reader.readAsDataURL(blob);
         },
         error: (error) => {
-          console.error(
-            'Erreur lors du chargement de la photo utilisateur',
-            error
-          );
-          // Image par défaut
+          console.error('Erreur lors du chargement de la photo utilisateur', error);
           this.currentUser!.photoSafeUrl =
-            this.sanitizer.bypassSecurityTrustUrl(
-              'assets/images/default-avatar.png'
-            );
+            this.sanitizer.bypassSecurityTrustUrl('assets/images/default-avatar.png');
         },
       });
     } else {
-      // Si pas de photoUrl, utiliser une image par défaut
       this.currentUser.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
         'assets/images/default-avatar.png'
       );
     }
   }
 
-  /**
-   * Retourne le nom complet de l'utilisateur connecté
-   * @returns Le nom complet formaté ou un texte par défaut
-   */
   getFullName(): string {
     if (this.currentUser) {
       const firstName = this.currentUser.firstName || '';
@@ -448,20 +398,13 @@ getTotalAmount(): number {
     return 'Utilisateur';
   }
 
-  /**
-   * Retourne le rôle de l'utilisateur connecté
-   * @returns Le rôle de l'utilisateur ou un texte par défaut
-   */
   getUserRole(): string {
-    // Si pas d'utilisateur connecté
     if (!this.currentUser) return 'Rôle non défini';
 
-    // Si l'utilisateur a des rôles
     if (this.currentUser.roles && this.currentUser.roles.length > 0) {
       return this.mapRoleIdToName(this.currentUser.roles[0]);
     }
 
-    // Sinon, utilise le service d'authentification
     const role = this.authService.getUserRole();
     return role ? this.mapRoleIdToName(role) : 'Rôle non défini';
   }
@@ -476,37 +419,40 @@ getTotalAmount(): number {
 
     return roleMapping[roleId] || 'Administrateur';
   }
+  //#endregion
 
-  /**
-   * Déconnecte l'utilisateur et le redirige vers la page de connexion.
-   */
+  //#region UI Methods
+  toggleSidebar() {
+    this.isSidebarCollapsed = !this.isSidebarCollapsed;
+
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.querySelector('.main-content');
+
+    if (sidebar && mainContent) {
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('collapsed');
+    }
+  }
+  //#endregion
+
+  //#region Auth Methods
   logout(): void {
-    // Vérifie si l'utilisateur est bien authentifié avant de le déconnecter
     if (this.authService.isAuthenticated()) {
       try {
-        // Log l'état du localStorage avant la déconnexion (pour debug)
-        console.log('État du localStorage avant déconnexion:', {
-        });
+        console.log('État du localStorage avant déconnexion:', {});
 
-        // Appel au service de déconnexion
         this.authService.logout();
 
-        // Vérifie que le localStorage a bien été vidé
-        console.log('État du localStorage après déconnexion:', {
+        console.log('État du localStorage après déconnexion:', {});
 
-        });
-
-        // Redirige vers la page de login seulement après confirmation que tout est bien déconnecté
         this.router.navigate(['/auth/login']);
       } catch (error) {
         console.error('Erreur lors de la déconnexion:', error);
-        // Fallback en cas d'erreur - force la redirection
         this.router.navigate(['/auth/login']);
       }
     } else {
-      // Si l'utilisateur n'est pas authentifié, rediriger directement
       this.router.navigate(['/auth/login']);
     }
   }
+  //#endregion
 }
-

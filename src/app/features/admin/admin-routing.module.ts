@@ -3,7 +3,6 @@ import { RouterModule, Routes } from '@angular/router';
 import { AdminDashboardComponent } from '../../view/admin-dashboard/admin-dashboard.component';
 import { UsersListComponent } from '../../view/admin-dashboard/users-list/users-list.component';
 import { UsersCreateComponent } from '../../view/admin-dashboard/users-create/users-create.component';
-import { UsersPermissionsComponent } from '../../view/admin-dashboard/users-permissions/users-permissions.component';
 import { CentresListComponent } from '../../view/admin-dashboard/centres-list/centres-list.component';
 import { CentresCreateComponent } from '../../view/admin-dashboard/centres-create/centres-create.component';
 import { SettingsScheduleComponent } from '../../view/admin-dashboard/settings-schedule/settings-schedule.component';
@@ -12,9 +11,7 @@ import { SettingsVehiclesComponent } from '../../view/admin-dashboard/settings-v
 import { WashNowComponent } from '../../view/admin-dashboard/wash-now/wash-now.component';
 import { WashSessionsComponent } from '../../view/admin-dashboard/wash-sessions/wash-sessions.component';
 import { ExpensesUtilitiesComponent } from '../../view/admin-dashboard/expenses-utilities/expenses-utilities.component';
-import { ExpensesRentComponent } from '../../view/admin-dashboard/expenses-rent/expenses-rent.component';
 import { ExpensesProfitabilityComponent } from '../../view/admin-dashboard/expenses-profitability/expenses-profitability.component';
-import { Payment } from '../../core/models/Payments/Payment';
 import { PaymentsWashersComponent } from '../../view/admin-dashboard/payments-washers/payments-washers.component';
 import { PaymentsReportsComponent } from '../../view/admin-dashboard/payments-reports/payments-reports.component';
 import { UsersProfilComponent } from '../../view/admin-dashboard/users-profil/users-profil.component';
