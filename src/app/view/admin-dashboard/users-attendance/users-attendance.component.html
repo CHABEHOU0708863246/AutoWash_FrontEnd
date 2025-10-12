@@ -1,0 +1,677 @@
+<html lang="fr">
+
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet">
+</head>
+
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fas fa-hashtag"></i> AUTOWASH
+    </div>
+    <div class="user-profile" *ngIf="currentUser">
+      <div class="user-photo-container">
+        <img *ngIf="currentUser.photoSafeUrl" [src]="currentUser.photoSafeUrl"
+          [alt]="'Photo de ' + (currentUser.firstName || 'Utilisateur')" class="user-avatar">
+        <div *ngIf="!currentUser.photoSafeUrl" class="user-initials">
+          {{ (currentUser.firstName?.charAt(0) || '') + (currentUser.lastName?.charAt(0) || '') }}
+        </div>
+      </div>
+      <div class="user-info">
+        <h4>{{ getFullName() }}</h4>
+        <p>{{ getUserRole() }}</p>
+      </div>
+    </div>
+    <div class="nav-menu">
+      <!-- Dashboard -->
+      <div class="dropdown dropdown-hover">
+        <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
+
+      <!-- Gestion des Utilisateurs -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-users-cog"></i>
+          <span>Utilisateurs</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-list']"><i class="fas fa-list"></i> Liste des
+              utilisateurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-create']"><i class="fas fa-user-plus"></i> Ajouter
+              un utilisateur</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-attendance']"><i class="fas fa-user-clock"></i>
+              Présences</a></li>
+        </ul>
+      </div>
+
+      <!-- Centres de Lavage -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fa-solid fa-car"></i>
+          <span>Centres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-list']"><i class="fas fa-list"></i> Tous les
+              centres</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-create']"><i class="fas fa-plus-circle"></i>
+              Nouveau centre</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-stock']"><i class="fas fa-boxes"></i> Stocks par
+              centre</a></li>
+        </ul>
+      </div>
+
+      <!-- Sessions de Lavage -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-car-side"></i>
+          <span>Lavages</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-sessions']"><i class="fas fa-list"></i> Toutes les
+              sessions</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-now']"><i class="fas fa-play-circle"></i> Nouveau
+              lavage</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-queue']"><i class="fas fa-clock"></i> File
+              d'attente</a></li>
+        </ul>
+      </div>
+
+      <!-- Paiements -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-money-bill-wave"></i>
+          <span>Paiements</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-washers']"><i class="fas fa-user-tie"></i>
+              Paiements laveurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-customers']"><i class="fas fa-users"></i>
+              Paiements clients</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-methods']"><i class="fas fa-credit-card"></i>
+              Méthodes de paiement</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-reports']"><i
+                class="fas fa-file-invoice-dollar"></i> Rapports</a></li>
+        </ul>
+      </div>
+
+      <!-- Stocks -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-box-open"></i>
+          <span>Stocks</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-list']"><i class="fas fa-boxes"></i> Inventaire</a>
+          </li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-alerts']"><i
+                class="fas fa-exclamation-triangle"></i> Alertes stock</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-movements']"><i class="fas fa-exchange-alt"></i>
+              Mouvements</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-suppliers']"><i class="fas fa-truck"></i>
+              Fournisseurs</a></li>
+        </ul>
+      </div>
+
+      <!-- Statistiques & Rapports -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-chart-pie"></i>
+          <span>Statistiques</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-daily']"><i class="fas fa-calendar-day"></i>
+              Journalier</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-weekly']"><i class="fas fa-calendar-week"></i>
+              Hebdomadaire</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-monthly']"><i class="fas fa-calendar-alt"></i>
+              Mensuel</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-comparison']"><i class="fas fa-balance-scale"></i>
+              Comparaison</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-export']"><i class="fas fa-file-export"></i>
+              Exports</a></li>
+        </ul>
+      </div>
+
+      <!-- Audit -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-clipboard-check"></i>
+          <span>Audit</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-logs']"><i class="fas fa-clipboard-list"></i>
+              Journal d'activité</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-changes']"><i class="fas fa-history"></i> Historique
+              modifications</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-security']"><i class="fas fa-shield-alt"></i>
+              Sécurité</a></li>
+        </ul>
+      </div>
+
+      <!-- Dépenses -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-file-invoice-dollar"></i>
+          <span>Dépenses</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion
+              dépenses</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-other']"><i class="fas fa-receipt"></i>
+              Divers</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-profitability']"><i
+                class="fas fa-chart-line"></i> Rentabilité</a></li>
+        </ul>
+      </div>
+
+      <!-- Paramètres -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-cogs"></i>
+          <span>Paramètres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-schedule']"><i class="fas fa-clock"></i>
+              Horaires</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-services']"><i class="fas fa-concierge-bell"></i>
+              Prestations</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-vehicles']"><i class="fas fa-car"></i> Types de
+              véhicules</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-notifications']"><i class="fas fa-bell"></i>
+              Notifications</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-system']"><i class="fas fa-sliders-h"></i>
+              Système</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-templates']"><i class="fas fa-file-alt"></i>
+              Modèles de paramètres</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" id="main-content">
+    <div class="top-bar">
+      <div class="menu-toggle" id="menu-toggle" (click)="toggleSidebar()">
+        <i class="fas fa-bars"></i>
+      </div>
+      <div class="top-right">
+        <div class="icon-button">
+          <i class="fas fa-envelope"></i>
+        </div>
+        <div class="icon-button">
+          <i class="fas fa-bell"></i>
+          <span class="badge">3</span>
+        </div>
+        <div class="dropdown dropdown-hover">
+          <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
+            <!-- Photo sécurisée si elle existe -->
+            <img *ngIf="currentUser?.photoSafeUrl as safeUrl" [src]="safeUrl" alt="User" class="user-avatar">
+            <!-- Nom complet -->
+            <span>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
+            <li><a class="dropdown-item" [routerLink]="['/admin/users-profil']"><i class="fas fa-user"></i> Mon
+                profil</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
+            <li><a class="dropdown-item" (click)="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <!-- Header avec titre et contrôles -->
+      <div class="page-header">
+        <div class="header-content">
+          <h2 class="page-title">Gestion des présences des utilisateurs</h2>
+          <p class="page-description">Surveillez et géz les présences de votre équipe en temps réel</p>
+        </div>
+        <!-- Dans le header-actions -->
+        <div class="header-actions">
+          <button class="btn btn-primary" (click)="refreshData()">
+            <i class="fas fa-sync-alt"></i>
+          </button>
+
+          <!-- Menu déroulant pour les exports -->
+          <div class="dropdown-hover">
+            <!-- <button class="btn btn-secondary dropdown-toggle">
+              <i class="fas fa-file-export"></i>
+              Exporter
+              <i class="fas fa-chevron-down dropdown-arrow"></i>
+            </button> -->
+            <div class="dropdown-menu">
+              <a class="dropdown-item" (click)="exportWeeklyReport()">
+                <i class="fas fa-calendar-week"></i>
+                Rapport Hebdomadaire
+              </a>
+              <a class="dropdown-item" (click)="exportMonthlyReport()">
+                <i class="fas fa-calendar-alt"></i>
+                Rapport Mensuel
+              </a>
+              <a class="dropdown-item" (click)="exportAnnualReport()">
+                <i class="fas fa-calendar-day"></i>
+                Rapport Annuel
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+<!-- Cartes de statistiques -->
+<div class="stats-container">
+  <div class="stat-card">
+    <div class="stat-icon">
+      <i class="fas fa-users"></i>
+    </div>
+    <div class="stat-value" id="totalEmployees">{{ totalEmployees }}</div>
+    <div class="stat-label">Employés total</div>
+    <div class="stat-trend positive">
+      <i class="fas fa-arrow-up"></i>
+      <span>{{ getEmployeeTrend() }}</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon present">
+      <i class="fas fa-user-check"></i>
+    </div>
+    <div class="stat-value" id="presentToday">{{ presentToday }}</div>
+    <div class="stat-label">Présents aujourd'hui</div>
+    <div class="stat-progress">
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width.%]="getAttendancePercentage()"></div>
+      </div>
+      <span>{{ getAttendancePercentage() }}%</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon absent">
+      <i class="fas fa-user-times"></i>
+    </div>
+    <div class="stat-value" id="absentToday">{{ absentToday }}</div>
+    <div class="stat-label">Absents aujourd'hui</div>
+    <div class="stat-progress">
+      <div class="progress-bar">
+        <div class="progress-fill absent" [style.width.%]="getAbsencePercentage()"></div>
+      </div>
+      <span>{{ getAbsencePercentage() }}%</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon late">
+      <i class="fas fa-clock"></i>
+    </div>
+    <div class="stat-value" id="lateToday">{{ lateToday }}</div>
+    <div class="stat-label">En retard</div>
+    <div class="stat-trend" [class.negative]="getLateTrend() === 'negative'"
+                          [class.positive]="getLateTrend() === 'positive'">
+      <i class="fas" [class.fa-arrow-up]="getLateTrend() === 'positive'"
+                    [class.fa-arrow-down]="getLateTrend() === 'negative'"></i>
+      <span>{{ getLateTrendText() }}</span>
+    </div>
+  </div>
+</div>
+
+      <!-- Filtres et contrôles -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Filtres et recherche</h3>
+        </div>
+        <div class="card-body">
+          <div class="filters-grid">
+            <div class="form-group">
+              <label class="form-label">Date</label>
+              <input type="date" class="form-control" [(ngModel)]="selectedDate" (change)="onDateChange()">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Centre</label>
+              <select class="form-select" [(ngModel)]="selectedCentreId" (change)="onCentreChange()">
+                <option value="">Tous les centres</option>
+                <option *ngFor="let centre of centres" [value]="centre.id">
+                  {{ centre.name }}
+                </option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Statut</label>
+              <select class="form-select" [(ngModel)]="selectedStatus" (change)="onFilterChange()">
+                <option value="all">Tous les statuts</option>
+                <option value="Present">Présent</option>
+                <option value="Absent">Absent</option>
+                <option value="Late">En retard</option>
+                <option value="HalfDay">Demi-journée</option>
+                <option value="Leave">Congé</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Recherche</label>
+              <div class="search-input-container">
+                <i class="fas fa-search"></i>
+                <input type="text" class="form-control" [(ngModel)]="searchQuery" (input)="onFilterChange()"
+                  placeholder="Rechercher un employé...">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tableau des présences -->
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-title">Liste des présences</h3>
+          <div class="card-actions">
+            <div class="table-info">
+              <span id="tableCount">0</span> employé(s) trouvé(s)
+            </div>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-container">
+            <table class="presence-table">
+              <thead>
+                <tr>
+                  <th>Employé</th>
+                  <th>Centre</th>
+                  <th>Heure d'arrivée</th>
+                  <th>Heure de départ</th>
+                  <th>Heures travaillées</th>
+                  <th>Statut</th>
+                  <th>Retard</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="attendanceTableBody">
+                <!-- État de chargement -->
+                <tr *ngIf="loadingAttendance" class="loading-row">
+                  <td colspan="9">
+                    <div class="loading-state">
+                      <i class="fas fa-spinner fa-spin"></i>
+                      <span>Chargement des données...</span>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- État vide -->
+                <tr *ngIf="!loadingAttendance && displayRecords.length === 0" class="empty-row">
+                  <td colspan="9">
+                    <div class="empty-state">
+                      <i class="fas fa-clipboard-list"></i>
+                      <p>Aucune donnée de présence trouvée</p>
+                      <small>Vérifiez les filtres ou la date sélectionnée</small>
+                    </div>
+                  </td>
+                </tr>
+
+                <!-- Données des présences -->
+                <tr *ngFor="let record of displayRecords" class="attendance-record">
+                  <td>
+                    <div class="employee-info">
+                      <div class="employee-details">
+                        <strong>{{ getUserFullName(record.userId) }}</strong>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span class="centre-name">{{ getCentreName(record.centreId) }}</span>
+                  </td>
+                  <td>
+                    <span class="time-value">{{ formatTime(record.checkInTime) }}</span>
+                  </td>
+                  <td>
+                    <span class="time-value">{{ formatTime(record.checkOutTime) }}</span>
+                  </td>
+                  <td>
+                    <span class="hours-worked">{{ record.workedHours || '-' }}</span>
+                  </td>
+                  <td>
+                    <span class="status-badge" [ngClass]="getStatusClass(record.status)">
+                      {{ getStatusText(record.status) }}
+                    </span>
+                  </td>
+                  <td>
+                    <span class="late-time">{{ record.lateArrival || '-' }}</span>
+                  </td>
+                  <td>
+                    <div class="action-buttons">
+                      <button class="btn-action view" [attr.title]="'Voir les détails'"
+                        (click)="viewRecordDetails(record)">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                      <button class="btn-action edit" [attr.title]="'Modifier'" (click)="editRecord(record)">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn-action validate" [attr.title]="'Valider'" (click)="validateRecord(record)"
+                        *ngIf="!record.approvedBy">
+                        <i class="fas fa-check"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="pagination-container">
+            <div class="pagination-info">
+              Affichage de <span id="pageStart">1</span> à <span id="pageEnd">{{ displayRecords.length }}</span> sur
+              <span id="totalItems">{{ totalItems }}</span> éléments
+            </div>
+            <div class="pagination-controls">
+              <button class="pagination-btn" id="prevPage" (click)="previousPage()" [disabled]="currentPage === 1">
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <div class="pagination-pages" id="paginationPages">
+                <!-- Les pages seront générées ici dynamiquement -->
+              </div>
+              <button class="pagination-btn" id="nextPage" (click)="nextPage()" [disabled]="currentPage === totalPages">
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal de détails -->
+        <div class="modal" [class.show]="showDetailModal" *ngIf="selectedRecord">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>Détails de la présence</h3>
+              <button class="modal-close" (click)="closeDetailModal()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="detail-content" *ngIf="selectedRecord">
+                <div class="detail-row">
+                  <label>Employé : </label>
+                  <span> {{ getUserFullName(selectedRecord.userId) }}</span>
+                </div>
+                <div class="detail-row">
+                  <label>Centre : </label>
+                  <span> {{ getCentreName(selectedRecord.centreId) }}</span>
+                </div>
+                <div class="detail-row">
+                  <label>Date:</label>
+                  <span>{{ selectedRecord.date | date:'dd/MM/yyyy' }}</span>
+                </div>
+                <div class="detail-row">
+                  <label>Heure d'arrivée : </label>
+                  <span> {{ formatTime(selectedRecord.checkInTime) }}</span>
+                </div>
+                <div class="detail-row">
+                  <label>Heure de départ : </label>
+                  <span> {{ formatTime(selectedRecord.checkOutTime) }}</span>
+                </div>
+                <div class="detail-row">
+                  <label>Statut : </label>
+                  <span class="status-badge" [ngClass]="getStatusClass(selectedRecord.status)">
+                    {{ getStatusText(selectedRecord.status) }}
+                  </span>
+                </div>
+                <div class="detail-row">
+                  <label>Heures travaillées : &nbsp;</label>
+                  <span> {{ selectedRecord.workedHours || '-' }}</span>
+                </div>
+                <div class="detail-row">
+                  <label>Retard : </label>
+                  <span> {{ selectedRecord.lateArrival || '-' }}</span>
+                </div>
+                <div class="detail-row" *ngIf="selectedRecord.notes">
+                  <label>Notes : </label>
+                  <span> {{ selectedRecord.notes }}</span>
+                </div>
+                <div class="detail-row" *ngIf="selectedRecord.approvedBy">
+                  <label>Validé par:</label>
+                  <span>{{ getApproverName(selectedRecord.approvedBy) }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" (click)="closeDetailModal()">Fermer</button>
+              <button class="btn btn-primary" (click)="editRecord(selectedRecord)">Modifier</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notification -->
+        <div class="notification" [class.show]="showNotification" [class.error]="notificationType === 'error'"
+          [class.warning]="notificationType === 'warning'">
+          <i class="fas" [class.fa-check-circle]="notificationType === 'success'"
+            [class.fa-exclamation-circle]="notificationType === 'error'"
+            [class.fa-exclamation-triangle]="notificationType === 'warning'"></i>
+          <span class="notification-message">{{ notificationMessage }}</span>
+          <button class="notification-close" (click)="hideNotification()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Modal de détails -->
+        <div class="modal" [class.show]="showDetailModal" *ngIf="selectedRecord">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h3>Détails de la présence</h3>
+              <button class="modal-close" (click)="closeDetailModal()">
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+            <div class="modal-body">
+              <div class="detail-content" *ngIf="selectedRecord">
+                <div class="detail-row">
+                  <label>Employé:</label>
+                  <span>{{ getUserFullName(selectedRecord.userId) }}</span>
+                </div>
+                <div class="detail-row">
+                  <label>Centre:</label>
+                  <span>{{ getCentreName(selectedRecord.centreId) }}</span>
+                </div>
+                <div class="detail-row">
+                  <label>Date:</label>
+                  <span>{{ selectedRecord.date | date:'dd/MM/yyyy' }}</span>
+                </div>
+                <div class="detail-row">
+                  <label>Heure d'arrivée:</label>
+                  <span>{{ formatTime(selectedRecord.checkInTime) }}</span>
+                </div>
+                <div class="detail-row">
+                  <label>Heure de départ:</label>
+                  <span>{{ formatTime(selectedRecord.checkOutTime) }}</span>
+                </div>
+                <div class="detail-row">
+                  <label>Statut:</label>
+                  <span class="status-badge" [ngClass]="getStatusClass(selectedRecord.status)">
+                    {{ getStatusText(selectedRecord.status) }}
+                  </span>
+                </div>
+                <div class="detail-row">
+                  <label>Heures travaillées:</label>
+                  <span>{{ selectedRecord.workedHours || '-' }}</span>
+                </div>
+                <div class="detail-row">
+                  <label>Retard:</label>
+                  <span>{{ selectedRecord.lateArrival || '-' }}</span>
+                </div>
+                <div class="detail-row" *ngIf="selectedRecord.notes">
+                  <label>Notes:</label>
+                  <span>{{ selectedRecord.notes }}</span>
+                </div>
+                <div class="detail-row" *ngIf="selectedRecord.approvedBy">
+                  <label>Validé par:</label>
+                  <span>{{ selectedRecord.approvedBy }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" (click)="closeDetailModal()">Fermer</button>
+              <button class="btn btn-primary" (click)="editRecord(selectedRecord)">Modifier</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notification -->
+        <div class="notification" [class.show]="showNotification" [class.error]="notificationType === 'error'"
+          [class.warning]="notificationType === 'warning'">
+          <i class="fas" [class.fa-check-circle]="notificationType === 'success'"
+            [class.fa-exclamation-circle]="notificationType === 'error'"
+            [class.fa-exclamation-triangle]="notificationType === 'warning'"></i>
+          <span class="notification-message">{{ notificationMessage }}</span>
+          <button class="notification-close" (click)="hideNotification()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Notification -->
+    <div class="notification" id="notification">
+      <i class="fas fa-check-circle"></i>
+      <span class="notification-message">Opération réussie</span>
+      <button class="notification-close" onclick="hideNotification()">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+
+    <!-- Modal pour les détails -->
+    <div class="modal" id="detailModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Détails de la présence</h3>
+          <button class="modal-close" onclick="closeModal()">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="modal-body">
+          <!-- Contenu du modal -->
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>©2025 AutoWash, Tous droit reservé.</div>
+      <div>Crée par <a href="https://www.linkedin.com/in/afferyauxencedelorschabehou/">Affery Auxence Delors
+          CHABEHOU</a></div>
+    </div>
+  </div>
+</body>
+
+</html>
