@@ -59,8 +59,6 @@
               centres</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/centres-create']"><i class="fas fa-plus-circle"></i>
               Nouveau centre</a></li>
-          <li><a class="dropdown-item" [routerLink]="['/admin/centres-stock']"><i class="fas fa-boxes"></i> Stocks par
-              centre</a></li>
         </ul>
       </div>
 
@@ -93,8 +91,8 @@
               Paiements laveurs</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/payments-customers']"><i class="fas fa-users"></i>
               Paiements clients</a></li>
-          <li><a class="dropdown-item" [routerLink]="['/admin/payments-methods']"><i class="fas fa-credit-card"></i>
-              Méthodes de paiement</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-manager']"><i class="fas fa-user-tie"></i>
+              Paiement gérant</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/payments-reports']"><i
                 class="fas fa-file-invoice-dollar"></i> Rapports</a></li>
         </ul>
@@ -275,307 +273,359 @@
                 <div class="card-body">
                   <form [formGroup]="washForm" (ngSubmit)="onSubmit()">
 
-                    <div class="row mb-4">
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label for="centreId" class="form-label">Centre de lavage <span
-                              class="text-danger">*</span></label>
-                          <select id="centreId" class="form-select" formControlName="centreId"
-                            [class.is-invalid]="washForm.get('centreId')?.invalid && washForm.get('centreId')?.touched">
-                            <option value="" disabled>Sélectionnez un centre</option>
-                            <option *ngFor="let centre of centres" [value]="centre.id">
-                              {{ centre.name }} ({{ centre.location }})
-                            </option>
-                          </select>
-                          <div class="invalid-feedback"
-                            *ngIf="washForm.get('centreId')?.invalid && washForm.get('centreId')?.touched">
-                            Veuillez sélectionner un centre
-                          </div>
-                        </div>
-                      </div>
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label for="serviceId" class="form-label">Type de service <span
-                              class="text-danger">*</span></label>
-                          <select id="serviceId" class="form-select" formControlName="serviceId"
-                            [class.is-invalid]="washForm.get('serviceId')?.invalid && washForm.get('serviceId')?.touched"
-                            [disabled]="!washForm.get('centreId')?.value">
-                            <option value="" disabled>Sélectionnez un service</option>
-                            <option *ngFor="let service of services" [value]="service.id">
-                              {{ service.name }} ({{ service.basePrice }})
-                            </option>
-                          </select>
-                          <div class="invalid-feedback"
-                            *ngIf="washForm.get('serviceId')?.invalid && washForm.get('serviceId')?.touched">
-                            Veuillez sélectionner un service
+                    <!-- Section 1: Localisation -->
+                    <div class="form-section">
+                      <h6 class="form-section-title">
+                        <i class="fas fa-map-marker-alt me-2"></i>Localisation
+                      </h6>
+
+                      <div class="row mb-3">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label for="centreId" class="form-label">Centre de lavage <span
+                                class="text-danger">*</span></label>
+                            <select id="centreId" class="form-select" formControlName="centreId"
+                              [class.is-invalid]="washForm.get('centreId')?.invalid && washForm.get('centreId')?.touched">
+                              <option value="" disabled>Sélectionnez un centre</option>
+                              <option *ngFor="let centre of centres" [value]="centre.id">
+                                {{ centre.name }} - {{ centre.location }}
+                              </option>
+                            </select>
+                            <div class="invalid-feedback"
+                              *ngIf="washForm.get('centreId')?.invalid && washForm.get('centreId')?.touched">
+                              Veuillez sélectionner un centre
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div class="row mb-4">
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label for="vehicleTypeId" class="form-label">Type de véhicule <span
-                              class="text-danger">*</span></label>
-                          <select id="vehicleTypeId" class="form-select" formControlName="vehicleTypeId"
-                            [class.is-invalid]="washForm.get('vehicleTypeId')?.invalid && washForm.get('vehicleTypeId')?.touched">
-                            <option value="" disabled>Sélectionnez un type</option>
-                            <option *ngFor="let vehicleType of vehicleTypes" [value]="vehicleType.id">
-                              {{ vehicleType.label }} (x{{ vehicleType.defaultSizeMultiplier }})
-                            </option>
-                          </select>
-                          <div class="invalid-feedback"
-                            *ngIf="washForm.get('vehicleTypeId')?.invalid && washForm.get('vehicleTypeId')?.touched">
-                            Veuillez sélectionner un type de véhicule
-                          </div>
-                          <small class="text-muted"
-                            *ngIf="vehicleTypes.length === 0 && washForm.get('centreId')?.value">
-                            Chargement des types de véhicule...
-                          </small>
-                        </div>
-                      </div>
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label for="vehiclePlate" class="form-label">Plaque d'immatriculation <span
-                              class="text-danger">*</span></label>
-                          <input type="text" id="vehiclePlate" class="form-control" formControlName="vehiclePlate"
-                            placeholder="Ex: AB123CD" style="text-transform: uppercase"
-                            [class.is-invalid]="washForm.get('vehiclePlate')?.invalid && washForm.get('vehiclePlate')?.touched">
-                          <div class="invalid-feedback"
-                            *ngIf="washForm.get('vehiclePlate')?.invalid && washForm.get('vehiclePlate')?.touched">
-                            La plaque est requise (min 4 caractères)
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <!-- Section 2: Service et Véhicule -->
+                    <div class="form-section">
+                      <h6 class="form-section-title">
+                        <i class="fas fa-car me-2"></i>Informations du véhicule
+                      </h6>
 
-                    <!-- Ajouter les nouveau champs ici  -->
-                    <!-- Nouvelle ligne pour email client et sélection du laveur -->
-                    <div class="row mb-4">
-                      <!-- Champ Email client -->
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label for="customerEmail" class="form-label">Email client</label>
-                          <!-- Supprimé l'astérisque rouge -->
-                          <div class="input-group">
-                            <span class="input-group-text"><i class="fas fa-envelope"></i></span>
-                            <input type="email" id="customerEmail" class="form-control" formControlName="customerEmail"
-                              placeholder="Ex: client@example.com (optionnel)"
-                              [class.is-invalid]="washForm.get('customerEmail')?.invalid && washForm.get('customerEmail')?.touched">
+                      <div class="row mb-3">
+                        <div class="col-md-6">
+                          <div class="form-group">
+                            <label for="serviceId" class="form-label">Type de service <span
+                                class="text-danger">*</span></label>
+                            <select id="serviceId" class="form-select" formControlName="serviceId"
+                              [class.is-invalid]="washForm.get('serviceId')?.invalid && washForm.get('serviceId')?.touched"
+                              [disabled]="!washForm.get('centreId')?.value">
+                              <option value="" disabled>Sélectionnez un service</option>
+                              <option *ngFor="let service of services" [value]="service.id">
+                                {{ service.name }} - {{ service.basePrice }} FCFA
+                              </option>
+                            </select>
+                            <div class="invalid-feedback"
+                              *ngIf="washForm.get('serviceId')?.invalid && washForm.get('serviceId')?.touched">
+                              Veuillez sélectionner un service
+                            </div>
                           </div>
-                          <!-- Supprimé le message d'erreur "required" -->
-                          <div class="invalid-feedback"
-                            *ngIf="washForm.get('customerEmail')?.errors?.['email'] && washForm.get('customerEmail')?.touched">
-                            Veuillez entrer un email valide
+                        </div>
+
+                        <div class="col-md-6">
+                          <div class="form-group">
+                            <label for="vehicleTypeId" class="form-label">Type de véhicule <span
+                                class="text-danger">*</span></label>
+                            <select id="vehicleTypeId" class="form-select" formControlName="vehicleTypeId"
+                              [class.is-invalid]="washForm.get('vehicleTypeId')?.invalid && washForm.get('vehicleTypeId')?.touched">
+                              <option value="" disabled>Sélectionnez un type</option>
+                              <option *ngFor="let vehicleType of vehicleTypes" [value]="vehicleType.id">
+                                {{ vehicleType.label }} (x{{ vehicleType.defaultSizeMultiplier }})
+                              </option>
+                            </select>
+                            <div class="invalid-feedback"
+                              *ngIf="washForm.get('vehicleTypeId')?.invalid && washForm.get('vehicleTypeId')?.touched">
+                              Veuillez sélectionner un type de véhicule
+                            </div>
                           </div>
-                          <small class="form-text text-muted">
-                            <i class="fas fa-info-circle"></i>
-                            L'email est facultatif mais recommandé pour les notifications
-                          </small>
                         </div>
                       </div>
 
-                      <!-- Champ Sélection du laveur -->
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label for="washerId" class="form-label">Laveur attribué <span
-                              class="text-danger">*</span></label>
-                          <select id="washerId" class="form-select" formControlName="washerId"
-                            [class.is-invalid]="washForm.get('washerId')?.invalid && washForm.get('washerId')?.touched"
-                            [disabled]="!washForm.get('centreId')?.value || isLoadingWashers">
-                            <option value="" disabled>Sélectionnez un laveur</option>
+                      <div class="row mb-3">
+                        <div class="col-md-4">
+                          <div class="form-group">
+                            <label for="vehiclePlate" class="form-label">Immatriculation <span
+                                class="text-danger">*</span></label>
+                            <input type="text" id="vehiclePlate" class="form-control" formControlName="vehiclePlate"
+                              placeholder="AB123CD" style="text-transform: uppercase"
+                              [class.is-invalid]="washForm.get('vehiclePlate')?.invalid && washForm.get('vehiclePlate')?.touched">
+                            <div class="invalid-feedback"
+                              *ngIf="washForm.get('vehiclePlate')?.invalid && washForm.get('vehiclePlate')?.touched">
+                              Plaque requise (min 4 caractères)
+                            </div>
+                          </div>
+                        </div>
 
-                            <!-- Afficher le spinner pendant le chargement -->
-                            <option *ngIf="isLoadingWashers" value="" disabled>
-                              Chargement en cours...
-                            </option>
+                        <div class="col-md-4">
+                          <div class="form-group">
+                            <label for="vehicleBrand" class="form-label">Marque</label>
+                            <input type="text" id="vehicleBrand" class="form-control" formControlName="vehicleBrand"
+                              placeholder="Ex: Toyota">
+                          </div>
+                        </div>
 
-                            <!-- Afficher les laveurs une fois chargés -->
-                            <option *ngFor="let washer of filteredWashers" [value]="washer.id">
-                              {{ washer.firstName }} {{ washer.lastName }} ({{ washer.email }})
-                            </option>
-
-                            <!-- Message si aucun laveur n'est disponible -->
-                            <option *ngIf="!isLoadingWashers && filteredWashers.length === 0" value="" disabled>
-                              Aucun laveur disponible pour ce centre
-                            </option>
-                          </select>
-
-                          <div class="invalid-feedback"
-                            *ngIf="washForm.get('washerId')?.invalid && washForm.get('washerId')?.touched">
-                            Veuillez sélectionner un laveur
+                        <div class="col-md-4">
+                          <div class="form-group">
+                            <label for="vehicleColor" class="form-label">Couleur</label>
+                            <input type="text" id="vehicleColor" class="form-control" formControlName="vehicleColor"
+                              placeholder="Ex: Rouge">
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div class="form-group">
-                      <label for="customerName">
-                        Nom du client *
-                        <span class="text-danger">*</span>
-                      </label>
-                      <input type="text" id="customerName" formControlName="customerName" class="form-control"
-                        placeholder="Saisir le nom complet du client"
-                        [class.is-invalid]="washForm.get('customerName')?.invalid && washForm.get('customerName')?.touched"
-                        [class.is-valid]="washForm.get('customerName')?.valid && washForm.get('customerName')?.touched">
+                    <!-- Section 3: Informations Client -->
+                    <div class="form-section">
+                      <h6 class="form-section-title">
+                        <i class="fas fa-user me-2"></i>Informations client
+                      </h6>
 
-                      <!-- Messages d'erreur -->
-                      <div *ngIf="washForm.get('customerName')?.invalid && washForm.get('customerName')?.touched"
-                        class="invalid-feedback">
-                        <div *ngIf="washForm.get('customerName')?.errors?.['required']">
-                          Le nom du client est obligatoire
+                      <div class="row mb-3">
+                        <div class="col-md-6">
+                          <div class="form-group">
+                            <label for="customerPhone" class="form-label">Téléphone <span
+                                class="text-danger">*</span></label>
+                            <div class="input-group">
+                              <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                              <input type="tel" id="customerPhone" formControlName="customerPhone" class="form-control"
+                                placeholder="+225 XX XX XX XX XX"
+                                [class.is-invalid]="washForm.get('customerPhone')?.invalid && washForm.get('customerPhone')?.touched">
+                            </div>
+                            <small class="form-text text-muted" *ngIf="!isSearchingCustomer && !currentCustomer">
+                              <i class="fas fa-search"></i> Recherche automatique du client
+                            </small>
+                            <small class="form-text text-primary" *ngIf="isSearchingCustomer">
+                              <i class="fas fa-spinner fa-spin"></i> Recherche en cours...
+                            </small>
+                            <small class="form-text text-success" *ngIf="currentCustomer">
+                              <i class="fas fa-check-circle"></i> Client trouvé: {{currentCustomer.name}}
+                            </small>
+                          </div>
+                        </div>
+
+                        <div class="col-md-6">
+                          <div class="form-group">
+                            <label for="customerName" class="form-label">Nom complet <span
+                                class="text-danger">*</span></label>
+                            <div class="input-group">
+                              <span class="input-group-text"><i class="fas fa-user"></i></span>
+                              <input type="text" id="customerName" formControlName="customerName" class="form-control"
+                                placeholder="Nom complet du client"
+                                [class.is-invalid]="washForm.get('customerName')?.invalid && washForm.get('customerName')?.touched">
+                            </div>
+                            <div class="invalid-feedback"
+                              *ngIf="washForm.get('customerName')?.invalid && washForm.get('customerName')?.touched">
+                              Le nom du client est obligatoire
+                            </div>
+                          </div>
                         </div>
                       </div>
 
-                      <!-- Message d'aide -->
-                      <small class="form-text text-muted">
-                        <i class="fas fa-info-circle"></i>
-                        Le nom sera utilisé pour identifier le client
-                      </small>
-                    </div>
-
-
-                    <div class="form-group">
-                      <label for="customerPhone">
-                        Téléphone client *
-                      </label>
-                      <input type="tel" id="customerPhone" formControlName="customerPhone" class="form-control"
-                        placeholder="+225 XX XX XX XX XX"
-                        [class.is-invalid]="washForm.get('customerPhone')?.invalid && washForm.get('customerPhone')?.touched">
-
-                      <!-- Indication de recherche -->
-                      <small class="form-text text-muted" *ngIf="!isSearchingCustomer">
-                        <i class="fas fa-search"></i>
-                        Saisissez le numéro pour rechercher un client existant
-                      </small>
-
-                      <small class="form-text text-primary" *ngIf="isSearchingCustomer">
-                        <i class="fas fa-spinner fa-spin"></i>
-                        Recherche en cours...
-                      </small>
-
-                      <small class="form-text text-success" *ngIf="currentCustomer">
-                        <i class="fas fa-check-circle"></i>
-                        Client trouvé : {{currentCustomer.name}}
-                      </small>
-                    </div>
-
-                    <div class="row mb-4">
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label for="vehicleBrand" class="form-label">Marque du véhicule</label>
-                          <input type="text" id="vehicleBrand" class="form-control" formControlName="vehicleBrand"
-                            placeholder="Ex: Toyota">
-                        </div>
-                      </div>
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label for="vehicleColor" class="form-label">Couleur du véhicule</label>
-                          <input type="text" id="vehicleColor" class="form-control" formControlName="vehicleColor"
-                            placeholder="Ex: Rouge">
+                      <div class="row mb-3">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label for="customerEmail" class="form-label">
+                              Email client
+                              <span class="badge bg-secondary ms-2">Optionnel</span>
+                            </label>
+                            <div class="input-group">
+                              <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                              <input type="email" id="customerEmail" class="form-control"
+                                formControlName="customerEmail" placeholder="client@example.com"
+                                [class.is-invalid]="washForm.get('customerEmail')?.invalid && washForm.get('customerEmail')?.touched">
+                            </div>
+                            <div class="invalid-feedback"
+                              *ngIf="washForm.get('customerEmail')?.errors?.['email'] && washForm.get('customerEmail')?.touched">
+                              Format d'email invalide
+                            </div>
+                            <small class="form-text text-muted">
+                              <i class="fas fa-info-circle"></i> Recommandé pour les notifications
+                            </small>
+                          </div>
                         </div>
                       </div>
                     </div>
 
+                    <!-- Section 4: Attribution Laveur -->
+                    <div class="form-section">
+                      <h6 class="form-section-title">
+                        <i class="fas fa-user-check me-2"></i>Attribution
+                      </h6>
 
-                    <div class="form-group" *ngIf="selectedPaymentMethod !== PaymentMethod.CASH">
-                      <label for="transactionId">ID Transaction *</label>
-                      <input type="text" id="transactionId" formControlName="transactionId" class="form-control"
-                        placeholder="Référence de la transaction"
-                        [class.is-invalid]="washForm.get('transactionId')?.invalid && washForm.get('transactionId')?.touched">
-
-                      <div *ngIf="washForm.get('transactionId')?.invalid && washForm.get('transactionId')?.touched"
-                        class="invalid-feedback">
-                        L'ID de transaction est requis pour ce mode de paiement
+                      <div class="row mb-3">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label for="washerId" class="form-label">Laveur attribué <span
+                                class="text-danger">*</span></label>
+                            <select id="washerId" class="form-select" formControlName="washerId"
+                              [class.is-invalid]="washForm.get('washerId')?.invalid && washForm.get('washerId')?.touched"
+                              [disabled]="!washForm.get('centreId')?.value || isLoadingWashers">
+                              <option value="" disabled>
+                                {{ isLoadingWashers ? 'Chargement...' : 'Sélectionnez un laveur' }}
+                              </option>
+                              <option *ngFor="let washer of filteredWashers" [value]="washer.id">
+                                {{ washer.firstName }} {{ washer.lastName }} - {{ washer.email }}
+                              </option>
+                              <option *ngIf="!isLoadingWashers && filteredWashers.length === 0" value="" disabled>
+                                Aucun laveur disponible
+                              </option>
+                            </select>
+                            <div class="invalid-feedback"
+                              *ngIf="washForm.get('washerId')?.invalid && washForm.get('washerId')?.touched">
+                              Veuillez sélectionner un laveur
+                            </div>
+                            <small class="form-text text-muted" *ngIf="filteredWashers.length > 0">
+                              <i class="fas fa-users"></i> {{ filteredWashers.length }} laveur(s) disponible(s)
+                            </small>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    <div class="row mb-4">
-                      <div class="col-md-12">
-                        <div class="form-group">
+                    <!-- Section 5: Paiement -->
+                    <div class="form-section">
+                      <h6 class="form-section-title">
+                        <i class="fas fa-credit-card me-2"></i>Paiement
+                      </h6>
+
+                      <div class="row mb-3">
+                        <div class="col-md-12">
                           <label class="form-label">Méthode de paiement <span class="text-danger">*</span></label>
-                          <div class="btn-group w-100" role="group">
-                            <button type="button" class="btn"
-                              [class.btn-primary]="selectedPaymentMethod === PaymentMethod.CASH"
-                              [class.btn-outline-primary]="selectedPaymentMethod !== PaymentMethod.CASH"
+                          <div class="payment-methods">
+                            <div class="payment-method" [class.active]="selectedPaymentMethod === PaymentMethod.CASH"
                               (click)="onPaymentMethodChange(PaymentMethod.CASH)">
-                              <i class="fas fa-money-bill-wave me-2"></i> Espèces
-                            </button>
-                            <button type="button" class="btn"
-                              [class.btn-primary]="selectedPaymentMethod === PaymentMethod.MOBILE_MONEY"
-                              [class.btn-outline-primary]="selectedPaymentMethod !== PaymentMethod.MOBILE_MONEY"
+                              <i class="fas fa-money-bill-wave"></i>
+                              <span>Espèces</span>
+                            </div>
+                            <div class="payment-method"
+                              [class.active]="selectedPaymentMethod === PaymentMethod.MOBILE_MONEY"
                               (click)="onPaymentMethodChange(PaymentMethod.MOBILE_MONEY)">
-                              <i class="fas fa-mobile-alt me-2"></i> Mobile Money
-                            </button>
-                            <button type="button" class="btn"
-                              [class.btn-primary]="selectedPaymentMethod === PaymentMethod.CREDIT_CARD"
-                              [class.btn-outline-primary]="selectedPaymentMethod !== PaymentMethod.CREDIT_CARD"
+                              <i class="fas fa-mobile-alt"></i>
+                              <span>Mobile Money</span>
+                            </div>
+                            <div class="payment-method"
+                              [class.active]="selectedPaymentMethod === PaymentMethod.CREDIT_CARD"
                               (click)="onPaymentMethodChange(PaymentMethod.CREDIT_CARD)">
-                              <i class="fas fa-credit-card me-2"></i> Carte
-                            </button>
+                              <i class="fas fa-credit-card"></i>
+                              <span>Carte bancaire</span>
+                            </div>
                           </div>
+                        </div>
+                      </div>
 
-                          <!-- Message informatif pour les paiements non-cash -->
-                          <small class="form-text text-info mt-2" *ngIf="selectedPaymentMethod !== PaymentMethod.CASH">
-                            <i class="fas fa-info-circle"></i>
-                            La référence de transaction sera générée automatiquement après confirmation du paiement
-                          </small>
+                      <!-- ID Transaction pour paiements électroniques -->
+                      <div class="row mb-3" *ngIf="selectedPaymentMethod !== PaymentMethod.CASH">
+                        <div class="col-md-12">
+                          <div class="form-group">
+                            <label for="transactionId" class="form-label">
+                              ID Transaction
+                              <span class="text-danger">*</span>
+                              <span class="badge bg-warning ms-2">Requis</span>
+                            </label>
+                            <div class="input-group">
+                              <span class="input-group-text">
+                                <i class="fas fa-receipt"></i>
+                              </span>
+                              <input type="text" id="transactionId" formControlName="transactionId" class="form-control"
+                                placeholder="Ex: TXN123456789"
+                                [class.is-invalid]="washForm.get('transactionId')?.invalid && washForm.get('transactionId')?.touched">
+                            </div>
+                            <div class="invalid-feedback"
+                              *ngIf="washForm.get('transactionId')?.invalid && washForm.get('transactionId')?.touched">
+                              L'ID de transaction est requis pour ce mode de paiement
+                            </div>
+                            <small class="form-text text-muted">
+                              <i class="fas fa-info-circle"></i>
+                              Saisissez la référence de transaction fournie par l'opérateur
+                            </small>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Message d'information pour paiements électroniques -->
+                      <div class="row mb-3" *ngIf="selectedPaymentMethod !== PaymentMethod.CASH">
+                        <div class="col-md-12">
+                          <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Pour les paiements électroniques, veuillez saisir l'ID de transaction fourni par
+                            l'opérateur.
+                          </div>
                         </div>
                       </div>
                     </div>
 
-                    <!-- Messages de succès et d'erreur améliorés -->
-                    <div class="alert alert-success alert-dismissible fade show" *ngIf="successMessage">
+                    <!-- Section 6: Options -->
+                    <div class="form-section">
+                      <h6 class="form-section-title">
+                        <i class="fas fa-cog me-2"></i>Options supplémentaires
+                      </h6>
+
+                      <div class="row mb-3">
+                        <div class="col-md-6">
+                          <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="applyLoyaltyDiscount"
+                              formControlName="applyLoyaltyDiscount" [disabled]="!canApplyLoyaltyDiscount">
+                            <label class="custom-control-label" for="applyLoyaltyDiscount">
+                              <i class="fas fa-star text-warning me-1"></i>
+                              Remise fidélité (10%)
+                            </label>
+                            <small class="d-block text-muted ms-4">
+                              {{ canApplyLoyaltyDiscount ? 'Client éligible' : 'Disponible après 5 lavages' }}
+                            </small>
+                          </div>
+                        </div>
+
+                        <div class="col-md-6"
+                          *ngIf="currentUser && (getUserRole() === 'Administrateur' || getUserRole() === 'Manager')">
+                          <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="isAdminOverride"
+                              formControlName="isAdminOverride">
+                            <label class="custom-control-label" for="isAdminOverride">
+                              <i class="fas fa-shield-alt text-warning me-1"></i>
+                              Override administrateur
+                            </label>
+                            <small class="d-block text-muted ms-4">
+                              Force l'enregistrement
+                            </small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Messages et Actions -->
+                    <div class="alert alert-success" *ngIf="successMessage">
                       <i class="fas fa-check-circle me-2"></i>
                       {{ successMessage }}
-                      <button type="button" class="btn-close" (click)="successMessage = ''"></button>
                     </div>
 
-                    <div class="row mb-4">
-                      <div class="col-md-6">
-                        <div class="form-check form-switch">
-                          <input class="form-check-input" type="checkbox" id="applyLoyaltyDiscount"
-                            formControlName="applyLoyaltyDiscount" [disabled]="!canApplyLoyaltyDiscount">
-                          <label class="form-check-label" for="applyLoyaltyDiscount">
-                            Appliquer remise fidélité
-                          </label>
-                          <small class="text-muted d-block">
-                            {{ canApplyLoyaltyDiscount ? '10% de réduction disponible' : 'Disponible après 5 lavages' }}
-                          </small>
-                        </div>
-                      </div>
-                      <div class="col-md-6"
-                        *ngIf="currentUser && (getUserRole() === 'Administrateur' || getUserRole() === 'Manager')">
-                        <div class="form-check form-switch">
-                          <input class="form-check-input" type="checkbox" id="isAdminOverride"
-                            formControlName="isAdminOverride">
-                          <label class="form-check-label" for="isAdminOverride">
-                            <i class="fas fa-shield-alt me-1 text-warning"></i>
-                            Override administrateur
-                          </label>
-                          <small class="text-muted d-block">Force l'enregistrement même en cas d'erreur mineure</small>
+                    <div class="alert alert-warning"
+                      *ngIf="selectedPaymentMethod === PaymentMethod.MOBILE_MONEY && isSubmitting">
+                      <div class="d-flex align-items-center">
+                        <div class="spinner-border spinner-border-sm me-3"></div>
+                        <div>
+                          <strong>Traitement Mobile Money en cours...</strong>
+                          <p class="mb-0 small">Vérification du paiement, veuillez patienter...</p>
                         </div>
                       </div>
                     </div>
 
+                    <!-- Boutons d'action -->
+                    <div class="form-actions">
+                      <button type="button" class="btn btn-secondary btn-lg" (click)="resetForm()"
+                        [disabled]="isSubmitting">
+                        <i class="fas fa-redo me-2"></i> Réinitialiser
+                      </button>
 
-                    <div class="row">
-                      <div class="col-12">
-                        <div class="d-flex justify-content-between align-items-center">
-                          <button type="button" class="btn btn-secondary" (click)="resetForm()"
-                            [disabled]="isSubmitting">
-                            <i class="fas fa-redo me-2"></i> Réinitialiser
-                          </button>
-
-                          <button type="submit" class="btn btn-primary btn-lg"
-                            [disabled]="washForm.invalid || isSubmitting">
-                            <span class="spinner-border spinner-border-sm me-2" *ngIf="isSubmitting"></span>
-                            <i class="fas fa-save me-2" *ngIf="!isSubmitting"></i>
-                            {{ isSubmitting ? 'Enregistrement...' : 'Enregistrer le lavage' }}
-                          </button>
-                        </div>
-                      </div>
+                      <button type="submit" class="btn btn-primary btn-lg"
+                        [disabled]="washForm.invalid || isSubmitting">
+                        <span class="spinner-border spinner-border-sm me-2" *ngIf="isSubmitting"></span>
+                        <i class="fas fa-save me-2" *ngIf="!isSubmitting"></i>
+                        {{ isSubmitting ? 'Enregistrement...' : 'Enregistrer le lavage' }}
+                      </button>
                     </div>
                   </form>
                 </div>
@@ -615,6 +665,12 @@
                         <span>{{ priceCalculation.finalPrice }} FCFA</span>
                       </div>
                     </div>
+                  </div>
+
+                  <div class="alert alert-success mt-3" *ngIf="loyaltyDiscountApplied">
+                    <i class="fas fa-gift me-2"></i>
+                    <strong>{{ loyaltyDiscountMessage }}</strong>
+                    <p class="mb-0 small">10% de réduction appliquée automatiquement</p>
                   </div>
 
                   <div *ngIf="!priceCalculation && !isCalculatingPrice" class="text-center py-3 text-muted">

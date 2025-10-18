@@ -62,6 +62,9 @@ export class WashNowComponent implements OnInit {
   isSidebarCollapsed = false;
   washForm!: FormGroup;
 
+  loyaltyDiscountApplied = false;
+  loyaltyDiscountMessage = '';
+
   // Laveurs
   washers: Users[] = []; // Liste complète des laveurs
   filteredWashers: Users[] = []; // Laveurs filtrés (par centre)
@@ -153,14 +156,14 @@ export class WashNowComponent implements OnInit {
         [Validators.required, Validators.pattern(/^\+?[0-9]{10,15}$/)],
       ],
       customerName: ['', Validators.required],
-      customerEmail: ['',],
+      customerEmail: [''],
       transactionId: [''],
       paymentMethod: [PaymentMethod.CASH, Validators.required],
       amountPaid: [0],
       applyLoyaltyDiscount: [false],
       isAdminOverride: [false],
       registration: [''],
-      status: true
+      status: true,
     });
 
     // Désactiver les champs après création du formulaire
@@ -284,7 +287,7 @@ export class WashNowComponent implements OnInit {
       }
     }
 
-    Object.keys(this.washForm.controls).forEach(key => {
+    Object.keys(this.washForm.controls).forEach((key) => {
       const control = this.washForm.get(key);
       if (control?.invalid) {
         console.log(`${key} errors:`, control.errors);
@@ -306,34 +309,62 @@ export class WashNowComponent implements OnInit {
    * Réinitialise le formulaire aux valeurs par défaut
    */
   resetForm(): void {
-    this.washForm.reset();
+    // Activer temporairement tous les champs avant le reset
+    this.washForm.get('serviceId')?.enable();
+    this.washForm.get('vehicleTypeId')?.enable();
+    this.washForm.get('washerId')?.enable();
 
-    // Réinitialiser avec les valeurs par défaut
-    this.washForm.patchValue({
+    // Réinitialiser le formulaire
+    this.washForm.reset({
       centreId: '',
       serviceId: '',
       vehicleTypeId: '',
+      washerId: '',
       vehiclePlate: '',
       vehicleBrand: '',
       vehicleColor: '',
       customerPhone: '',
       customerName: '',
+      customerEmail: '',
       transactionId: '',
       paymentMethod: PaymentMethod.CASH,
       amountPaid: 0,
       applyLoyaltyDiscount: false,
       isAdminOverride: false,
       registration: '',
+      status: true,
     });
 
+    // Réinitialiser les états de remise fidélité
+    this.loyaltyDiscountApplied = false;
+    this.loyaltyDiscountMessage = '';
+
+    // Réinitialiser les données du composant
     this.currentCustomer = null;
     this.customerHistory = [];
     this.priceCalculation = null;
     this.selectedPaymentMethod = PaymentMethod.CASH;
+    this.services = [];
+    this.vehicleTypes = [];
+    this.filteredWashers = [];
 
-    // Désactiver les selects dépendants
+    // Réinitialiser les messages
+    this.errorMessages = [];
+    this.successMessage = '';
+
+    // Désactiver à nouveau les champs dépendants
     this.washForm.get('serviceId')?.disable();
     this.washForm.get('vehicleTypeId')?.disable();
+    this.washForm.get('washerId')?.disable();
+
+    // Marquer tous les champs comme non touchés
+    Object.keys(this.washForm.controls).forEach((key) => {
+      this.washForm.get(key)?.markAsUntouched();
+      this.washForm.get(key)?.markAsPristine();
+    });
+
+    // Forcer la détection des changements
+    this.cdr.detectChanges();
   }
   //#endregion
 
@@ -403,7 +434,6 @@ export class WashNowComponent implements OnInit {
         this.washers = [];
         this.filteredWashers = [];
       }
-
     } catch (error) {
       console.error('Unexpected error loading washers:', error);
       this.washers = [];
@@ -483,21 +513,37 @@ export class WashNowComponent implements OnInit {
         if (response.success && response.data) {
           this.currentCustomer = response.data;
 
-          // Ne mettre à jour le nom que s'il est vide
+          // Mettre à jour le nom uniquement s'il est vide
           const currentName = this.washForm.get('customerName')?.value;
           if (!currentName || currentName.trim() === '') {
-            this.washForm.patchValue({
-              customerName: this.currentCustomer.name,
-            });
+            this.washForm.patchValue(
+              {
+                customerName: this.currentCustomer.name,
+              },
+              { emitEvent: false }
+            );
           }
 
           // Charger l'historique
           this.loadCustomerHistory(phone);
+
+          // Recalculer le prix pour appliquer automatiquement la remise
+          const { serviceId, vehicleTypeId } = this.washForm.value;
+          if (serviceId && vehicleTypeId) {
+            this.calculatePrice();
+          }
         } else {
           this.currentCustomer = null;
           this.customerHistory = [];
+          this.loyaltyDiscountApplied = false;
+          this.loyaltyDiscountMessage = '';
         }
         return of(response);
+      }),
+      catchError((error) => {
+        this.isSearchingCustomer = false;
+        console.error('Erreur lors de la recherche du client:', error);
+        return of(null);
       })
     );
   }
@@ -528,7 +574,8 @@ export class WashNowComponent implements OnInit {
    * Crée ou récupère un client
    */
   private async getOrCreateCustomer(): Promise<Customer> {
-    const { customerPhone, customerName, customerEmail, vehicleBrand } = this.washForm.value;
+    const { customerPhone, customerName, customerEmail, vehicleBrand } =
+      this.washForm.value;
 
     // Validation du nom
     if (!customerName || customerName.trim() === '') {
@@ -536,15 +583,18 @@ export class WashNowComponent implements OnInit {
     }
 
     // Récupérer le type de véhicule sélectionné
-    const selectedVehicleType = this.vehicleTypes.find(vt => vt.id === this.washForm.value.vehicleTypeId);
+    const selectedVehicleType = this.vehicleTypes.find(
+      (vt) => vt.id === this.washForm.value.vehicleTypeId
+    );
     const vehicleTypeLabel = selectedVehicleType?.label || 'Non spécifié';
 
     const customerRequest: CreateOrUpdateCustomerRequest = {
       phone: customerPhone,
       name: customerName.trim(),
-      ...(customerEmail && customerEmail.trim() !== '' && { email: customerEmail.trim() }),
+      ...(customerEmail &&
+        customerEmail.trim() !== '' && { email: customerEmail.trim() }),
       vehicleType: vehicleTypeLabel,
-      vehicleBrand: vehicleBrand || 'Non spécifié'
+      vehicleBrand: vehicleBrand || 'Non spécifié',
     };
 
     return new Promise((resolve, reject) => {
@@ -572,8 +622,11 @@ export class WashNowComponent implements OnInit {
   calculatePrice(): void {
     const { serviceId, vehicleTypeId, customerPhone } = this.washForm.value;
 
+    // Réinitialiser si les données essentielles manquent
     if (!serviceId || !vehicleTypeId) {
       this.priceCalculation = null;
+      this.loyaltyDiscountApplied = false;
+      this.loyaltyDiscountMessage = '';
       return;
     }
 
@@ -589,17 +642,24 @@ export class WashNowComponent implements OnInit {
           this.isCalculatingPrice = false;
           if (response.success && response.data) {
             this.priceCalculation = response.data;
-            this.washForm.patchValue({
-              amountPaid: response.data.finalPrice,
-            });
-          } else {
-            console.error('Réponse API invalide:', response);
-            this.priceCalculation = null;
+
+            // Vérifier l'éligibilité et appliquer automatiquement la remise
+            this.applyAutomaticLoyaltyDiscount();
+
+            // Mettre à jour le montant à payer
+            this.washForm.patchValue(
+              {
+                amountPaid: this.priceCalculation.finalPrice,
+              },
+              { emitEvent: false }
+            );
           }
         },
         error: (error) => {
           this.isCalculatingPrice = false;
           this.priceCalculation = null;
+          this.loyaltyDiscountApplied = false;
+          this.loyaltyDiscountMessage = '';
 
           // Fallback avec calcul local
           if (error.status === 404 || error.status === 500) {
@@ -610,9 +670,78 @@ export class WashNowComponent implements OnInit {
   }
 
   /**
+   * Applique automatiquement la remise fidélité si le client est éligible
+   */
+  private applyAutomaticLoyaltyDiscount(): void {
+    if (!this.priceCalculation || !this.currentCustomer) {
+      this.loyaltyDiscountApplied = false;
+      this.loyaltyDiscountMessage = '';
+      return;
+    }
+
+    const washCount = this.currentCustomer.totalCompletedBookings || 0;
+
+    // Client éligible : au moins 5 lavages
+    if (washCount >= 5) {
+      // Calculer le prix de base total
+      const basePrice =
+        this.priceCalculation.basePrice *
+        this.priceCalculation.vehicleMultiplier;
+
+      // Appliquer la remise de 10%
+      const discountAmount = Math.round(basePrice * 0.1);
+      const finalPrice = basePrice - discountAmount;
+
+      // Mettre à jour l'objet priceCalculation
+      this.priceCalculation.loyaltyDiscount = discountAmount;
+      this.priceCalculation.loyaltyDiscountApplied = true;
+      this.priceCalculation.finalPrice = finalPrice;
+
+      // Mettre à jour le formulaire
+      this.washForm.patchValue(
+        {
+          applyLoyaltyDiscount: true,
+          amountPaid: finalPrice,
+        },
+        { emitEvent: false }
+      );
+
+      // Définir les messages d'état
+      this.loyaltyDiscountApplied = true;
+      this.loyaltyDiscountMessage = 'Remise fidélité appliquée';
+
+      console.log(
+        `✅ Remise fidélité automatique: ${discountAmount} FCFA (Prix final: ${finalPrice} FCFA)`
+      );
+    } else {
+      // Client non éligible
+      this.priceCalculation.loyaltyDiscount = 0;
+      this.priceCalculation.loyaltyDiscountApplied = false;
+
+      this.washForm.patchValue(
+        {
+          applyLoyaltyDiscount: false,
+        },
+        { emitEvent: false }
+      );
+
+      this.loyaltyDiscountApplied = false;
+      this.loyaltyDiscountMessage = '';
+
+      console.log(`ℹ️ Client non éligible: ${washCount}/5 lavages`);
+    }
+
+    // Forcer la détection des changements
+    this.cdr.detectChanges();
+  }
+
+  /**
    * Calcul de prix de secours en cas d'échec de l'API
    */
-  private calculatePriceFallback(serviceId: string, vehicleTypeId: string): void {
+  private calculatePriceFallback(
+    serviceId: string,
+    vehicleTypeId: string
+  ): void {
     const service = this.services.find((s) => s.id === serviceId);
     const vehicleType = this.vehicleTypes.find((vt) => vt.id === vehicleTypeId);
 
@@ -686,7 +815,32 @@ export class WashNowComponent implements OnInit {
       }
 
       this.successMessage = 'Lavage enregistré avec succès!';
-      this.resetForm();
+
+      // Réinitialisation complète du formulaire
+      this.washForm.reset();
+
+      // Réappliquer les valeurs par défaut
+      this.washForm.patchValue({
+        paymentMethod: PaymentMethod.CASH,
+        amountPaid: 0,
+        applyLoyaltyDiscount: false,
+        isAdminOverride: false,
+        status: true,
+      });
+
+      // Réinitialiser les états
+      this.currentCustomer = null;
+      this.customerHistory = [];
+      this.priceCalculation = null;
+      this.selectedPaymentMethod = PaymentMethod.CASH;
+
+      // Désactiver les champs dépendants
+      this.washForm.get('serviceId')?.disable();
+      this.washForm.get('vehicleTypeId')?.disable();
+      this.washForm.get('washerId')?.disable();
+
+      // Forcer la détection des changements
+      this.cdr.detectChanges();
     } catch (error) {
       this.handleError("Erreur lors de l'enregistrement du lavage", error);
     } finally {
@@ -706,15 +860,20 @@ export class WashNowComponent implements OnInit {
     }
 
     // Récupérer le type de véhicule
-    const selectedVehicleType = this.vehicleTypes.find(vt => vt.id === formValue.vehicleTypeId);
+    const selectedVehicleType = this.vehicleTypes.find(
+      (vt) => vt.id === formValue.vehicleTypeId
+    );
     const vehicleTypeLabel = selectedVehicleType?.label || 'Non spécifié';
 
     const customerRequest: CreateOrUpdateCustomerRequest = {
       phone: formValue.customerPhone,
       name: formValue.customerName.trim(),
-      ...(formValue.customerEmail && formValue.customerEmail.trim() !== '' && { email: formValue.customerEmail.trim() }),
+      ...(formValue.customerEmail &&
+        formValue.customerEmail.trim() !== '' && {
+          email: formValue.customerEmail.trim(),
+        }),
       vehicleType: vehicleTypeLabel,
-      vehicleBrand: formValue.vehicleBrand || 'Non spécifié'
+      vehicleBrand: formValue.vehicleBrand || 'Non spécifié',
     };
 
     return {
@@ -733,14 +892,16 @@ export class WashNowComponent implements OnInit {
       isAdminOverride: formValue.isAdminOverride,
       performedByUserId: this.currentUser?.id || '',
       registration: formValue.registration || this.generateRegistrationNumber(),
-      status: true
+      status: true,
     };
   }
 
   /**
    * Enregistre le lavage via l'API
    */
-  private async registerWash(registration: WashRegistration): Promise<WashSession> {
+  private async registerWash(
+    registration: WashRegistration
+  ): Promise<WashSession> {
     return new Promise((resolve, reject) => {
       this.washsService
         .registerWash(registration)
@@ -787,7 +948,8 @@ export class WashNowComponent implements OnInit {
   private async registerPayment(washSessionId: string): Promise<void> {
     const { transactionId, applyLoyaltyDiscount } = this.washForm.value;
 
-    const transactionRef = transactionId || (await this.generateTransactionReference());
+    const transactionRef =
+      transactionId || (await this.generateTransactionReference());
 
     const paymentInfo = new PaymentInfo({
       method: this.selectedPaymentMethod,

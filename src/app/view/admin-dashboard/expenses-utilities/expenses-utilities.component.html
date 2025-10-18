@@ -1,10 +1,9 @@
+<!DOCTYPE html>
 <html lang="fr">
-
 <head>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
   <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet">
 </head>
-
 <body>
   <!-- Sidebar -->
   <div class="sidebar" id="sidebar">
@@ -27,11 +26,11 @@
     <div class="nav-menu">
       <!-- Dashboard -->
       <div class="dropdown dropdown-hover">
-      <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
-        <i class="fas fa-tachometer-alt"></i>
-        <span>Tableau de bord</span>
-      </a>
-    </div>
+        <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
 
       <!-- Gestion des Utilisateurs -->
       <div class="dropdown dropdown-hover">
@@ -64,8 +63,6 @@
               centres</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/centres-create']"><i class="fas fa-plus-circle"></i>
               Nouveau centre</a></li>
-          <li><a class="dropdown-item" [routerLink]="['/admin/centres-stock']"><i class="fas fa-boxes"></i> Stocks par
-              centre</a></li>
         </ul>
       </div>
 
@@ -98,8 +95,8 @@
               Paiements laveurs</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/payments-customers']"><i class="fas fa-users"></i>
               Paiements clients</a></li>
-          <li><a class="dropdown-item" [routerLink]="['/admin/payments-methods']"><i class="fas fa-credit-card"></i>
-              Méthodes de paiement</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-manager']"><i class="fas fa-user-tie"></i>
+              Paiement gérant</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/payments-reports']"><i
                 class="fas fa-file-invoice-dollar"></i> Rapports</a></li>
         </ul>
@@ -170,7 +167,8 @@
           <i class="fas fa-chevron-right dropdown-arrow"></i>
         </button>
         <ul class="dropdown-menu dropdown-menu-hover">
-        <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion dépenses</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion
+              dépenses</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/expenses-profitability']"><i
                 class="fas fa-chart-line"></i> Rentabilité</a></li>
         </ul>
@@ -217,14 +215,13 @@
         </div>
         <div class="dropdown dropdown-hover">
           <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
-            <!-- Photo sécurisée si elle existe -->
             <img *ngIf="currentUser?.photoSafeUrl as safeUrl" [src]="safeUrl" alt="User" class="user-avatar">
-            <!-- Nom complet -->
             <span>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
             <i class="fas fa-chevron-down"></i>
           </button>
           <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
-             <li><a class="dropdown-item" [routerLink]="['/admin/users-profil']"><i class="fas fa-user"></i> Mon profil</a></li>
+            <li><a class="dropdown-item" [routerLink]="['/admin/users-profil']"><i class="fas fa-user"></i> Mon
+                profil</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
             <li><a class="dropdown-item" (click)="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
@@ -234,225 +231,342 @@
     </div>
 
     <div class="page-content">
-      <!-- Stats Cards -->
-      <div class="stats-cards">
-        <div class="stat-card">
-          <div class="stat-icon blue">
-            <i class="fas fa-tint"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-title">Eau (SODECI) (Mois)</div>
-            <div class="stat-value">200 000 FCFA</div>
-          </div>
+      <!-- Header avec navigation -->
+      <div class="page-header">
+        <div class="header-content">
+          <h1 class="page-title">Gestion des Dépenses</h1>
+          <p class="page-subtitle">Suivez et gérez vos dépenses efficacement</p>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon green">
-            <i class="fas fa-bolt"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-title">Électricité (CIE) (Mois)</div>
-            <div class="stat-value">1 987 FCFA</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon orange">
-            <i class="fas fa-wallet"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-title">CIE/SODECI Totales (Année)</div>
-            <div class="stat-value">3 221 FCFA</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon purple">
-            <i class="fas fa-chart-pie"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-title">Dépenses Totales</div>
-            <div class="stat-value">38 654 FCFA</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon blue">
-            <i class="fas fa-calendar-alt"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-title">Total par Période</div>
-            <div class="stat-value" id="total-period">-</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon green">
+
+        <div class="view-navigation">
+          <button class="nav-btn" [class.active]="isActiveView('cards')" (click)="switchView('cards')">
             <i class="fas fa-chart-bar"></i>
+            Tableau de Bord
+          </button>
+          <button class="nav-btn" [class.active]="isActiveView('grid')" (click)="switchView('grid')">
+            <i class="fas fa-list"></i>
+            Liste des Dépenses
+          </button>
+          <button class="nav-btn" [class.active]="isActiveView('form')" (click)="switchView('form')">
+            <i class="fas fa-plus"></i>
+            Nouvelle Dépense
+          </button>
+        </div>
+      </div>
+
+      <!-- Sélection du centre -->
+      <div class="centre-selection">
+        <div class="selection-card">
+          <label for="centre-id" class="selection-label">Centre</label>
+          <select id="centre-id" class="centre-select" [(ngModel)]="selectedCentreId" (change)="onCentreChange()">
+            <option value="" disabled selected>Sélectionnez un centre</option>
+            <option *ngFor="let centre of centres" [value]="centre.id">
+              {{ centre.name }} ({{ centre.location }})
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Vue Cards - Tableau de Bord -->
+      <div *ngIf="isActiveView('cards') && selectedCentreId" class="cards-view">
+        <!-- Statistiques Principales -->
+        <div class="main-stats">
+          <div class="stat-card primary">
+            <div class="stat-icon">
+              <i class="fas fa-wallet"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-title">Total Mensuel</div>
+              <div class="stat-value">{{ formatAmount(expenseStats.totalMensuel) }}</div>
+              <div class="stat-trend positive">
+                <i class="fas fa-chart-line"></i>
+                Ce mois-ci
+              </div>
+            </div>
           </div>
-          <div class="stat-content">
-            <div class="stat-title">Dépenses par Type</div>
-            <div class="stat-value" id="expenses-by-type">-</div>
+
+          <div class="stat-card success">
+            <div class="stat-icon">
+              <i class="fas fa-calendar-alt"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-title">Total Annuel</div>
+              <div class="stat-value">{{ formatAmount(expenseStats.totalAnnuel) }}</div>
+              <div class="stat-trend">
+                <i class="fas fa-calendar"></i>
+                Cette année
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card info">
+            <div class="stat-icon">
+              <i class="fas fa-calculator"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-title">Moyenne Mensuelle</div>
+              <div class="stat-value">{{ formatAmount(expenseStats.moyenneMensuelle) }}</div>
+              <div class="stat-trend">
+                <i class="fas fa-balance-scale"></i>
+                Par mois
+              </div>
+            </div>
           </div>
         </div>
-        <div class="stat-card">
-          <div class="stat-icon orange">
-            <i class="fas fa-calendar"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-title">Dépenses Mensuelles</div>
-            <div class="stat-value" id="monthly-expenses">-</div>
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon purple">
-            <i class="fas fa-calculator"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-title">Moyenne Dépenses</div>
-            <div class="stat-value" id="average-expenses">-</div>
+
+        <!-- Dépenses par Type -->
+        <div class="type-stats-section">
+          <h3 class="section-title">Dépenses par Type</h3>
+          <div class="type-stats-grid">
+            <div *ngFor="let type of expenseTypes" class="type-stat-card">
+              <div class="type-icon">
+                <i class="fas" [class]="getTypeIcon(type)"></i>
+              </div>
+              <div class="type-content">
+                <div class="type-name">{{ type }}</div>
+                <div class="type-amount">{{ formatAmount(getExpenseTypeAmount(type)) }}</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      <!-- Form -->
-      <div class="form-container">
-        <div class="form-card">
-          <div class="form-header">
-            <h2 class="form-title">Gestion des Dépenses</h2>
-            <p class="form-subtitle">Saisissez les informations pour enregistrer une dépense</p>
-          </div>
+      <!-- Vue Grid - Liste des Dépenses -->
+      <div *ngIf="isActiveView('grid') && selectedCentreId" class="grid-view">
+        <div class="grid-header">
+          <h2 class="grid-title">
+            Liste des Dépenses
+            <span *ngIf="selectedType" class="filter-indicator">- {{selectedType}}</span>
+          </h2>
 
-          <form (ngSubmit)="onSubmit()" class="form-content">
-            <div class="form-group">
-              <label for="expense-type">Type de Dépense</label>
-              <select id="expense-type" name="type" [(ngModel)]="expenseForm.type" required>
-                <option value="" disabled selected>Sélectionnez un type</option>
-                <option *ngFor="let type of expenseTypes" [value]="type">{{type}}</option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="centre-id">Centre</label>
-              <select id="centre-id" name="centreId" [(ngModel)]="selectedCentreId" (change)="onCentreChange()"
-                required>
-                <option value="" disabled selected>Sélectionnez un centre</option>
-                <option *ngFor="let centre of centres" [value]="centre.id">
-                  {{ centre.name }} ({{ centre.location }})
-                </option>
-              </select>
-            </div>
-
-            <div class="form-group">
-              <label for="description">Description</label>
-              <textarea id="description" name="description" [(ngModel)]="expenseForm.description"
-                placeholder="Décrivez la dépense" required></textarea>
-            </div>
-
-            <div class="form-group">
-              <label for="amount">Montant (FCFA)</label>
-              <input type="number" id="amount" name="amount" [(ngModel)]="expenseForm.amount"
-                placeholder="Entrez le montant" step="0.01" min="0.01" required>
-            </div>
-
-            <div class="form-group">
-              <label for="date">Date</label>
-              <input type="date" id="date" name="date" [(ngModel)]="expenseForm.date"
-                [value]="expenseForm.date | date:'yyyy-MM-dd'" required>
-            </div>
-
-            <div class="form-actions">
-              <button type="submit" class="btn btn-primary" [disabled]="submitting || !isFormValid()">
-                {{ submitting ? 'Enregistrement...' : 'Enregistrer' }}
-              </button>
-              <button type="button" class="btn btn-secondary" (click)="resetForm()">
-                Annuler
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- Filtres -->
-      <div class="filters-container" *ngIf="selectedCentreId">
-        <div class="filters-card">
-          <h3 class="filters-title">Filtres</h3>
-          <div class="filters-content">
+          <div class="grid-actions">
+            <!-- Filtres -->
             <div class="filter-group">
-              <label for="filter-type">Filtrer par type</label>
-              <select id="filter-type" [(ngModel)]="selectedType" (change)="onTypeChange()">
+              <select [(ngModel)]="selectedType" (change)="onTypeChange()" class="filter-select">
                 <option value="">Tous les types</option>
                 <option *ngFor="let type of expenseTypes" [value]="type">{{type}}</option>
               </select>
-            </div>
-
-            <div class="filter-actions">
               <button type="button" class="btn btn-outline" (click)="resetFilters()" [disabled]="!selectedType">
+                <i class="fas fa-times"></i>
                 Réinitialiser
               </button>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <!-- Expenses Table -->
-      <div class="table-container" *ngIf="selectedCentreId">
-        <div class="table-header-section">
-          <h2 class="table-header">
-            Dépenses du centre
-            <span *ngIf="selectedType">- {{selectedType}}</span>
-          </h2>
-          <div class="table-actions">
-            <button class="btn btn-refresh" (click)="loadExpenses()" [disabled]="loading">
-              {{ loading ? 'Chargement...' : 'Actualiser' }}
+            <button class="btn btn-primary" (click)="switchView('form')">
+              <i class="fas fa-plus"></i>
+              Nouvelle Dépense
             </button>
-            <span class="expenses-count">{{expenses.length}} dépense(s)</span>
           </div>
         </div>
 
-        <div *ngIf="loading" class="loading-indicator">
-          <p>Chargement des dépenses...</p>
-        </div>
+        <!-- Tableau -->
+        <div class="table-container">
+          <div *ngIf="loading" class="loading-indicator">
+            <i class="fas fa-spinner fa-spin"></i>
+            Chargement des dépenses...
+          </div>
 
-        <div *ngIf="!loading && expenses.length === 0" class="empty-state">
-          <p *ngIf="selectedType">
-            Aucune dépense de type "{{selectedType}}" trouvée pour ce centre.
-          </p>
-          <p *ngIf="!selectedType">
-            Aucune dépense enregistrée pour ce centre.
-          </p>
-        </div>
+          <div *ngIf="!loading && expenses.length === 0" class="empty-state">
+            <i class="fas fa-receipt"></i>
+            <h3>Aucune dépense trouvée</h3>
+            <p *ngIf="selectedType">
+              Aucune dépense de type "{{selectedType}}" pour ce centre.
+            </p>
+            <p *ngIf="!selectedType">
+              Commencez par ajouter votre première dépense.
+            </p>
+            <button class="btn btn-primary" (click)="switchView('form')">
+              <i class="fas fa-plus"></i>
+              Ajouter une dépense
+            </button>
+          </div>
 
-        <table *ngIf="!loading && expenses.length > 0" class="expense-table">
-          <thead>
-            <tr>
-              <th>Type</th>
-              <th>Description</th>
-              <th>Montant (FCFA)</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let expense of expenses">
-              <td>
-                <span class="expense-type-badge">{{ expense.type }}</span>
-              </td>
-              <td>{{ expense.description }}</td>
-              <td class="amount-cell">{{ formatAmount(expense.amount) }}</td>
-              <td>{{ formatDate(expense.date) }}</td>
-            </tr>
-            <tr class="total-row">
-              <td colspan="2"><strong>Total</strong></td>
-              <td><strong>{{ formatAmount(getTotalAmount()) }}</strong></td>
-              <td></td>
-            </tr>
-          </tbody>
-        </table>
+          <div *ngIf="!loading && expenses.length > 0" class="table-wrapper">
+            <table class="expense-table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Description</th>
+                  <th>Montant</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let expense of expenses" class="expense-row">
+                  <td>
+                    <span class="expense-type-badge" [class]="getTypeBadgeClass(expense.type)">
+                      <i class="fas" [class]="getTypeIcon(expense.type)"></i>
+                      {{ expense.type }}
+                    </span>
+                  </td>
+                  <td class="expense-description">{{ expense.description }}</td>
+                  <td class="amount-cell">{{ formatAmount(expense.amount) }}</td>
+                  <td class="date-cell">{{ formatDate(expense.date) }}</td>
+                  <td class="actions-cell">
+                    <button class="btn-icon" title="Modifier" (click)="editExpense(expense)">
+                      <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-icon danger" title="Supprimer" (click)="confirmDeleteExpense(expense)">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+              <tfoot>
+                <tr class="total-row">
+                  <td colspan="2"><strong>Total</strong></td>
+                  <td><strong>{{ formatAmount(getTotalAmount()) }}</strong></td>
+                  <td colspan="2"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
       </div>
 
+      <!-- Vue Form - Nouvelle Dépense -->
+      <div *ngIf="isActiveView('form')" class="form-view">
+        <div class="form-container">
+          <div class="form-card">
+            <div class="form-header">
+              <h2 class="form-title">
+                <i class="fas" [class.fa-plus-circle]="!isEditMode" [class.fa-edit]="isEditMode"></i>
+                {{ isEditMode ? 'Modifier la Dépense' : 'Nouvelle Dépense' }}
+              </h2>
+              <p class="form-subtitle">
+                {{ isEditMode ? 'Modifiez les informations de la dépense' : 'Renseignez les informations de la dépense'
+                }}
+              </p>
+            </div>
+
+            <form (ngSubmit)="onSubmit()" class="form-content">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="expense-type" class="form-label">
+                    Type de Dépense *
+                  </label>
+                  <select id="expense-type" class="form-select" [(ngModel)]="expenseForm.type" name="type" required>
+                    <option value="" disabled selected>Choisissez un type</option>
+                    <option *ngFor="let type of expenseTypes" [value]="type">
+                      {{ type }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="amount" class="form-label">
+                    Montant (FCFA) *
+                  </label>
+                  <input type="number" id="amount" class="form-input" [(ngModel)]="expenseForm.amount" name="amount"
+                    placeholder="0.00" step="0.01" min="0.01" required>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="description" class="form-label">
+                  Description *
+                </label>
+                <textarea id="description" class="form-textarea" [(ngModel)]="expenseForm.description"
+                  name="description" placeholder="Décrivez le motif de cette dépense..." rows="3" required></textarea>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="date" class="form-label">
+                    Date *
+                  </label>
+                  <input type="date" id="date" class="form-input" [(ngModel)]="expenseForm.date" name="date"
+                    [value]="expenseForm.date | date:'yyyy-MM-dd'" required>
+                </div>
+
+                <div class="form-group">
+                  <label for="form-centre-id" class="form-label">
+                    Centre *
+                  </label>
+                  <select id="form-centre-id" class="form-select" [(ngModel)]="expenseForm.centreId" name="centreId"
+                    required>
+                    <option value="" disabled selected>Sélectionnez un centre</option>
+                    <option *ngFor="let centre of centres" [value]="centre.id">
+                      {{ centre.name }} ({{ centre.location }})
+                    </option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-large" [disabled]="submitting || !isFormValid()">
+                  <i class="fas" [class.fa-spinner]="submitting" [class.fa-pulse]="submitting"
+                    [class.fa-save]="!submitting"></i>
+                  {{ submitting ? (isEditMode ? 'Modification...' : 'Enregistrement...') : (isEditMode ? 'Modifier la
+                  dépense' : 'Enregistrer la dépense') }}
+                </button>
+
+                <button type="button" class="btn btn-secondary" (click)="resetForm(); switchView('cards')">
+                  <i class="fas fa-times"></i>
+                  Annuler
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Message si aucun centre sélectionné -->
       <div *ngIf="!selectedCentreId" class="selection-prompt">
         <div class="prompt-card">
+          <i class="fas fa-building"></i>
           <h3>Sélectionnez un centre</h3>
-          <p>Veuillez sélectionner un centre dans le formulaire ci-dessus pour afficher et gérer ses dépenses.</p>
+          <p>Veuillez sélectionner un centre pour accéder à la gestion des dépenses.</p>
         </div>
       </div>
     </div>
 
+    <!-- Popup de Confirmation de Suppression -->
+    <div *ngIf="showDeleteConfirmation" class="confirmation-popup-overlay" (click)="closeDeleteConfirmation()">
+      <div class="confirmation-popup" (click)="$event.stopPropagation()">
+        <div class="confirmation-popup-content">
+          <div class="confirmation-icon">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <h3 class="confirmation-title">Confirmer la suppression</h3>
+          <p class="confirmation-description">
+            Êtes-vous sûr de vouloir supprimer cette dépense ?<br>
+            <strong>Type:</strong> {{ expenseToDelete?.type }}<br>
+            <strong>Montant:</strong> {{ expenseToDelete ? formatAmount(expenseToDelete.amount) : '' }}
+          </p>
+          <div class="confirmation-actions">
+            <button class="btn btn-danger" (click)="confirmDelete()">
+              <i class="fas fa-trash"></i>
+              Supprimer
+            </button>
+            <button class="btn btn-secondary" (click)="closeDeleteConfirmation()">
+              <i class="fas fa-times"></i>
+              Annuler
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Popup de Succès -->
+    <div *ngIf="showSuccessPopup" class="success-popup-overlay" (click)="closeSuccessPopup()">
+      <div class="success-popup" (click)="$event.stopPropagation()">
+        <div class="success-popup-content">
+          <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <h3 class="success-title">{{ successMessage }}</h3>
+          <p class="success-description">L'opération a été effectuée avec succès</p>
+          <button class="btn btn-success" (click)="closeSuccessPopup()">
+            <i class="fas fa-check"></i>
+            Compris
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
     <div class="footer">
       <div>©2025 AutoWash, Tous droit reservé.</div>
       <div>Crée par <a href="https://www.linkedin.com/in/afferyauxencedelorschabehou/">Affery Auxence Delors
@@ -460,5 +574,4 @@
     </div>
   </div>
 </body>
-
 </html>

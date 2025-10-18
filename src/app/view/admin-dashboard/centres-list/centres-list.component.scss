@@ -1895,3 +1895,29 @@ body {
 
 
 
+// Ajouter ces styles dans centres-list.component.scss
+.form-control.is-invalid {
+  border-color: #dc3545;
+
+  &:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+  }
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #f8d7da;
+  padding: 0.75rem;
+  border-radius: 0.375rem;
+  border: 1px solid #f5c2c7;
+
+  i {
+    font-size: 1rem;
+  }
+}

@@ -62,8 +62,7 @@
               centres</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/centres-create']"><i class="fas fa-plus-circle"></i>
               Nouveau centre</a></li>
-          <li><a class="dropdown-item" [routerLink]="['/admin/centres-stock']"><i class="fas fa-boxes"></i> Stocks par
-              centre</a></li>
+
         </ul>
       </div>
 
@@ -96,8 +95,8 @@
               Paiements laveurs</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/payments-customers']"><i class="fas fa-users"></i>
               Paiements clients</a></li>
-          <li><a class="dropdown-item" [routerLink]="['/admin/payments-methods']"><i class="fas fa-credit-card"></i>
-              Méthodes de paiement</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-manager']"><i class="fas fa-user-tie"></i>
+              Paiement gérant</a></li>
           <li><a class="dropdown-item" [routerLink]="['/admin/payments-reports']"><i
                 class="fas fa-file-invoice-dollar"></i> Rapports</a></li>
         </ul>
@@ -391,12 +390,23 @@
 
                     <div class="form-group">
                       <label for="centreManager">Gérant du centre</label>
-                      <select id="centreManager" formControlName="managerId" class="form-control">
-                        <option value="">Sélectionner un gérant (optionnel)</option>
-                        <option *ngFor="let manager of availableManagers" [value]="manager.id">
-                          {{ manager.firstName }} {{ manager.lastName }}
-                        </option>
-                      </select>
+                        <select
+                          id="centreManager"
+                          formControlName="managerId"
+                          class="form-control"
+                          (change)="checkManagerAssignment($any($event).target.value)"
+                          [class.is-invalid]="managerAlreadyAssignedError">
+                          <option value="">Sélectionner un gérant (optionnel)</option>
+                          <option *ngFor="let manager of availableManagers" [value]="manager.id">
+                            {{ manager.firstName }} {{ manager.lastName }}
+                          </option>
+                        </select>
+
+                      <!-- Message d'erreur si le gérant est déjà assigné -->
+                      <div class="error-message" *ngIf="managerAlreadyAssignedError">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        {{ managerAlreadyAssignedError }}
+                      </div>
                     </div>
 
                     <div class="form-group">

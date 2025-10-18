@@ -27,6 +27,9 @@ export class CentresListComponent {
   currentEditCentreId: string | null = null;
   currentCentreData: Centres | null = null;
 
+  managerAlreadyAssignedError: string | null = null;
+  selectedManagerCurrentCentre: string | null = null;
+
   // Données des centres
   centres: Centres[] = [];
   filteredCentre: Centres[] = [];
@@ -332,16 +335,47 @@ export class CentresListComponent {
    * Charge les managers disponibles
    */
   loadAvailableManagers(): void {
-    this.centreService.getAvailableManagers().subscribe({
-      next: (managers) => {
-        this.availableManagers = managers;
-      },
-      error: (error) => {
-        console.error('Erreur lors du chargement des gérants', error);
-        this.showNotification('error', 'Erreur lors du chargement des gérants');
+  this.centreService.getAvailableManagers().subscribe({
+    next: (managers) => {
+      // Inclure le gérant actuel du centre en cours d'édition s'il existe
+      if (this.currentCentreData?.ownerId) {
+        const currentManager = this.users.find(u => u.id === this.currentCentreData?.ownerId);
+        if (currentManager && !managers.find(m => m.id === currentManager.id)) {
+          managers.push(currentManager);
+        }
       }
-    });
+      this.availableManagers = managers;
+    },
+    error: (error) => {
+      console.error('Erreur lors du chargement des gérants', error);
+      this.showNotification('error', 'Erreur lors du chargement des gérants');
+    }
+  });
+}
+
+checkManagerAssignment(managerId: string): void {
+  if (!managerId || managerId === this.currentCentreData?.ownerId) {
+    this.managerAlreadyAssignedError = null;
+    this.selectedManagerCurrentCentre = null;
+    return;
   }
+
+  // Vérifier si ce gérant est déjà assigné à un autre centre
+  const centreWithManager = this.centres.find(
+    c => c.ownerId === managerId && c.id !== this.currentEditCentreId
+  );
+
+  if (centreWithManager) {
+    const manager = this.availableManagers.find(m => m.id === managerId);
+    const managerName = manager ? `${manager.firstName} ${manager.lastName}` : 'ce gérant';
+
+    this.managerAlreadyAssignedError = `${managerName} gère déjà le centre "${centreWithManager.name}"`;
+    this.selectedManagerCurrentCentre = centreWithManager.name || '';
+  } else {
+    this.managerAlreadyAssignedError = null;
+    this.selectedManagerCurrentCentre = null;
+  }
+}
   //#endregion
 
   //#region Méthodes utilitaires
@@ -535,55 +569,63 @@ export class CentresListComponent {
    * Ferme la modal d'édition
    */
   closeEditModal(): void {
-    this.showEditModal = false;
-    this.isLoadingCentreData = false;
-    this.currentEditCentreId = null;
-    this.currentCentreData = null;
-    this.editCentreForm.reset();
-    this.initEditForm();
-  }
+  this.showEditModal = false;
+  this.isLoadingCentreData = false;
+  this.currentEditCentreId = null;
+  this.currentCentreData = null;
+  this.managerAlreadyAssignedError = null;
+  this.selectedManagerCurrentCentre = null;
+  this.editCentreForm.reset();
+  this.initEditForm();
+}
 
   /**
    * Soumet les modifications
    */
   onSubmitEdit(): void {
-    if (this.editCentreForm.invalid || !this.currentEditCentreId) {
-      this.markFormGroupTouched(this.editCentreForm);
-      return;
-    }
-
-    this.isSubmitting = true;
-
-    const formData = this.editCentreForm.value;
-    const selectedManager = formData.managerId
-      ? this.availableManagers.find(manager => manager.id === formData.managerId)
-      : null;
-
-    const centreData = {
-      name: formData.name,
-      location: formData.location,
-      ownerId: formData.managerId || null,
-      ownerName: selectedManager ? `${selectedManager.firstName} ${selectedManager.lastName}` : null,
-      isActive: formData.isActive
-    };
-
-    this.centreService.updateCentre(this.currentEditCentreId, centreData).subscribe({
-      next: (response) => {
-        this.isSubmitting = false;
-        this.showNotification('success', 'Centre modifié avec succès');
-        this.closeEditModal();
-
-        setTimeout(() => {
-          this.getCentres();
-        }, 1000);
-      },
-      error: (error) => {
-        this.isSubmitting = false;
-        console.error('Erreur lors de la modification', error);
-        this.showNotification('error', error.error?.message || 'Erreur lors de la modification du centre');
-      }
-    });
+  if (this.editCentreForm.invalid || !this.currentEditCentreId) {
+    this.markFormGroupTouched(this.editCentreForm);
+    return;
   }
+
+  // Vérifier si un gérant déjà assigné est sélectionné
+  if (this.managerAlreadyAssignedError) {
+    this.showNotification('error', 'Impossible de modifier : ' + this.managerAlreadyAssignedError);
+    return;
+  }
+
+  this.isSubmitting = true;
+
+  const formData = this.editCentreForm.value;
+  const selectedManager = formData.managerId
+    ? this.availableManagers.find(manager => manager.id === formData.managerId)
+    : null;
+
+  const centreData = {
+    name: formData.name,
+    location: formData.location,
+    ownerId: formData.managerId || null,
+    ownerName: selectedManager ? `${selectedManager.firstName} ${selectedManager.lastName}` : null,
+    isActive: formData.isActive
+  };
+
+  this.centreService.updateCentre(this.currentEditCentreId, centreData).subscribe({
+    next: (response) => {
+      this.isSubmitting = false;
+      this.showNotification('success', 'Centre modifié avec succès');
+      this.closeEditModal();
+
+      setTimeout(() => {
+        this.getCentres();
+      }, 1000);
+    },
+    error: (error) => {
+      this.isSubmitting = false;
+      console.error('Erreur lors de la modification', error);
+      this.showNotification('error', error.error?.message || 'Erreur lors de la modification du centre');
+    }
+  });
+}
   //#endregion
 
   //#region Gestion de la suppression

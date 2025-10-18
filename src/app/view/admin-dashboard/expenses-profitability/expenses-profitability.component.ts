@@ -1,10 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
+import { Subject, takeUntil } from 'rxjs';
+
 import { Users } from '../../../core/models/Users/Users';
 import { AuthService } from '../../../core/services/Auth/auth.service';
 import { UsersService } from '../../../core/services/Users/users.service';
+import { ProfitabilityService } from '../../../core/services/Profitability/profitability.service';
+import { ProfitabilityAnalysis } from '../../../core/models/Profitability/ProfitabilityAnalysis';
+import { ProfitabilityResponse } from '../../../core/models/Profitability/ProfitabilityResponse';
+import { ProfitabilityStats } from '../../../core/models/Profitability/ProfitabilityStats';
 
 @Component({
   selector: 'app-expenses-profitability',
@@ -12,26 +18,38 @@ import { UsersService } from '../../../core/services/Users/users.service';
   templateUrl: './expenses-profitability.component.html',
   styleUrl: './expenses-profitability.component.scss'
 })
-export class ExpensesProfitabilityComponent implements OnInit {
-  users: Users[] = []; // Liste complète des utilisateurs.
-  displayedUsers: Users[] = []; // Liste des utilisateurs affichés sur la page actuelle.
-  currentUser: Users | null = null; // Utilisateur actuellement connecté.
-  user: Users | null = null; // Informations sur l'utilisateur connecté.
+export class ExpensesProfitabilityComponent implements OnInit, OnDestroy {
+  users: Users[] = [];
+  displayedUsers: Users[] = [];
+  currentUser: Users | null = null;
+  user: Users | null = null;
   isSidebarCollapsed = false;
+
+  // Données de rentabilité
+  profitabilityData: ProfitabilityResponse | null = null;
+  monthComparison: any = null;
+  isLoading = false;
+  errorMessage = '';
+
+  private destroy$ = new Subject<void>();
 
   constructor(
     private sanitizer: DomSanitizer,
-    private usersService: UsersService, // Service pour interagir avec les utilisateurs.
-    private router: Router, // Service pour la navigation entre les routes.
-    private authService: AuthService // Service pour gérer l'authentification.
+    private usersService: UsersService,
+    private router: Router,
+    private authService: AuthService,
+    private profitabilityService: ProfitabilityService
   ) {}
 
   ngOnInit(): void {
-    this.getUsers(); // Récupère les utilisateurs.
-    this.loadCurrentUser(); // Charge l'utilisateur connecté
+    this.getUsers();
+    this.loadCurrentUser();
+    this.loadCurrentMonthProfitability();
+    this.loadMonthComparison();
 
-    // S'abonner aux changements de l'utilisateur connecté
-    this.authService.currentUser$.subscribe((user) => {
+    this.authService.currentUser$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe((user) => {
       if (user && user !== this.currentUser) {
         this.currentUser = user;
         this.loadCurrentUserPhoto();
@@ -39,10 +57,184 @@ export class ExpensesProfitabilityComponent implements OnInit {
     });
   }
 
- /**
-   * Charge les photos des utilisateurs et les sécurise pour l'affichage.
-   * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  /**
+   * Charger les données de rentabilité du mois en cours
    */
+  loadCurrentMonthProfitability(): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.profitabilityService.getCurrentMonthProfitability()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.profitabilityData = response;
+          this.isLoading = false;
+          console.log('Données de rentabilité chargées avec succès:', response);
+        },
+        error: (error) => {
+          console.error('Erreur lors du chargement des données de rentabilité:', error);
+          this.errorMessage = error.message || 'Erreur lors du chargement des données';
+          this.isLoading = false;
+        }
+      });
+  }
+
+  /**
+   * Charger la comparaison mensuelle
+   */
+  loadMonthComparison(): void {
+    this.profitabilityService.compareMonths()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (comparison) => {
+          this.monthComparison = comparison;
+          console.log('Comparaison mensuelle chargée:', comparison);
+        },
+        error: (error) => {
+          console.error('Erreur lors du chargement de la comparaison:', error);
+        }
+      });
+  }
+
+  /**
+   * Charger les données pour une période spécifique
+   */
+  loadProfitabilityForPeriod(startDate: Date, endDate: Date, centreId?: string): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    const request = this.profitabilityService.createCustomPeriodRequest(startDate, endDate, centreId);
+
+    this.profitabilityService.getProfitabilityAnalysis(request)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.profitabilityData = response;
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Erreur lors du chargement des données de rentabilité:', error);
+          this.errorMessage = error.message || 'Erreur lors du chargement des données';
+          this.isLoading = false;
+        }
+      });
+  }
+
+  /**
+   * Charger les données pour un centre spécifique
+   */
+  loadProfitabilityByCentre(centreId: string, startDate: Date, endDate: Date): void {
+    this.isLoading = true;
+    this.errorMessage = '';
+
+    this.profitabilityService.getProfitabilityByCentre(centreId, startDate, endDate)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.profitabilityData = response;
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Erreur lors du chargement des données du centre:', error);
+          this.errorMessage = error.message || 'Erreur lors du chargement des données du centre';
+          this.isLoading = false;
+        }
+      });
+  }
+
+  /**
+   * Exporter les données en Excel
+   */
+  exportToExcel(): void {
+    if (!this.profitabilityData) {
+      this.errorMessage = 'Aucune donnée à exporter';
+      return;
+    }
+
+    const request = this.profitabilityService.createCurrentMonthRequest();
+
+    this.profitabilityService.exportToExcel(request)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob) => {
+          const fileName = `Rentabilite_${this.formatDateForFilename(request.startDate)}_${this.formatDateForFilename(request.endDate)}.xlsx`;
+          this.profitabilityService.downloadExcel(blob, fileName);
+        },
+        error: (error) => {
+          console.error('Erreur lors de l\'export Excel:', error);
+          this.errorMessage = error.message || 'Erreur lors de l\'export des données';
+        }
+      });
+  }
+
+  /**
+   * Rafraîchir les données
+   */
+  refreshData(): void {
+    this.loadCurrentMonthProfitability();
+    this.loadMonthComparison();
+  }
+
+  /**
+   * Obtenir les statistiques globales
+   */
+  getGlobalStats(): ProfitabilityStats | null {
+    return this.profitabilityData?.globalStats || null;
+  }
+
+  /**
+   * Obtenir les détails par centre
+   */
+  getCentreDetails(): ProfitabilityAnalysis[] {
+    return this.profitabilityData?.centreDetails || [];
+  }
+
+  /**
+   * Formater un montant en devise
+   */
+  formatCurrency(amount: number): string {
+    return `${amount?.toLocaleString('fr-FR') || '0'} FCFA`;
+  }
+
+  /**
+   * Formater un pourcentage
+   */
+  formatPercentage(value: number): string {
+    return `${value?.toFixed(1) || '0.0'}%`;
+  }
+
+  /**
+   * Vérifier si une valeur est positive
+   */
+  isPositive(value: number): boolean {
+    return value > 0;
+  }
+
+  /**
+   * Obtenir la variation formatée pour l'affichage
+   */
+  getChangeDisplay(change: number, percent: number): string {
+    const sign = change > 0 ? '+' : '';
+    return `${sign}${this.formatCurrency(change)} (${sign}${percent?.toFixed(1) || '0.0'}%)`;
+  }
+
+  /**
+   * Formater une date pour le nom de fichier
+   */
+  private formatDateForFilename(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}${month}${day}`;
+  }
+
+  // Les méthodes existantes restent inchangées...
   loadUserPhotos(): void {
     this.displayedUsers.forEach((user) => {
       if (user.photoUrl && typeof user.photoUrl === 'string') {
@@ -59,36 +251,22 @@ export class ExpensesProfitabilityComponent implements OnInit {
     });
   }
 
-  /**
-   * Bascule l'état de la barre latérale entre "collapsée" et
-   * "étendue".
-   * Modifie les classes CSS pour ajuster l'affichage.
-   * Cette méthode est appelée lors du clic sur le bouton de
-   * basculement de la barre latérale.
-   */
-    toggleSidebar() {
-      this.isSidebarCollapsed = !this.isSidebarCollapsed;
+  toggleSidebar() {
+    this.isSidebarCollapsed = !this.isSidebarCollapsed;
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.querySelector('.main-content');
 
-      // Ajoute/retire les classes nécessaires
-      const sidebar = document.getElementById('sidebar');
-      const mainContent = document.querySelector('.main-content');
-
-      if (sidebar && mainContent) {
-        sidebar.classList.toggle('collapsed');
-        mainContent.classList.toggle('collapsed');
-      }
+    if (sidebar && mainContent) {
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('collapsed');
     }
+  }
 
-
-  /**
-   * Récupère tous les utilisateurs et charge leurs photos.
-   * Utilise le service UsersService pour obtenir la liste des utilisateurs.
-   */
   getUsers(): void {
     this.usersService.getAllUsers().subscribe({
       next: (data) => {
         this.users = data;
-        this.loadUserPhotos(); // Charge les photos après avoir reçu les utilisateurs
+        this.loadUserPhotos();
       },
       error: (error) => {
         console.error('Erreur lors du chargement des utilisateurs', error);
@@ -96,19 +274,13 @@ export class ExpensesProfitabilityComponent implements OnInit {
     });
   }
 
-  /**
-   * Charge l'utilisateur actuellement connecté.
-   * Essaie d'abord de récupérer l'utilisateur depuis le service d'authentification,
-   */
   loadCurrentUser(): void {
-    // D'abord, essaie de récupérer depuis le service d'authentification
     this.authService.loadCurrentUserProfile().subscribe({
       next: (user) => {
         if (user) {
           this.currentUser = user;
           this.loadCurrentUserPhoto();
         } else {
-          // Si pas d'utilisateur depuis AuthService, utilise UsersService
           this.usersService.getCurrentUser().subscribe({
             next: (user) => {
               this.currentUser = user;
@@ -125,7 +297,6 @@ export class ExpensesProfitabilityComponent implements OnInit {
       },
       error: (error) => {
         console.error('Erreur lors du chargement du profil utilisateur', error);
-        // Fallback vers UsersService
         this.usersService.getCurrentUser().subscribe({
           next: (user) => {
             this.currentUser = user;
@@ -142,11 +313,6 @@ export class ExpensesProfitabilityComponent implements OnInit {
     });
   }
 
-  /**
-   * Charge la photo de l'utilisateur actuellement connecté.
-   *
-   * Utilise le service UsersService pour obtenir la photo de l'utilisateur.
-   */
   loadCurrentUserPhoto(): void {
     if (!this.currentUser) return;
 
@@ -168,7 +334,6 @@ export class ExpensesProfitabilityComponent implements OnInit {
             'Erreur lors du chargement de la photo utilisateur',
             error
           );
-          // Image par défaut
           this.currentUser!.photoSafeUrl =
             this.sanitizer.bypassSecurityTrustUrl(
               'assets/images/default-avatar.png'
@@ -176,17 +341,12 @@ export class ExpensesProfitabilityComponent implements OnInit {
         },
       });
     } else {
-      // Si pas de photoUrl, utiliser une image par défaut
       this.currentUser.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
         'assets/images/default-avatar.png'
       );
     }
   }
 
-  /**
-   * Retourne le nom complet de l'utilisateur connecté
-   * @returns Le nom complet formaté ou un texte par défaut
-   */
   getFullName(): string {
     if (this.currentUser) {
       const firstName = this.currentUser.firstName || '';
@@ -196,20 +356,13 @@ export class ExpensesProfitabilityComponent implements OnInit {
     return 'Utilisateur';
   }
 
-  /**
-   * Retourne le rôle de l'utilisateur connecté
-   * @returns Le rôle de l'utilisateur ou un texte par défaut
-   */
   getUserRole(): string {
-    // Si pas d'utilisateur connecté
     if (!this.currentUser) return 'Rôle non défini';
 
-    // Si l'utilisateur a des rôles
     if (this.currentUser.roles && this.currentUser.roles.length > 0) {
       return this.mapRoleIdToName(this.currentUser.roles[0]);
     }
 
-    // Sinon, utilise le service d'authentification
     const role = this.authService.getUserRole();
     return role ? this.mapRoleIdToName(role) : 'Rôle non défini';
   }
@@ -225,36 +378,17 @@ export class ExpensesProfitabilityComponent implements OnInit {
     return roleMapping[roleId] || 'Administrateur';
   }
 
-  /**
-   * Déconnecte l'utilisateur et le redirige vers la page de connexion.
-   */
   logout(): void {
-    // Vérifie si l'utilisateur est bien authentifié avant de le déconnecter
     if (this.authService.isAuthenticated()) {
       try {
-        // Log l'état du localStorage avant la déconnexion (pour debug)
-        console.log('État du localStorage avant déconnexion:', {
-        });
-
-        // Appel au service de déconnexion
         this.authService.logout();
-
-        // Vérifie que le localStorage a bien été vidé
-        console.log('État du localStorage après déconnexion:', {
-
-        });
-
-        // Redirige vers la page de login seulement après confirmation que tout est bien déconnecté
         this.router.navigate(['/auth/login']);
       } catch (error) {
         console.error('Erreur lors de la déconnexion:', error);
-        // Fallback en cas d'erreur - force la redirection
         this.router.navigate(['/auth/login']);
       }
     } else {
-      // Si l'utilisateur n'est pas authentifié, rediriger directement
       this.router.navigate(['/auth/login']);
     }
   }
 }
-

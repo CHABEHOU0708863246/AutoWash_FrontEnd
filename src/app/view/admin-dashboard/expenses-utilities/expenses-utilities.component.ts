@@ -18,11 +18,19 @@ import { UsersService } from '../../../core/services/Users/users.service';
 import { ExpensesService } from '../../../core/services/Expenses/expenses.service';
 import { CentresService } from '../../../core/services/Centres/centres.service';
 
+interface ExpenseStats {
+  totalMensuel: number;
+  totalAnnuel: number;
+  moyenneMensuelle: number;
+  depensesParType: { [key: string]: number };
+  depensesMensuelles: { [key: string]: number };
+}
+
 @Component({
   selector: 'app-expenses-utilities',
   imports: [RouterLink, CommonModule, FormsModule],
   templateUrl: './expenses-utilities.component.html',
-  styleUrl: './expenses-utilities.component.scss'
+  styleUrl: './expenses-utilities.component.scss',
 })
 export class ExpensesUtilitiesComponent implements OnInit {
   //#region Properties
@@ -33,12 +41,30 @@ export class ExpensesUtilitiesComponent implements OnInit {
   user: Users | null = null;
   isSidebarCollapsed = false;
 
+  showSuccessPopup: boolean = false;
+successMessage: string = '';
+
+showDeleteConfirmation: boolean = false;
+expenseToDelete: Expense | null = null;
+
+  isEditMode: boolean = false;
+  editingExpenseId: string | null = null;
+
   // Propriétés dépenses
   expenses: Expense[] = [];
   loading = false;
   submitting = false;
   expenseTypes: string[] = [];
   centres: Centres[] = [];
+
+  // Statistiques
+  expenseStats: ExpenseStats = {
+    totalMensuel: 0,
+    totalAnnuel: 0,
+    moyenneMensuelle: 0,
+    depensesParType: {},
+    depensesMensuelles: {},
+  };
 
   // Filtres
   selectedCentreId: string = '';
@@ -50,8 +76,11 @@ export class ExpensesUtilitiesComponent implements OnInit {
     description: '',
     amount: 0,
     date: new Date(),
-    centreId: ''
+    centreId: '',
   };
+
+  // Navigation entre vues
+  activeView: 'cards' | 'grid' | 'form' = 'cards';
   //#endregion
 
   //#region Constructor
@@ -87,77 +116,122 @@ export class ExpensesUtilitiesComponent implements OnInit {
   }
   //#endregion
 
+  //#region Edit & Delete Methods
+
+  /**
+   * Préparer le formulaire pour modifier une dépense
+   */
+  editExpense(expense: Expense): void {
+    this.isEditMode = true;
+    this.editingExpenseId = expense.id?.toString() || null;
+
+    // Remplir le formulaire avec les données de la dépense
+    this.expenseForm = {
+      type: expense.type,
+      description: expense.description,
+      amount: expense.amount,
+      date: new Date(expense.date),
+      centreId: expense.centreId,
+    };
+
+    // Basculer vers la vue formulaire
+    this.switchView('form');
+  }
+
+  /**
+   * Demander confirmation avant de supprimer
+   */
+  confirmDeleteExpense(expense: Expense): void {
+    const confirmation = confirm(
+      `Êtes-vous sûr de vouloir supprimer cette dépense ?\n\n` +
+        `Type: ${expense.type}\n` +
+        `Description: ${expense.description}\n` +
+        `Montant: ${this.formatAmount(expense.amount)}\n` +
+        `Date: ${this.formatDate(expense.date)}`
+    );
+
+    if (confirmation) {
+      this.deleteExpense(expense.id?.toString() || '');
+    }
+  }
+
+  /**
+   * Supprimer une dépense
+   */
+  deleteExpense(expenseId: string): void {
+  this.loading = true;
+
+  this.expensesService.deleteExpense(expenseId).subscribe({
+    next: (response) => {
+      this.showSuccess('Dépense supprimée avec succès!'); // ← Modifié ici
+      this.loadExpenses();
+    },
+    error: (error) => {
+      console.error('Erreur lors de la suppression:', error);
+      alert('Une erreur est survenue lors de la suppression de la dépense.');
+      this.loading = false;
+    },
+  });
+}
+
+  //#endregion
+
   //#region Centres Methods
   loadCentres(): void {
-    this.centresService.getAllCentres()
-      .subscribe({
-        next: (centres) => {
-          this.centres = centres;
-          // Sélectionner le centre de l'utilisateur par défaut si disponible
-          if (this.currentUser?.centreId && !this.selectedCentreId) {
-            this.selectedCentreId = this.currentUser.centreId;
-            this.expenseForm.centreId = this.currentUser.centreId;
-            this.loadExpenseTypes();
-            this.loadExpenses();
-          }
-        },
-        error: (error) => {
-          console.error('Erreur lors du chargement des centres:', error);
+    this.centresService.getAllCentres().subscribe({
+      next: (centres) => {
+        this.centres = centres;
+        // Sélectionner le centre de l'utilisateur par défaut si disponible
+        if (this.currentUser?.centreId && !this.selectedCentreId) {
+          this.selectedCentreId = this.currentUser.centreId;
+          this.expenseForm.centreId = this.currentUser.centreId;
+          this.loadExpenseTypes();
+          this.loadExpenses();
         }
-      });
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des centres:', error);
+      },
+    });
   }
   //#endregion
 
   //#region Expense Types Methods
   loadExpenseTypes(): void {
     if (this.selectedCentreId) {
-      console.log('Chargement des types pour le centre:', this.selectedCentreId);
-
-      this.expensesService.getExpenseTypes(this.selectedCentreId)
-        .subscribe({
-          next: (response) => {
-            console.log('Réponse des types:', response);
-
-            if (response.success) {
-              this.expenseTypes = response.data;
-              console.log('Types chargés:', this.expenseTypes);
-            } else {
-              console.error('Erreur lors du chargement des types:', response.message);
-              // Types par défaut en cas d'erreur
-              this.expenseTypes = [
-                "Eau/Électricité",
-                "Produits",
-                "Nourriture",
-                "Maintenance",
-                "Personnel",
-                "Transport",
-                "Marketing",
-                "Assurance",
-                "Taxes",
-                "Autres"
-              ];
-            }
-          },
-          error: (error) => {
-            console.error('Erreur API lors du chargement des types:', error);
-            // Types par défaut en cas d'erreur
-            this.expenseTypes = [
-              "Eau/Électricité",
-              "Produits",
-              "Nourriture",
-              "Maintenance",
-              "Personnel",
-              "Transport",
-              "Marketing",
-              "Assurance",
-              "Taxes",
-              "Autres"
-            ];
+      this.expensesService.getExpenseTypes(this.selectedCentreId).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.expenseTypes = response.data;
+          } else {
+            console.error(
+              'Erreur lors du chargement des types:',
+              response.message
+            );
+            this.loadDefaultExpenseTypes();
           }
-        });
-    } else {
-      console.warn('Aucun centre sélectionné pour charger les types');
+        },
+        error: (error) => {
+          console.error('Erreur API lors du chargement des types:', error);
+          this.loadDefaultExpenseTypes();
+        },
+      });
     }
+  }
+
+  private loadDefaultExpenseTypes(): void {
+    this.expenseTypes = [
+      'Eau/Électricité',
+      'Produits',
+      'Nourriture',
+      'Maintenance',
+      'Personnel',
+      'Transport',
+      'Marketing',
+      'Assurance',
+      'Taxes',
+      'Autres',
+    ];
   }
   //#endregion
 
@@ -166,36 +240,36 @@ export class ExpensesUtilitiesComponent implements OnInit {
     if (this.selectedCentreId) {
       this.loading = true;
 
-      // Appliquer les filtres en fonction des sélections
-      if (this.selectedType) {
-        // Filtrer par type
-        this.expensesService.getExpensesByType(this.selectedCentreId, this.selectedType, 1, 50)
-          .subscribe({
-            next: (response) => {
-              this.handleExpensesResponse(response);
-            },
-            error: (error) => {
-              this.handleExpensesError(error);
-            }
-          });
-      } else {
-        // Toutes les dépenses du centre
-        this.expensesService.getExpensesByCentre(this.selectedCentreId, 1, 50)
-          .subscribe({
-            next: (response) => {
-              this.handleExpensesResponse(response);
-            },
-            error: (error) => {
-              this.handleExpensesError(error);
-            }
-          });
-      }
+      const loadObservable = this.selectedType
+        ? this.expensesService.getExpensesByType(
+            this.selectedCentreId,
+            this.selectedType,
+            1,
+            50
+          )
+        : this.expensesService.getExpensesByCentre(
+            this.selectedCentreId,
+            1,
+            50
+          );
+
+      loadObservable.subscribe({
+        next: (response) => {
+          this.handleExpensesResponse(response);
+        },
+        error: (error) => {
+          this.handleExpensesError(error);
+        },
+      });
     }
   }
 
-  private handleExpensesResponse(response: ApiResponseData<PaginatedResponse<Expense>>): void {
+  private handleExpensesResponse(
+    response: ApiResponseData<PaginatedResponse<Expense>>
+  ): void {
     if (response.success) {
       this.expenses = response.data.items;
+      this.calculateStats();
     } else {
       console.error('Erreur:', response.message);
       this.expenses = [];
@@ -209,6 +283,53 @@ export class ExpensesUtilitiesComponent implements OnInit {
     this.loading = false;
   }
 
+  private calculateStats(): void {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Filtre pour le mois en cours
+    const expensesThisMonth = this.expenses.filter((expense) => {
+      const expenseDate = new Date(expense.date);
+      return (
+        expenseDate.getMonth() === currentMonth &&
+        expenseDate.getFullYear() === currentYear
+      );
+    });
+
+    // Filtre pour l'année en cours
+    const expensesThisYear = this.expenses.filter((expense) => {
+      const expenseDate = new Date(expense.date);
+      return expenseDate.getFullYear() === currentYear;
+    });
+
+    // Calcul des totaux
+    this.expenseStats.totalMensuel = expensesThisMonth.reduce(
+      (total, expense) => total + expense.amount,
+      0
+    );
+    this.expenseStats.totalAnnuel = expensesThisYear.reduce(
+      (total, expense) => total + expense.amount,
+      0
+    );
+    this.expenseStats.moyenneMensuelle = this.expenseStats.totalAnnuel / 12;
+
+    // Dépenses par type
+    this.expenseStats.depensesParType = {};
+    this.expenses.forEach((expense) => {
+      this.expenseStats.depensesParType[expense.type] =
+        (this.expenseStats.depensesParType[expense.type] || 0) + expense.amount;
+    });
+
+    // Dépenses mensuelles (simplifié)
+    this.expenseStats.depensesMensuelles = {};
+    expensesThisYear.forEach((expense) => {
+      const month = new Date(expense.date).getMonth();
+      this.expenseStats.depensesMensuelles[month] =
+        (this.expenseStats.depensesMensuelles[month] || 0) + expense.amount;
+    });
+  }
+
   getTotalAmount(): number {
     return this.expenses.reduce((total, expense) => total + expense.amount, 0);
   }
@@ -216,13 +337,17 @@ export class ExpensesUtilitiesComponent implements OnInit {
   formatAmount(amount: number): string {
     return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
-      currency: 'XOF'
+      currency: 'XOF',
     }).format(amount);
   }
 
   formatDate(date: Date | string): string {
     const dateObj = typeof date === 'string' ? new Date(date) : date;
     return new Intl.DateTimeFormat('fr-FR').format(dateObj);
+  }
+
+  getExpenseTypeAmount(type: string): number {
+    return this.expenseStats.depensesParType[type] || 0;
   }
   //#endregion
 
@@ -249,20 +374,23 @@ export class ExpensesUtilitiesComponent implements OnInit {
 
   //#region Form Methods
   onSubmit(): void {
-    if (!this.isFormValid()) {
-      alert('Veuillez remplir tous les champs obligatoires');
-      return;
-    }
+  if (!this.isFormValid()) {
+    alert('Veuillez remplir tous les champs obligatoires');
+    return;
+  }
 
-    this.submitting = true;
+  this.submitting = true;
 
-    this.expensesService.createExpense(this.expenseForm)
+  if (this.isEditMode && this.editingExpenseId) {
+    this.expensesService
+      .updateExpense(this.editingExpenseId, this.expenseForm)
       .subscribe({
         next: (response) => {
           if (response.success) {
-            alert('Dépense enregistrée avec succès!');
+            this.showSuccess('Dépense modifiée avec succès!');
             this.resetForm();
             this.loadExpenses();
+            this.switchView('grid');
           } else {
             alert('Erreur: ' + response.message);
           }
@@ -270,18 +398,40 @@ export class ExpensesUtilitiesComponent implements OnInit {
         },
         error: (error) => {
           console.error('Erreur API:', error);
-          alert('Une erreur est survenue lors de l\'enregistrement');
+          alert('Une erreur est survenue lors de la modification');
           this.submitting = false;
-        }
+        },
       });
+  } else {
+    this.expensesService.createExpense(this.expenseForm).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.showSuccess('Dépense enregistrée avec succès!'); // ← Modifié ici
+          this.resetForm();
+          this.loadExpenses();
+          this.switchView('cards');
+        } else {
+          alert('Erreur: ' + response.message);
+        }
+        this.submitting = false;
+      },
+      error: (error) => {
+        console.error('Erreur API:', error);
+        alert("Une erreur est survenue lors de l'enregistrement");
+        this.submitting = false;
+      },
+    });
   }
+}
 
   isFormValid(): boolean {
-    return !!this.expenseForm.type &&
-           !!this.expenseForm.centreId &&
-           !!this.expenseForm.description &&
-           this.expenseForm.amount > 0 &&
-           !!this.expenseForm.date;
+    return (
+      !!this.expenseForm.type &&
+      !!this.expenseForm.centreId &&
+      !!this.expenseForm.description &&
+      this.expenseForm.amount > 0 &&
+      !!this.expenseForm.date
+    );
   }
 
   resetForm(): void {
@@ -290,12 +440,37 @@ export class ExpensesUtilitiesComponent implements OnInit {
       description: '',
       amount: 0,
       date: new Date(),
-      centreId: ''
+      centreId: this.selectedCentreId,
     };
+
+    // Réinitialiser le mode édition
+    this.isEditMode = false;
+    this.editingExpenseId = null;
   }
   //#endregion
 
-  //#region User Methods
+  //#region View Navigation
+  switchView(view: 'cards' | 'grid' | 'form'): void {
+    this.activeView = view;
+
+    // Si on quitte la vue formulaire, réinitialiser le mode édition
+    if (view !== 'form') {
+      this.resetForm();
+    }
+
+    // Si on va vers le formulaire et qu'on n'est pas en mode édition
+    // S'assurer que le formulaire est vide
+    if (view === 'form' && !this.isEditMode) {
+      this.resetForm();
+    }
+  }
+
+  isActiveView(view: string): boolean {
+    return this.activeView === view;
+  }
+  //#endregion
+
+  //#region User Methods (inchangés)
   loadUserPhotos(): void {
     this.displayedUsers.forEach((user) => {
       if (user.photoUrl && typeof user.photoUrl === 'string') {
@@ -366,7 +541,10 @@ export class ExpensesUtilitiesComponent implements OnInit {
   loadCurrentUserPhoto(): void {
     if (!this.currentUser) return;
 
-    if (this.currentUser.photoUrl && typeof this.currentUser.photoUrl === 'string') {
+    if (
+      this.currentUser.photoUrl &&
+      typeof this.currentUser.photoUrl === 'string'
+    ) {
       this.usersService.getUserPhoto(this.currentUser.photoUrl).subscribe({
         next: (blob) => {
           const reader = new FileReader();
@@ -377,9 +555,14 @@ export class ExpensesUtilitiesComponent implements OnInit {
           reader.readAsDataURL(blob);
         },
         error: (error) => {
-          console.error('Erreur lors du chargement de la photo utilisateur', error);
+          console.error(
+            'Erreur lors du chargement de la photo utilisateur',
+            error
+          );
           this.currentUser!.photoSafeUrl =
-            this.sanitizer.bypassSecurityTrustUrl('assets/images/default-avatar.png');
+            this.sanitizer.bypassSecurityTrustUrl(
+              'assets/images/default-avatar.png'
+            );
         },
       });
     } else {
@@ -421,6 +604,50 @@ export class ExpensesUtilitiesComponent implements OnInit {
   }
   //#endregion
 
+  // Méthode pour obtenir l'icône selon le type de dépense
+  getTypeIcon(type: string): string {
+    const icons: { [key: string]: string } = {
+      Electricité: 'fa-bolt',
+      Eau: 'fa-tint',
+      Internet: 'fa-wifi',
+      Téléphone: 'fa-phone',
+      Fournitures: 'fa-box',
+      Maintenance: 'fa-tools',
+      Salaires: 'fa-users',
+      Loyer: 'fa-building',
+      Assurance: 'fa-shield-alt',
+      Transport: 'fa-car',
+      Marketing: 'fa-bullhorn',
+      Formation: 'fa-graduation-cap',
+      Équipement: 'fa-laptop',
+      Autres: 'fa-ellipsis-h',
+    };
+
+    return icons[type] || 'fa-file-invoice-dollar';
+  }
+
+  // Méthode pour obtenir la classe CSS du badge selon le type
+  getTypeBadgeClass(type: string): string {
+    const classes: { [key: string]: string } = {
+      Electricité: 'warning',
+      Eau: 'primary',
+      Internet: 'info',
+      Téléphone: 'success',
+      Fournitures: 'primary',
+      Maintenance: 'warning',
+      Salaires: 'success',
+      Loyer: 'danger',
+      Assurance: 'info',
+      Transport: 'warning',
+      Marketing: 'primary',
+      Formation: 'success',
+      Équipement: 'info',
+      Autres: 'secondary',
+    };
+
+    return classes[type] || 'primary';
+  }
+
   //#region UI Methods
   toggleSidebar() {
     this.isSidebarCollapsed = !this.isSidebarCollapsed;
@@ -435,16 +662,44 @@ export class ExpensesUtilitiesComponent implements OnInit {
   }
   //#endregion
 
+closeDeleteConfirmation(): void {
+  this.showDeleteConfirmation = false;
+  this.expenseToDelete = null;
+}
+
+confirmDelete(): void {
+  if (this.expenseToDelete) {
+    this.deleteExpense(this.expenseToDelete.id?.toString() || '');
+    this.closeDeleteConfirmation();
+  }
+}
+
+  /**
+ * Afficher la popup de succès
+ */
+showSuccess(message: string): void {
+  this.successMessage = message;
+  this.showSuccessPopup = true;
+
+  // Fermer automatiquement après 3 secondes
+  setTimeout(() => {
+    this.closeSuccessPopup();
+  }, 3000);
+}
+
+/**
+ * Fermer la popup de succès
+ */
+closeSuccessPopup(): void {
+  this.showSuccessPopup = false;
+  this.successMessage = '';
+}
+
   //#region Auth Methods
   logout(): void {
     if (this.authService.isAuthenticated()) {
       try {
-        console.log('État du localStorage avant déconnexion:', {});
-
         this.authService.logout();
-
-        console.log('État du localStorage après déconnexion:', {});
-
         this.router.navigate(['/auth/login']);
       } catch (error) {
         console.error('Erreur lors de la déconnexion:', error);
