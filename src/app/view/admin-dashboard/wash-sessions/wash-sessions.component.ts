@@ -14,7 +14,7 @@ import { UsersService } from '../../../core/services/Users/users.service';
 import { WashSession } from '../../../core/models/Wash/WashSession';
 import { Centres } from '../../../core/models/Centres/Centres';
 import { WashsService } from '../../../core/services/Washs/washs.service';
-import { finalize } from 'rxjs';
+import { catchError, finalize, forkJoin, of } from 'rxjs';
 import { CommonModule } from '@angular/common';
 import { ApiResponseData } from '../../../core/models/ApiResponseData';
 import { ServiceSettingsService } from '../../../core/services/ServiceSettings/service-settings.service';
@@ -52,6 +52,7 @@ export class WashSessionsComponent implements OnInit {
 
   // Services et types de véhicules
   services: ServiceSettings[] = [];
+  allServices: ServiceSettings[] = [];
   vehicleTypes: VehicleTypeSettings[] = [];
 
   // Formulaire
@@ -96,6 +97,7 @@ export class WashSessionsComponent implements OnInit {
     this.loadCurrentUser();
     this.loadCentres();
     this.loadServices();
+    this.loadAllServices();
 
     // Charger les sessions après avoir chargé les centres
     setTimeout(() => {
@@ -328,6 +330,44 @@ export class WashSessionsComponent implements OnInit {
 
     return service.name;
   }
+
+  /**
+   * Charge TOUS les services de TOUS les centres (pour l'affichage des sessions)
+   */
+  loadAllServices(): void {
+  if (!this.centres || this.centres.length === 0) {
+    console.warn('Aucun centre disponible pour charger les services');
+    this.allServices = [];
+    return;
+  }
+
+  const serviceRequests = this.centres.map(centre =>
+    this.serviceSettingsService.getServicesByCentre(centre.id || '').pipe(
+      catchError(error => {
+        console.error(`Erreur lors du chargement des services pour le centre ${centre.name}`, error);
+        return of({ success: false, data: [] } as unknown as ApiResponseData<ServiceSettings[]>);
+      })
+    )
+  );
+
+  forkJoin(serviceRequests).subscribe({
+    next: (responses) => {
+      this.allServices = responses
+        .filter(response => response.success && response.data)
+        .flatMap(response => response.data || [])
+        // Éviter les doublons basés sur l'ID du service
+        .filter((service, index, array) =>
+          array.findIndex(s => s.id === service.id) === index
+        );
+
+      console.log('Tous les services chargés (sans doublons):', this.allServices);
+    },
+    error: (error) => {
+      console.error('Erreur lors du chargement de tous les services', error);
+      this.allServices = [];
+    },
+  });
+}
 
   /**
    * Retourne le nom d'un centre par son ID

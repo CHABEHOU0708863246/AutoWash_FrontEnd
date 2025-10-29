@@ -1,0 +1,24 @@
+
+<div class="notification-container">
+      <div
+        *ngFor="let notification of notifications"
+        class="notification"
+        [class]="'notification-' + notification.type"
+        (click)="remove(notification.id)">
+        <div class="notification-icon">
+          <i [class]="notification.icon"></i>
+        </div>
+        <div class="notification-content">
+          <div class="notification-title">{{ notification.title }}</div>
+          <div class="notification-message">{{ notification.message }}</div>
+        </div>
+        <button class="notification-close" (click)="remove(notification.id)">
+          <i class="fas fa-times"></i>
+        </button>
+        <div
+          *ngIf="notification.duration && notification.duration > 0"
+          class="notification-progress"
+          [style.animation-duration]="notification.duration + 'ms'">
+        </div>
+      </div>
+    </div>

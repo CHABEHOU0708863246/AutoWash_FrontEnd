@@ -4,7 +4,7 @@ import { PaymentType } from "./PaymentType";
 
 export class Payment {
   id?: string;
-  userId: string = ''; // Laveur payé
+  userId: string = ''; // Laveur ou manager payé
   centreId: string = '';
   paymentType: PaymentType = PaymentType.PerService;
   method: PaymentMethod = PaymentMethod.CASH;
@@ -21,6 +21,10 @@ export class Payment {
   createdAt: Date = new Date();
   createdBy: string = '';
 
+  // Nouveaux champs
+  isManagerPayment: boolean = false; // true si c'est un paiement manager
+  deductions: number = 0; // Déductions appliquées au paiement
+
   constructor(init?: Partial<Payment>) {
     Object.assign(this, init);
 
@@ -36,6 +40,10 @@ export class Payment {
     if (init?.attachments) {
       this.attachments = init.attachments.map(a => new PaymentAttachment(a));
     }
+
+    // Initialisation des nouveaux champs avec valeurs par défaut
+    this.isManagerPayment = init?.isManagerPayment ?? false;
+    this.deductions = init?.deductions ?? 0;
   }
 
   approve(approvedByUserId: string): void {
@@ -61,7 +69,7 @@ export class Payment {
   }
 
   getTotalAmount(): number {
-    return this.amount + this.commission;
+    return this.amount + this.commission - this.deductions;
   }
 
   isElectronicPayment(): boolean {
@@ -77,7 +85,27 @@ export class Payment {
   }
 
   getPaymentDetails(): string {
-    return `${this.paymentType} - ${this.method}: ${this.getTotalAmount().toFixed(2)}`;
+    const userType = this.isManagerPayment ? 'Manager' : 'Washer';
+    return `${userType} - ${this.paymentType} - ${this.method}: ${this.getTotalAmount().toFixed(2)}`;
+  }
+
+  // Nouvelle méthode pour déterminer le type d'utilisateur
+  getUserType(): string {
+    return this.isManagerPayment ? 'Manager' : 'Washer';
+  }
+
+  // Nouvelle méthode pour le montant net après déductions
+  getNetAmount(): number {
+    return (this.amount + this.commission) - this.deductions;
+  }
+
+  // Nouvelle méthode pour vérifier si c'est un paiement manager
+  isManager(): boolean {
+    return this.isManagerPayment;
+  }
+
+  // Nouvelle méthode pour vérifier si c'est un paiement laveur
+  isWasher(): boolean {
+    return !this.isManagerPayment;
   }
 }
-
