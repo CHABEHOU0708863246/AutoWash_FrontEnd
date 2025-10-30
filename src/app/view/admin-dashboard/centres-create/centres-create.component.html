@@ -318,15 +318,6 @@
             <div class="spinner"></div>
             <p>Création du centre en cours...</p>
           </div>
-
-          <!-- Notification élégante -->
-          <div class="notification" *ngIf="notification.show" [class.success]="notification.type === 'success'"
-            [class.error]="notification.type === 'error'">
-            {{ notification.message }}
-            <button (click)="hideNotification()" class="close-btn">
-              <i class="fas fa-times"></i>
-            </button>
-          </div>
         </form>
       </div>
     </div>

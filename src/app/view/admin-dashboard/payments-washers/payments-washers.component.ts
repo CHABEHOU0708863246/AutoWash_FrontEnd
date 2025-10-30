@@ -90,6 +90,7 @@ export class PaymentsWashersComponent implements OnInit, OnDestroy {
     centre: 'all',
     washer: 'all'
   };
+  toastr: any;
 
   //#endregion
 
@@ -196,7 +197,6 @@ export class PaymentsWashersComponent implements OnInit, OnDestroy {
  */
 onWasherSelectChange(washerId: string, centreId: string): void {
   if (washerId && centreId) {
-    // Optionnel: Pré-remplir certaines données
     this.calculateWasherPayment(washerId, centreId);
   }
 }
@@ -660,23 +660,30 @@ async calculateWasherPayment(washerId: string, centreId: string): Promise<void> 
  * Génère un reçu pour un paiement
  */
 async generateReceipt(paymentId: string): Promise<void> {
-  try {
-    const response = await lastValueFrom(
-      this.paymentsService.generatePaymentReceipt(paymentId).pipe(
-        takeUntil(this.destroy$)
-      )
-    );
+    try {
+      // Récupérer l'image du backend
+      const blob = await lastValueFrom(
+        this.paymentsService.generatePaymentReceipt(paymentId).pipe(
+          takeUntil(this.destroy$)
+        )
+      );
 
-    if (response.success) {
-      // Ouvrir le reçu dans une nouvelle fenêtre ou le télécharger
-      const blob = new Blob([response.data], { type: 'text/plain' });
+      // Télécharger automatiquement
       const url = window.URL.createObjectURL(blob);
-      window.open(url, '_blank');
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `recu_${paymentId}.png`;
+      link.click();
+      window.URL.revokeObjectURL(url);
+
+      // Message de succès (optionnel)
+      this.toastr.success('Reçu téléchargé avec succès');
+
+    } catch (error) {
+      this.handleError('Erreur lors de la génération du reçu', error);
     }
-  } catch (error) {
-    this.handleError('Erreur lors de la génération du reçu', error);
   }
-}
+
 
   /**
    * Exporte vers Excel

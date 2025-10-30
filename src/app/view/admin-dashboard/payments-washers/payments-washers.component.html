@@ -236,11 +236,6 @@
       <!-- En-tête de page -->
       <div class="page-header">
         <h1 class="page-title"><i class="fas fa-user-tie"></i> Paiements des Laveurs</h1>
-        <div class="header-actions">
-          <button class="btn btn-primary" (click)="switchTab('new-payment')">
-            <i class="fas fa-plus"></i> Nouveau Paiement
-          </button>
-        </div>
       </div>
 
       <!-- Cartes de statistiques -->
@@ -373,13 +368,6 @@
                   </span>
                 </td>
                 <td class="action-buttons">
-                  <button class="btn-icon" title="Voir les détails">
-                    <i class="fas fa-eye"></i>
-                  </button>
-                  <button class="btn-icon" title="Modifier">
-                    <i class="fas fa-edit"></i>
-                  </button>
-
                   <!-- Actions conditionnelles selon le statut -->
                   <button *ngIf="!payment.approvedBy && payment.amount > 0 && hasValidId(payment)" class="btn-icon"
                     title="Valider le paiement" (click)="validatePayment(getPaymentId(payment))">
@@ -477,12 +465,6 @@
                   <input type="number" id="amount" [(ngModel)]="newPayment.amount" name="amount"
                     placeholder="Entrez le montant" step="0.01" required min="0">
                 </div>
-
-                <div class="form-group">
-                  <label for="commission">Commission/Pourboire (FCFA)</label>
-                  <input type="number" id="commission" [(ngModel)]="newPayment.commission" name="commission"
-                    placeholder="Entrez la commission" step="0.01" value="0" min="0">
-                </div>
               </div>
 
               <div class="form-group">
@@ -528,7 +510,7 @@
 
         <!-- Rapports -->
         <div class="tab-content" [class.active]="isTabActive('reports')">
-          <div class="charts-container">
+          <!-- <div class="charts-container">
             <div class="chart-card">
               <div class="chart-header">
                 <h4 class="chart-title">Répartition des Paiements par Type</h4>
@@ -553,7 +535,7 @@
                 <canvas id="payment-trend-chart"></canvas>
               </div>
             </div>
-          </div>
+          </div> -->
 
           <div class="form-container">
             <div class="form-header">

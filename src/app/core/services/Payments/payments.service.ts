@@ -10,6 +10,13 @@ import { MonthlyPaymentFilter } from '../../models/Payments/MonthlyPaymentFilter
 import { PaymentMethod } from '../../models/Payments/PaymentMethod';
 import { ApiResponseData } from '../../models/ApiResponseData';
 
+
+export interface ReceiptBase64 {
+  imageBase64: string;
+  mimeType: string;
+  fileName: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -260,11 +267,20 @@ getPaymentsWithFilter(filter: MonthlyPaymentFilter): Observable<ApiResponseData<
   // 🔹 Reçus
   // ============================
 
-  /**
-   * Générer un reçu de paiement
+/**
+   * Télécharger le reçu de paiement en image PNG
    */
-  generatePaymentReceipt(paymentId: string): Observable<ApiResponseData<string>> {
-    return this.http.get<ApiResponseData<string>>(`${this.baseUrl}/receipt/${paymentId}`)
+  generatePaymentReceipt(paymentId: string): Observable<Blob> {
+    return this.http.get(`${this.baseUrl}/receipt/${paymentId}`, {
+      responseType: 'blob' // Important: pour recevoir l'image
+    }).pipe(catchError(this.handleError));
+  }
+
+  /**
+   * Obtenir le reçu en base64 (pour affichage direct dans l'app)
+   */
+  generatePaymentReceiptBase64(paymentId: string): Observable<ApiResponseData<ReceiptBase64>> {
+    return this.http.get<ApiResponseData<ReceiptBase64>>(`${this.baseUrl}/receipt/${paymentId}/base64`)
       .pipe(catchError(this.handleError));
   }
 

@@ -9,6 +9,7 @@ import Swal from 'sweetalert2';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Centres } from '../../../core/models/Centres/Centres';
 import { CentresService } from '../../../core/services/Centres/centres.service';
+import { NotificationService } from '../../../core/services/Notification/notification.service';
 
 @Component({
   selector: 'app-users-create',
@@ -56,7 +57,8 @@ export class UsersCreateComponent implements OnInit {
     private router: Router,
     private usersService: UsersService,
     private authService: AuthService,
-    private formBuilder: FormBuilder
+    private formBuilder: FormBuilder,
+    private notificationService: NotificationService
   ) {
     this.initializeForm();
   }
@@ -209,69 +211,42 @@ export class UsersCreateComponent implements OnInit {
   }
 
   // Traiter les erreurs de réponse du serveur
-  handleServerErrors(error: any): void {
-    this.isSubmitting = false;
+handleServerErrors(error: any): void {
+  this.isSubmitting = false;
 
-    if (error.error && error.error.errors) {
-      // Erreurs de validation du serveur
-      const serverErrors = error.error.errors;
+  if (error.error && error.error.errors) {
+    // Erreurs de validation du serveur
+    const serverErrors = error.error.errors;
 
-      for (const [field, messages] of Object.entries(serverErrors)) {
-        if (Array.isArray(messages) && messages.length > 0) {
-          this.serverErrors[field] = messages[0];
-        }
+    for (const [field, messages] of Object.entries(serverErrors)) {
+      if (Array.isArray(messages) && messages.length > 0) {
+        this.serverErrors[field] = messages[0];
       }
-
-      this.showErrorToast('Erreurs de validation', 'Veuillez corriger les erreurs signalées');
-    } else if (error.error && error.error.message) {
-      // Erreur générale avec message
-      const message = error.error.message;
-
-      // Traiter les messages d'erreur spécifiques
-      if (message.includes('email') && message.includes('already exists')) {
-        this.serverErrors['email'] = 'Cette adresse email est déjà utilisée';
-        this.showErrorToast('Email existant', 'Cette adresse email est déjà utilisée par un autre utilisateur');
-      } else if (message.includes('phone') && message.includes('already exists')) {
-        this.serverErrors['phoneNumber'] = 'Ce numéro de téléphone est déjà utilisé';
-        this.showErrorToast('Téléphone existant', 'Ce numéro de téléphone est déjà utilisé par un autre utilisateur');
-      } else {
-        this.showErrorToast('Erreur', message);
-      }
-    } else {
-      // Erreur générique
-      this.showErrorToast('Erreur serveur', 'Une erreur inattendue s\'est produite. Veuillez réessayer.');
     }
-  }
 
-  // Afficher une notification d'erreur
-  showErrorToast(title: string, message: string): void {
-    Swal.fire({
-      icon: 'error',
-      title: title,
-      text: message,
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 5000,
-      timerProgressBar: true,
-      background: '#fff3cd',
-      color: '#856404'
-    });
-  }
+    // REMPLACER showErrorToast par notificationService.error
+    this.notificationService.error('Erreurs de validation', 'Veuillez corriger les erreurs signalées');
+  } else if (error.error && error.error.message) {
+    // Erreur générale avec message
+    const message = error.error.message;
 
-  // Afficher une notification de succès
-  showSuccessToast(title: string, message: string): void {
-    Swal.fire({
-      icon: 'success',
-      title: title,
-      text: message,
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 3000,
-      timerProgressBar: true
-    });
+    // Traiter les messages d'erreur spécifiques
+    if (message.includes('email') && message.includes('already exists')) {
+      this.serverErrors['email'] = 'Cette adresse email est déjà utilisée';
+      this.notificationService.error('Email existant', 'Cette adresse email est déjà utilisée par un autre utilisateur');
+    } else if (message.includes('phone') && message.includes('already exists')) {
+      this.serverErrors['phoneNumber'] = 'Ce numéro de téléphone est déjà utilisé';
+      this.notificationService.error('Téléphone existant', 'Ce numéro de téléphone est déjà utilisé par un autre utilisateur');
+    } else {
+      this.notificationService.error('Erreur', message);
+    }
+  } else {
+    // Erreur générique
+    this.notificationService.error('Erreur serveur', 'Une erreur inattendue s\'est produite. Veuillez réessayer.');
   }
+}
+
+
 
   //#endregion
 
@@ -471,13 +446,8 @@ export class UsersCreateComponent implements OnInit {
   }
 
   private showPhotoError(title: string, text: string): void {
-    Swal.fire({
-      icon: 'error',
-      title,
-      text,
-      confirmButtonText: 'Ok'
-    });
-  }
+  this.notificationService.error(title, text);
+}
 
   previewPhoto(file: File): void {
     const reader = new FileReader();
@@ -545,17 +515,17 @@ export class UsersCreateComponent implements OnInit {
   // ====================================================================
 
   getCentres(): void {
-    this.centresService.getAllCentres().subscribe({
-      next: (data) => {
-        this.centres = data;
-        console.log('Centres chargés:', this.centres);
-      },
-      error: (error) => {
-        console.error("Erreur lors du chargement des centres", error);
-        this.showError('Erreur!', 'Impossible de charger la liste des centres.');
-      }
-    });
-  }
+  this.centresService.getAllCentres().subscribe({
+    next: (data) => {
+      this.centres = data;
+      console.log('Centres chargés:', this.centres);
+    },
+    error: (error) => {
+      console.error("Erreur lors du chargement des centres", error);
+      this.notificationService.error('Erreur!', 'Impossible de charger la liste des centres.');
+    }
+  });
+}
 
   //#endregion
 
@@ -574,18 +544,18 @@ export class UsersCreateComponent implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.userForm.valid) {
-      if (this.userForm.get('password')?.value !== this.userForm.get('confirmPassword')?.value) {
-        this.showError('Erreur!', 'Les mots de passe ne correspondent pas.');
-        return;
-      }
-
-      this.processUserCreation();
-    } else {
-      this.markFormAsTouched();
-      this.showWarning('Formulaire invalide', 'Veuillez remplir correctement tous les champs obligatoires.');
+  if (this.userForm.valid) {
+    if (this.userForm.get('password')?.value !== this.userForm.get('confirmPassword')?.value) {
+      this.notificationService.error('Erreur!', 'Les mots de passe ne correspondent pas.');
+      return;
     }
+
+    this.processUserCreation();
+  } else {
+    this.markFormAsTouched();
+    this.notificationService.warning('Formulaire invalide', 'Veuillez remplir correctement tous les champs obligatoires.');
   }
+}
 
   processUserCreation(): void {
     const formData = this.userForm.value;
@@ -768,15 +738,15 @@ export class UsersCreateComponent implements OnInit {
   }
 
   private handleSuccess(): void {
-    this.initializeForm();
-    this.getUsers();
-    this.selectedPhoto = null;
-    this.showSuccess('Succès!', 'Utilisateur créé avec succès!');
-  }
+  this.initializeForm();
+  this.getUsers();
+  this.selectedPhoto = null;
+  this.notificationService.success('Succès!', 'Utilisateur créé avec succès!');
+}
 
   private handleError(): void {
-    this.showError('Erreur!', 'Erreur lors de la création de l\'utilisateur.');
-  }
+  this.notificationService.error('Erreur!', 'Erreur lors de la création de l\'utilisateur.');
+}
 
   private showSuccess(title: string, text: string): void {
     Swal.fire({
@@ -797,13 +767,8 @@ export class UsersCreateComponent implements OnInit {
   }
 
   private showWarning(title: string, text: string): void {
-    Swal.fire({
-      icon: 'warning',
-      title,
-      text,
-      confirmButtonText: 'Ok'
-    });
-  }
+  this.notificationService.warning(title, text);
+}
 
   onReset(): void {
     this.userForm.reset();

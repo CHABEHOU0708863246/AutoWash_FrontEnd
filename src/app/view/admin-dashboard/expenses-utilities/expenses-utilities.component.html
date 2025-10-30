@@ -549,23 +549,6 @@
       </div>
     </div>
 
-    <!-- Popup de Succès -->
-    <div *ngIf="showSuccessPopup" class="success-popup-overlay" (click)="closeSuccessPopup()">
-      <div class="success-popup" (click)="$event.stopPropagation()">
-        <div class="success-popup-content">
-          <div class="success-icon">
-            <i class="fas fa-check-circle"></i>
-          </div>
-          <h3 class="success-title">{{ successMessage }}</h3>
-          <p class="success-description">L'opération a été effectuée avec succès</p>
-          <button class="btn btn-success" (click)="closeSuccessPopup()">
-            <i class="fas fa-check"></i>
-            Compris
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- Footer -->
     <div class="footer">
       <div>©2026 AutoWash, Tous droit reservé.</div>

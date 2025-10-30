@@ -17,6 +17,7 @@ import { AuthService } from '../../../core/services/Auth/auth.service';
 import { UsersService } from '../../../core/services/Users/users.service';
 import { ExpensesService } from '../../../core/services/Expenses/expenses.service';
 import { CentresService } from '../../../core/services/Centres/centres.service';
+import { NotificationService } from '../../../core/services/Notification/notification.service'; // Import ajouté
 
 interface ExpenseStats {
   totalMensuel: number;
@@ -41,11 +42,12 @@ export class ExpensesUtilitiesComponent implements OnInit {
   user: Users | null = null;
   isSidebarCollapsed = false;
 
-  showSuccessPopup: boolean = false;
-successMessage: string = '';
+  // Suppression des anciennes propriétés de notification
+  // showSuccessPopup: boolean = false;
+  // successMessage: string = '';
 
-showDeleteConfirmation: boolean = false;
-expenseToDelete: Expense | null = null;
+  showDeleteConfirmation: boolean = false;
+  expenseToDelete: Expense | null = null;
 
   isEditMode: boolean = false;
   editingExpenseId: string | null = null;
@@ -90,7 +92,8 @@ expenseToDelete: Expense | null = null;
     private router: Router,
     private authService: AuthService,
     private expensesService: ExpensesService,
-    private centresService: CentresService
+    private centresService: CentresService,
+    private notificationService: NotificationService // Injection du service
   ) {}
   //#endregion
 
@@ -159,20 +162,26 @@ expenseToDelete: Expense | null = null;
    * Supprimer une dépense
    */
   deleteExpense(expenseId: string): void {
-  this.loading = true;
+    this.loading = true;
 
-  this.expensesService.deleteExpense(expenseId).subscribe({
-    next: (response) => {
-      this.showSuccess('Dépense supprimée avec succès!'); // ← Modifié ici
-      this.loadExpenses();
-    },
-    error: (error) => {
-      console.error('Erreur lors de la suppression:', error);
-      alert('Une erreur est survenue lors de la suppression de la dépense.');
-      this.loading = false;
-    },
-  });
-}
+    this.expensesService.deleteExpense(expenseId).subscribe({
+      next: (response) => {
+        this.notificationService.success(
+          'Succès',
+          'Dépense supprimée avec succès!'
+        );
+        this.loadExpenses();
+      },
+      error: (error) => {
+        console.error('Erreur lors de la suppression:', error);
+        this.notificationService.error(
+          'Erreur',
+          'Une erreur est survenue lors de la suppression de la dépense.'
+        );
+        this.loading = false;
+      },
+    });
+  }
 
   //#endregion
 
@@ -191,6 +200,10 @@ expenseToDelete: Expense | null = null;
       },
       error: (error) => {
         console.error('Erreur lors du chargement des centres:', error);
+        this.notificationService.error(
+          'Erreur',
+          'Impossible de charger les centres'
+        );
       },
     });
   }
@@ -209,11 +222,19 @@ expenseToDelete: Expense | null = null;
               response.message
             );
             this.loadDefaultExpenseTypes();
+            this.notificationService.warning(
+              'Attention',
+              'Chargement des types par défaut'
+            );
           }
         },
         error: (error) => {
           console.error('Erreur API lors du chargement des types:', error);
           this.loadDefaultExpenseTypes();
+          this.notificationService.error(
+            'Erreur',
+            'Impossible de charger les types de dépenses'
+          );
         },
       });
     }
@@ -273,6 +294,10 @@ expenseToDelete: Expense | null = null;
     } else {
       console.error('Erreur:', response.message);
       this.expenses = [];
+      this.notificationService.warning(
+        'Attention',
+        'Aucune donnée de dépenses disponible'
+      );
     }
     this.loading = false;
   }
@@ -281,6 +306,10 @@ expenseToDelete: Expense | null = null;
     console.error('Erreur API:', error);
     this.expenses = [];
     this.loading = false;
+    this.notificationService.error(
+      'Erreur',
+      'Impossible de charger les dépenses'
+    );
   }
 
   private calculateStats(): void {
@@ -374,55 +403,70 @@ expenseToDelete: Expense | null = null;
 
   //#region Form Methods
   onSubmit(): void {
-  if (!this.isFormValid()) {
-    alert('Veuillez remplir tous les champs obligatoires');
-    return;
-  }
+    if (!this.isFormValid()) {
+      this.notificationService.warning(
+        'Formulaire incomplet',
+        'Veuillez remplir tous les champs obligatoires'
+      );
+      return;
+    }
 
-  this.submitting = true;
+    this.submitting = true;
 
-  if (this.isEditMode && this.editingExpenseId) {
-    this.expensesService
-      .updateExpense(this.editingExpenseId, this.expenseForm)
-      .subscribe({
+    if (this.isEditMode && this.editingExpenseId) {
+      this.expensesService
+        .updateExpense(this.editingExpenseId, this.expenseForm)
+        .subscribe({
+          next: (response) => {
+            if (response.success) {
+              this.notificationService.success(
+                'Succès',
+                'Dépense modifiée avec succès!'
+              );
+              this.resetForm();
+              this.loadExpenses();
+              this.switchView('grid');
+            } else {
+              this.notificationService.error('Erreur', response.message);
+            }
+            this.submitting = false;
+          },
+          error: (error) => {
+            console.error('Erreur API:', error);
+            this.notificationService.error(
+              'Erreur',
+              'Une erreur est survenue lors de la modification'
+            );
+            this.submitting = false;
+          },
+        });
+    } else {
+      this.expensesService.createExpense(this.expenseForm).subscribe({
         next: (response) => {
           if (response.success) {
-            this.showSuccess('Dépense modifiée avec succès!');
+            this.notificationService.success(
+              'Succès',
+              'Dépense enregistrée avec succès!'
+            );
             this.resetForm();
             this.loadExpenses();
-            this.switchView('grid');
+            this.switchView('cards');
           } else {
-            alert('Erreur: ' + response.message);
+            this.notificationService.error('Erreur', response.message);
           }
           this.submitting = false;
         },
         error: (error) => {
           console.error('Erreur API:', error);
-          alert('Une erreur est survenue lors de la modification');
+          this.notificationService.error(
+            'Erreur',
+            "Une erreur est survenue lors de l'enregistrement"
+          );
           this.submitting = false;
         },
       });
-  } else {
-    this.expensesService.createExpense(this.expenseForm).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.showSuccess('Dépense enregistrée avec succès!'); // ← Modifié ici
-          this.resetForm();
-          this.loadExpenses();
-          this.switchView('cards');
-        } else {
-          alert('Erreur: ' + response.message);
-        }
-        this.submitting = false;
-      },
-      error: (error) => {
-        console.error('Erreur API:', error);
-        alert("Une erreur est survenue lors de l'enregistrement");
-        this.submitting = false;
-      },
-    });
+    }
   }
-}
 
   isFormValid(): boolean {
     return (
@@ -495,6 +539,10 @@ expenseToDelete: Expense | null = null;
       },
       error: (error) => {
         console.error('Erreur lors du chargement des utilisateurs', error);
+        this.notificationService.error(
+          'Erreur',
+          'Impossible de charger les utilisateurs'
+        );
       },
     });
   }
@@ -662,38 +710,17 @@ expenseToDelete: Expense | null = null;
   }
   //#endregion
 
-closeDeleteConfirmation(): void {
-  this.showDeleteConfirmation = false;
-  this.expenseToDelete = null;
-}
-
-confirmDelete(): void {
-  if (this.expenseToDelete) {
-    this.deleteExpense(this.expenseToDelete.id?.toString() || '');
-    this.closeDeleteConfirmation();
+  closeDeleteConfirmation(): void {
+    this.showDeleteConfirmation = false;
+    this.expenseToDelete = null;
   }
-}
 
-  /**
- * Afficher la popup de succès
- */
-showSuccess(message: string): void {
-  this.successMessage = message;
-  this.showSuccessPopup = true;
-
-  // Fermer automatiquement après 3 secondes
-  setTimeout(() => {
-    this.closeSuccessPopup();
-  }, 3000);
-}
-
-/**
- * Fermer la popup de succès
- */
-closeSuccessPopup(): void {
-  this.showSuccessPopup = false;
-  this.successMessage = '';
-}
+  confirmDelete(): void {
+    if (this.expenseToDelete) {
+      this.deleteExpense(this.expenseToDelete.id?.toString() || '');
+      this.closeDeleteConfirmation();
+    }
+  }
 
   //#region Auth Methods
   logout(): void {

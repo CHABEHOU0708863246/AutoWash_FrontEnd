@@ -14,12 +14,7 @@ import { CentresService } from '../../../core/services/Centres/centres.service';
 import { Users } from '../../../core/models/Users/Users';
 import { DomSanitizer } from '@angular/platform-browser';
 import { UsersService } from '../../../core/services/Users/users.service';
-
-interface Notification {
-  show: boolean;
-  type: 'success' | 'error' | null;
-  message: string;
-}
+import { NotificationService } from '../../../core/services/Notification/notification.service';
 
 @Component({
   selector: 'app-centres-create',
@@ -39,13 +34,6 @@ export class CentresCreateComponent {
   currentStep: number = 1; // Étape actuelle dans le processus de création
   managers: Users[] = []; // Liste des gérants disponibles
   isSubmitting = false; // Indicateur de soumission en cours
-
-  // Configuration des notifications
-  notification: Notification = {
-    show: false,
-    type: null,
-    message: ''
-  };
   //#endregion
 
   //#region Constructeur et initialisation
@@ -55,7 +43,8 @@ export class CentresCreateComponent {
     private router: Router,
     private centreService: CentresService,
     private authService: AuthService,
-    private formBuilder: FormBuilder
+    private formBuilder: FormBuilder,
+    private notificationService: NotificationService
   ) {
     this.initializeForm();
   }
@@ -80,7 +69,7 @@ export class CentresCreateComponent {
    * Seul l'administrateur peut gérer plusieurs centres
    */
   canUserManageMultipleCentres(user: Users): boolean {
-    return  user.roles.includes('admin');
+    return user.roles.includes('admin');
   }
 
   /**
@@ -109,14 +98,15 @@ export class CentresCreateComponent {
     const canManageMultiple = this.canUserManageMultipleCentres(selectedManager);
 
     if (!canManageMultiple && this.isManagerAlreadyAssigned(managerId)) {
-      this.showNotification('error', 'Ce gérant est déjà assigné à un autre centre. Veuillez en choisir un autre.');
+      this.notificationService.error(
+        'Gérant déjà assigné',
+        'Ce gérant est déjà assigné à un autre centre. Veuillez en choisir un autre.'
+      );
       return false;
     }
 
     return true;
   }
-
-
 
   /**
    * S'abonne aux changements de l'utilisateur connecté
@@ -167,6 +157,10 @@ export class CentresCreateComponent {
       },
       error: (error) => {
         console.error('Erreur lors du chargement des utilisateurs', error);
+        this.notificationService.error(
+          'Erreur de chargement',
+          'Impossible de charger la liste des utilisateurs'
+        );
       },
     });
   }
@@ -220,6 +214,10 @@ export class CentresCreateComponent {
       },
       error: (error) => {
         console.error("Erreur lors du chargement de l'utilisateur connecté", error);
+        this.notificationService.error(
+          'Erreur de connexion',
+          'Impossible de charger les informations de votre profil'
+        );
       },
     });
   }
@@ -264,14 +262,18 @@ export class CentresCreateComponent {
    * Récupère tous les centres depuis le service
    */
   getCentres(): void {
-    this.centreService.getAllCentres().subscribe(
-      (data) => {
+    this.centreService.getAllCentres().subscribe({
+      next: (data) => {
         this.centre = data;
       },
-      (error) => {
+      error: (error) => {
         console.error('Erreur lors du chargement des centres', error);
-      }
-    );
+        this.notificationService.error(
+          'Erreur de chargement',
+          'Impossible de charger la liste des centres'
+        );
+      },
+    });
   }
 
   /**
@@ -284,7 +286,10 @@ export class CentresCreateComponent {
       },
       error: (error) => {
         console.error('Erreur chargement gérants', error);
-        alert('Impossible de charger la liste des gérants. Veuillez réessayer plus tard.');
+        this.notificationService.error(
+          'Erreur de chargement',
+          'Impossible de charger la liste des gérants. Veuillez réessayer plus tard.'
+        );
       },
     });
   }
@@ -315,7 +320,10 @@ export class CentresCreateComponent {
         error: (error) => this.handleCreateError(error),
       });
     } else {
-      this.showNotification('error', 'Veuillez remplir correctement tous les champs obligatoires');
+      this.notificationService.warning(
+        'Formulaire incomplet',
+        'Veuillez remplir correctement tous les champs obligatoires'
+      );
       this.centreForm.markAllAsTouched();
     }
   }
@@ -351,7 +359,10 @@ export class CentresCreateComponent {
    */
   private handleCreateSuccess(): void {
     this.isSubmitting = false;
-    this.showNotification('success', 'Centre créé avec succès!');
+    this.notificationService.success(
+      'Succès',
+      'Centre créé avec succès!'
+    );
     setTimeout(() => this.router.navigate(['/admin/centres-list']), 1500);
   }
 
@@ -360,7 +371,10 @@ export class CentresCreateComponent {
    */
   private handleCreateError(error: any): void {
     this.isSubmitting = false;
-    this.showNotification('error', error.error?.message || 'Échec de la création du centre');
+    this.notificationService.error(
+      'Erreur de création',
+      error.error?.message || 'Échec de la création du centre'
+    );
   }
   //#endregion
 
@@ -448,28 +462,6 @@ export class CentresCreateComponent {
   }
   //#endregion
 
-  //#region Gestion des notifications
-  /**
-   * Affiche une notification
-   */
-  showNotification(type: 'success' | 'error', message: string) {
-    this.notification = {
-      show: true,
-      type,
-      message
-    };
-
-    setTimeout(() => this.hideNotification(), 5000);
-  }
-
-  /**
-   * Masque la notification
-   */
-  hideNotification() {
-    this.notification.show = false;
-  }
-  //#endregion
-
   //#region Gestion de l'authentification
   /**
    * Déconnecte l'utilisateur et redirige vers la page de connexion
@@ -481,6 +473,10 @@ export class CentresCreateComponent {
         this.router.navigate(['/auth/login']);
       } catch (error) {
         console.error('Erreur lors de la déconnexion:', error);
+        this.notificationService.error(
+          'Erreur',
+          'Une erreur est survenue lors de la déconnexion'
+        );
         this.router.navigate(['/auth/login']);
       }
     } else {
