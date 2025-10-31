@@ -245,7 +245,7 @@
             <i class="fas fa-money-bill-wave"></i>
           </div>
           <div class="stat-content">
-            <div class="stat-title">Paiements du Mois</div>
+            <div class="stat-title">Revenus du Mois</div>
             <div class="stat-value">{{ formatAmount(stats.totalAmount) }}</div>
           </div>
         </div>
@@ -310,12 +310,19 @@
 
             <div class="filter-group">
               <label for="filter-washer">Laveur</label>
-              <select id="filter-washer" [(ngModel)]="selectedWasher" (change)="onWasherFilterChange(selectedWasher)">
+              <select id="filter-washer" [(ngModel)]="selectedWasher" (change)="onWasherFilterChange(selectedWasher)"
+                [disabled]="isLoadingWashers || washers.length === 0">
                 <option value="all">Tous les laveurs</option>
                 <option *ngFor="let washer of washers" [value]="washer.id">
                   {{ washer.firstName }} {{ washer.lastName }}
                 </option>
               </select>
+              <div *ngIf="isLoadingWashers" class="loading-small">
+                <i class="fas fa-spinner fa-spin"></i>
+              </div>
+              <div *ngIf="!isLoadingWashers && washers.length === 0 && selectedCentre !== 'all'" class="no-washers">
+                Aucun laveur trouvé pour ce centre
+              </div>
             </div>
 
             <!-- Les autres filtres restent les mêmes -->
@@ -475,9 +482,10 @@
               <div class="form-group">
                 <label for="sessions">Sessions de Travail (IDs)</label>
                 <input type="text" id="sessions" [(ngModel)]="newPayment.sessions" name="sessions"
-                  placeholder="Séparés par des virgules">
+                  placeholder="Séparés par des virgules" [readonly]="true" [attr.disabled]="true"
+                  class="readonly-field">
                 <small class="form-help">
-                  Laissez vide pour calculer automatiquement les sessions du mois
+                  Ce champ se remplit automatiquement après le calcul du paiement
                 </small>
               </div>
 
@@ -546,12 +554,35 @@
             <form class="form-content" (ngSubmit)="generateReport()" #reportForm="ngForm">
               <div class="form-group">
                 <label for="report-type">Type de Rapport</label>
-                <select id="report-type" [(ngModel)]="reportFilters.type" name="reportType" required>
+                <select id="report-type" [(ngModel)]="reportFilters.type" name="reportType" required
+                  (change)="onReportTypeChange($event)">
                   <option value="payments">Paiements</option>
                   <option value="commissions">Commissions</option>
                   <option value="washers">Performance des Laveurs</option>
                   <option value="centres">Par Centre</option>
                 </select>
+              </div>
+
+              <div class="form-group">
+                <label for="report-format">Format</label>
+                <select id="report-format" [(ngModel)]="reportFilters.format" name="reportFormat" required
+                  (change)="onReportFormatChange($event)">
+                  <option value="excel">Excel (.xlsx)</option>
+                  <option value="pdf">PDF (.pdf)</option>
+                  <option value="csv">CSV (.csv)</option>
+                </select>
+              </div>
+
+              <!-- Message d'information -->
+              <div *ngIf="showFormatWarning()" class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>Information :</strong>
+                <span *ngIf="reportFilters.type !== 'payments'">
+                  Le rapport "{{ getReportTypeLabel() }}" n'est disponible qu'au format Excel.
+                </span>
+                <span *ngIf="reportFilters.type === 'payments' && reportFilters.format !== 'excel'">
+                  Le format "{{ getFormatLabel() }}" n'est pas encore disponible. Veuillez sélectionner Excel.
+                </span>
               </div>
 
               <div class="form-group">

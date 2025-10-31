@@ -23,7 +23,7 @@ import { NotificationService } from '../../../core/services/Notification/notific
   selector: 'app-payments-washers',
   imports: [RouterLink, CommonModule, ReactiveFormsModule, FormsModule],
   templateUrl: './payments-washers.component.html',
-  styleUrl: './payments-washers.component.scss'
+  styleUrl: './payments-washers.component.scss',
 })
 export class PaymentsWashersComponent implements OnInit, OnDestroy {
   //#region Properties
@@ -51,7 +51,7 @@ export class PaymentsWashersComponent implements OnInit, OnDestroy {
     totalAmount: 0,
     activeWashers: 0,
     pendingPayments: 0,
-    averageCommission: 0
+    averageCommission: 0,
   };
 
   // Filtres
@@ -78,7 +78,7 @@ export class PaymentsWashersComponent implements OnInit, OnDestroy {
     commission: 0,
     paymentDate: new Date().toISOString().split('T')[0],
     sessions: '',
-    notes: ''
+    notes: '',
   };
 
   // Rapports
@@ -88,7 +88,7 @@ export class PaymentsWashersComponent implements OnInit, OnDestroy {
     startDate: '',
     endDate: '',
     centre: 'all',
-    washer: 'all'
+    washer: 'all',
   };
   toastr: any;
 
@@ -145,8 +145,7 @@ export class PaymentsWashersComponent implements OnInit, OnDestroy {
         next: (centres) => {
           this.centres = centres;
         },
-        error: (error) =>
-          this.handleError('Chargement des centres', error)
+        error: (error) => this.handleError('Chargement des centres', error),
       });
   }
 
@@ -193,129 +192,138 @@ export class PaymentsWashersComponent implements OnInit, OnDestroy {
   }
 
   /**
- * Gère le changement de sélection du laveur
- */
-onWasherSelectChange(washerId: string, centreId: string): void {
-  if (washerId && centreId) {
-    this.calculateWasherPayment(washerId, centreId);
+   * Gère le changement de sélection du laveur
+   */
+  onWasherSelectChange(washerId: string, centreId: string): void {
+    if (washerId && centreId) {
+      this.calculateWasherPayment(washerId, centreId);
+    }
   }
-}
-
-/**
- * Gère le changement de filtre par laveur
- */
-onWasherFilterChange(washerId: string): void {
-  this.selectedWasher = washerId;
-  this.loadPayments();
-}
-
-/**
- * Gère le changement de sélection du centre dans le formulaire
- */
-onCentreSelectChange(centreId: string): void {
-  if (centreId) {
-    this.loadWashersByCentre(centreId);
-  } else {
-    this.filteredWashers = [];
-  }
-}
-
-/**
- * Vérifie si un paiement a un ID valide
- */
-hasValidId(payment: Payment): boolean {
-  return !!payment.id && payment.id.trim() !== '';
-}
-
-/**
- * Obtient l'ID d'un paiement de manière sécurisée
- */
-getPaymentId(payment: Payment): string {
-  return payment.id || '';
-}
 
   /**
- * Charge les paiements avec filtres
- */
-async loadPayments(): Promise<void> {
-  try {
-    this.isLoadingPayments = true;
-
-    // Essayer avec un washerId null explicitement
-    const filter: any = {
-      centreId: this.selectedCentre !== 'all' ? this.selectedCentre : undefined,
-      washerId: null, // ← Essayer avec null
-      managerId: null, // ← Ajouter aussi managerId null
-      userType: 'washer',
-      month: this.getCurrentMonth(),
-      year: this.getCurrentYear(),
-      isValidated: this.getValidationFilter()
-    };
-
-    // Nettoyer l'objet des valeurs undefined
-    const cleanFilter = Object.fromEntries(
-      Object.entries(filter).filter(([_, v]) => v !== undefined)
-    );
-
-    console.log('Filtre nettoyé envoyé à l\'API:', cleanFilter);
-
-    const response = await lastValueFrom(
-      this.paymentsService.getPaymentsWithFilter(cleanFilter).pipe(
-        takeUntil(this.destroy$)
-      )
-    );
-
-    if (response.success) {
-      this.payments = response.data;
-      this.applyPaymentsFilters();
-      console.log(`${this.payments.length} paiements chargés`);
-    }
-  } catch (error: any) {
-    console.error('Erreur détaillée:', error);
-    if (error && error.error) {
-      console.error('Erreur backend:', error.error);
-    }
-    this.handleError('Erreur lors du chargement des paiements', error);
-  } finally {
-    this.isLoadingPayments = false;
-    this.cdr.detectChanges();
+   * Gère le changement de filtre par laveur
+   */
+  onWasherFilterChange(washerId: string): void {
+    this.selectedWasher = washerId;
+    console.log('Laveur sélectionné pour filtre:', washerId);
+    this.loadPayments();
   }
-}
+
+  /**
+   * Gère le changement de sélection du centre dans le formulaire
+   */
+  onCentreSelectChange(centreId: string): void {
+    if (centreId) {
+      this.loadWashersByCentre(centreId);
+    } else {
+      this.filteredWashers = [];
+    }
+  }
+
+  /**
+   * Vérifie si un paiement a un ID valide
+   */
+  hasValidId(payment: Payment): boolean {
+    return !!payment.id && payment.id.trim() !== '';
+  }
+
+  /**
+   * Obtient l'ID d'un paiement de manière sécurisée
+   */
+  getPaymentId(payment: Payment): string {
+    return payment.id || '';
+  }
+
+  /**
+   * Charge les paiements avec filtres
+   */
+  async loadPayments(): Promise<void> {
+    try {
+      this.isLoadingPayments = true;
+
+      // Construire le filtre de manière conditionnelle
+      const filter: any = {
+        centreId:
+          this.selectedCentre !== 'all' ? this.selectedCentre : undefined,
+        userType: 'washer',
+        month: this.getCurrentMonth(),
+        year: this.getCurrentYear(),
+        isValidated: this.getValidationFilter(),
+      };
+
+      // Ajouter le filtre washerId seulement si un laveur est sélectionné
+      if (this.selectedWasher && this.selectedWasher !== 'all') {
+        filter.washerId = this.selectedWasher;
+      }
+
+      // Nettoyer l'objet des valeurs undefined
+      const cleanFilter = Object.fromEntries(
+        Object.entries(filter).filter(([_, v]) => v !== undefined && v !== null)
+      );
+
+      console.log("Filtre nettoyé envoyé à l'API:", cleanFilter);
+
+      const response = await lastValueFrom(
+        this.paymentsService
+          .getPaymentsWithFilter(cleanFilter)
+          .pipe(takeUntil(this.destroy$))
+      );
+
+      if (response.success) {
+        this.payments = response.data;
+        this.applyPaymentsFilters();
+        console.log(
+          `${this.payments.length} paiements chargés avec le filtre laveur: ${this.selectedWasher}`
+        );
+      }
+    } catch (error: any) {
+      console.error('Erreur détaillée:', error);
+      if (error && error.error) {
+        console.error('Erreur backend:', error.error);
+      }
+      this.handleError('Erreur lors du chargement des paiements', error);
+    } finally {
+      this.isLoadingPayments = false;
+      this.cdr.detectChanges();
+    }
+  }
 
   /**
    * Charge les statistiques
    */
   async loadStatistics(): Promise<void> {
-  try {
-    const currentDate = new Date();
+    try {
+      const currentDate = new Date();
 
-    // Déterminer l'ID du centre de manière sécurisée
-    let centreId: string;
+      // Déterminer l'ID du centre de manière sécurisée
+      let centreId: string;
 
-    if (this.selectedCentre !== 'all') {
-      centreId = this.selectedCentre;
-    } else if (this.centres.length > 0 && this.centres[0].id) {
-      centreId = this.centres[0].id;
-    } else {
-      console.warn('Aucun centre disponible pour charger les statistiques');
-      return;
+      if (this.selectedCentre !== 'all') {
+        centreId = this.selectedCentre;
+      } else if (this.centres.length > 0 && this.centres[0].id) {
+        centreId = this.centres[0].id;
+      } else {
+        console.warn('Aucun centre disponible pour charger les statistiques');
+        return;
+      }
+
+      const response = await lastValueFrom(
+        this.paymentsService
+          .getCentrePaymentStatistics(
+            centreId,
+            currentDate.getMonth() + 1,
+            currentDate.getFullYear()
+          )
+          .pipe(takeUntil(this.destroy$))
+      );
+
+      if (response.success) {
+        this.updateStatsFromAuditSummary(response.data);
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement des statistiques:', error);
     }
-
-    const response = await lastValueFrom(
-      this.paymentsService.getCentrePaymentStatistics(
-        centreId,
-        currentDate.getMonth() + 1,
-        currentDate.getFullYear()
-      ).pipe(takeUntil(this.destroy$))
-    );
-
-    if (response.success) {
-      this.updateStatsFromAuditSummary(response.data);
-    }
-  } catch (error) {
-    console.error('Erreur lors du chargement des statistiques:', error);
   }
-}
   //#endregion
 
   //#region Gestion des onglets
@@ -366,7 +374,7 @@ async loadPayments(): Promise<void> {
   }
 
   private applyPaymentsFilters(): void {
-    this.filteredPayments = this.payments.filter(payment => {
+    this.filteredPayments = this.payments.filter((payment) => {
       let matches = true;
 
       // Filtre par statut
@@ -389,6 +397,130 @@ async loadPayments(): Promise<void> {
       return matches;
     });
   }
+
+  /**
+   * Réinitialise le filtre laveur
+   */
+  resetWasherFilter(): void {
+    this.selectedWasher = 'all';
+    this.loadPayments();
+  }
+
+  //#region Gestion des rapports
+
+  /**
+   * Gère le changement du type de rapport
+   */
+  onReportTypeChange(event: any): void {
+    const selectedType = event.target.value;
+
+    // Si le type n'est pas "payments", forcer le format Excel
+    if (selectedType !== 'payments') {
+      this.reportFilters.format = 'excel';
+      this.handleInfo(
+        `Rapport ${this.getReportTypeLabel()}`,
+        'Ce type de rapport est disponible uniquement au format Excel.'
+      );
+    }
+  }
+
+  /**
+   * Gère le changement du format de rapport
+   */
+  onReportFormatChange(event: any): void {
+    const selectedFormat = event.target.value;
+
+    // Si le format n'est pas Excel, afficher un avertissement
+    if (selectedFormat !== 'excel') {
+      this.handleWarning(
+        'Format non disponible',
+        "Le format sélectionné n'est pas encore implémenté. Veuillez choisir Excel."
+      );
+
+      // Optionnel : Revenir automatiquement à Excel après un délai
+      setTimeout(() => {
+        this.reportFilters.format = 'excel';
+        this.cdr.detectChanges();
+      }, 2000);
+    }
+  }
+
+  /**
+   * Vérifie si l'avertissement doit être affiché
+   */
+  showFormatWarning(): boolean {
+    return (
+      this.reportFilters.format !== 'excel' ||
+      this.reportFilters.type !== 'payments'
+    );
+  }
+
+  /**
+   * Obtient le libellé du type de rapport
+   */
+  getReportTypeLabel(): string {
+    const labels: { [key: string]: string } = {
+      payments: 'Paiements',
+      commissions: 'Commissions',
+      washers: 'Performance des Laveurs',
+      centres: 'Par Centre',
+    };
+    return labels[this.reportFilters.type] || this.reportFilters.type;
+  }
+
+  /**
+   * Obtient le libellé du format
+   */
+  getFormatLabel(): string {
+    const labels: { [key: string]: string } = {
+      excel: 'Excel',
+      pdf: 'PDF',
+      csv: 'CSV',
+    };
+    return labels[this.reportFilters.format] || this.reportFilters.format;
+  }
+
+  /**
+   * Génère un rapport avec vérifications
+   */
+  async generateReport(): Promise<void> {
+    try {
+      this.isLoading = true;
+
+      // Vérifier que le format est Excel
+      if (this.reportFilters.format !== 'excel') {
+        this.handleError(
+          'Format non supporté',
+          'Seul le format Excel est disponible pour le moment. Veuillez sélectionner Excel.'
+        );
+        return;
+      }
+
+      // Vérifier que le type est supporté (seul "payments" est pleinement supporté)
+      if (this.reportFilters.type !== 'payments') {
+        this.handleInfo(
+          'Rapport en développement',
+          `Le rapport "${this.getReportTypeLabel()}" est en cours de développement. ` +
+            `Seul le rapport "Paiements" est pleinement opérationnel.`
+        );
+      }
+
+      // Validation des dates
+      if (!this.reportFilters.startDate || !this.reportFilters.endDate) {
+        this.handleError('Validation', 'Veuillez sélectionner une période');
+        return;
+      }
+
+      // Générer le rapport Excel
+      await this.exportToExcel();
+    } catch (error) {
+      this.handleError('Erreur lors de la génération du rapport', error);
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  //#endregion
   //#endregion
 
   //#region Gestion des paiements
@@ -405,7 +537,7 @@ async loadPayments(): Promise<void> {
       commission: 0,
       paymentDate: new Date().toISOString().split('T')[0],
       sessions: '',
-      notes: ''
+      notes: '',
     };
   }
 
@@ -422,7 +554,10 @@ async loadPayments(): Promise<void> {
       }
 
       const sessionIds = this.newPayment.sessions
-        ? this.newPayment.sessions.split(',').map(s => s.trim()).filter(s => s)
+        ? this.newPayment.sessions
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s)
         : [];
 
       const paymentData = {
@@ -435,24 +570,29 @@ async loadPayments(): Promise<void> {
         paymentDate: new Date(this.newPayment.paymentDate),
         sessionIds: sessionIds,
         notes: this.newPayment.notes,
-        approvedBy: this.currentUser?.id
+        approvedBy: this.currentUser?.id,
       };
 
       const response = await lastValueFrom(
-        this.paymentsService.generateWasherMonthlyPayment(
-          paymentData.washerId,
-          paymentData.centreId,
-          new Date(paymentData.paymentDate).getMonth() + 1,
-          new Date(paymentData.paymentDate).getFullYear(),
-          paymentData.approvedBy || ''
-        ).pipe(takeUntil(this.destroy$))
+        this.paymentsService
+          .generateWasherMonthlyPayment(
+            paymentData.washerId,
+            paymentData.centreId,
+            new Date(paymentData.paymentDate).getMonth() + 1,
+            new Date(paymentData.paymentDate).getFullYear(),
+            paymentData.approvedBy || ''
+          )
+          .pipe(takeUntil(this.destroy$))
       );
 
       if (response.success) {
         this.handleSuccess('Paiement créé avec succès');
         this.switchTab('payments-list');
       } else {
-        this.handleError('Erreur lors de la création du paiement', response.message);
+        this.handleError(
+          'Erreur lors de la création du paiement',
+          response.message
+        );
       }
     } catch (error) {
       this.handleError('Erreur lors de la création du paiement', error);
@@ -474,11 +614,17 @@ async loadPayments(): Promise<void> {
       return false;
     }
     if (!this.newPayment.paymentType) {
-      this.handleError('Validation', 'Veuillez sélectionner un type de paiement');
+      this.handleError(
+        'Validation',
+        'Veuillez sélectionner un type de paiement'
+      );
       return false;
     }
     if (!this.newPayment.method) {
-      this.handleError('Validation', 'Veuillez sélectionner une méthode de paiement');
+      this.handleError(
+        'Validation',
+        'Veuillez sélectionner une méthode de paiement'
+      );
       return false;
     }
     if (!this.newPayment.amount || this.newPayment.amount <= 0) {
@@ -486,75 +632,85 @@ async loadPayments(): Promise<void> {
       return false;
     }
     if (!this.newPayment.paymentDate) {
-      this.handleError('Validation', 'Veuillez sélectionner une date de paiement');
+      this.handleError(
+        'Validation',
+        'Veuillez sélectionner une date de paiement'
+      );
       return false;
     }
 
     return true;
   }
 
-/**
- * Calcule le paiement pour un laveur
- */
-async calculateWasherPayment(washerId: string, centreId: string): Promise<void> {
-  try {
-    // Afficher un indicateur de chargement
-    this.isLoading = true;
-    console.log('Calcul du paiement pour:', { washerId, centreId });
+  /**
+   * Calcule le paiement pour un laveur
+   */
+  async calculateWasherPayment(
+    washerId: string,
+    centreId: string
+  ): Promise<void> {
+    try {
+      // Afficher un indicateur de chargement
+      this.isLoading = true;
+      console.log('Calcul du paiement pour:', { washerId, centreId });
 
-    const currentDate = new Date();
-    const response = await lastValueFrom(
-      this.paymentsService.calculateWasherPayment(
-        washerId,
-        currentDate.getMonth() + 1,
-        currentDate.getFullYear(),
-        centreId
-      ).pipe(takeUntil(this.destroy$))
-    );
-
-    console.log('Réponse du calcul:', response);
-
-    if (response.success && response.data) {
-      // Mettre à jour les valeurs du formulaire
-      this.newPayment.amount = response.data.finalAmount || 0;
-      this.newPayment.commission = response.data.totalCommission || 0;
-      this.newPayment.sessions = response.data.sessionIds
-        ? response.data.sessionIds.join(', ')
-        : '';
-
-      // Forcer la détection des changements
-      this.cdr.detectChanges();
-
-      // Afficher un message de succès
-      this.handleSuccess(
-        `Montant calculé: ${this.formatAmount(this.newPayment.amount)} \n` +
-        `Commission: ${this.formatAmount(this.newPayment.commission)} \n` +
-        `Sessions: ${response.data.sessionIds?.length || 0}`
+      const currentDate = new Date();
+      const response = await lastValueFrom(
+        this.paymentsService
+          .calculateWasherPayment(
+            washerId,
+            currentDate.getMonth() + 1,
+            currentDate.getFullYear(),
+            centreId
+          )
+          .pipe(takeUntil(this.destroy$))
       );
 
-      console.log('Valeurs mises à jour:', {
-        amount: this.newPayment.amount,
-        commission: this.newPayment.commission,
-        sessions: this.newPayment.sessions
-      });
-    } else {
+      console.log('Réponse du calcul:', response);
+
+      if (response.success && response.data) {
+        // Mettre à jour les valeurs du formulaire
+        this.newPayment.amount = response.data.finalAmount || 0;
+        this.newPayment.commission = response.data.totalCommission || 0;
+        this.newPayment.sessions = response.data.sessionIds
+          ? response.data.sessionIds.join(', ')
+          : '';
+
+        // Forcer la détection des changements
+        this.cdr.detectChanges();
+
+        // Afficher un message de succès
+        this.handleSuccess(
+          `Montant calculé: ${this.formatAmount(this.newPayment.amount)} \n` +
+            `Commission: ${this.formatAmount(this.newPayment.commission)} \n` +
+            `Sessions: ${response.data.sessionIds?.length || 0}`
+        );
+
+        console.log('Valeurs mises à jour:', {
+          amount: this.newPayment.amount,
+          commission: this.newPayment.commission,
+          sessions: this.newPayment.sessions,
+        });
+      } else {
+        this.handleError(
+          'Calcul du paiement',
+          response.message || 'Aucune donnée disponible pour ce laveur'
+        );
+      }
+    } catch (error: any) {
+      console.error('Erreur lors du calcul du paiement:', error);
       this.handleError(
-        'Calcul du paiement',
-        response.message || 'Aucune donnée disponible pour ce laveur'
+        'Erreur de calcul',
+        error.error?.message ||
+          error.message ||
+          'Impossible de calculer le paiement'
       );
+    } finally {
+      // Masquer l'indicateur de chargement
+      this.isLoading = false;
+      this.cdr.detectChanges();
     }
-  } catch (error: any) {
-    console.error('Erreur lors du calcul du paiement:', error);
-    this.handleError(
-      'Erreur de calcul',
-      error.error?.message || error.message || 'Impossible de calculer le paiement'
-    );
-  } finally {
-    // Masquer l'indicateur de chargement
-    this.isLoading = false;
-    this.cdr.detectChanges();
   }
-}
 
   /**
    * Valide un paiement
@@ -567,11 +723,13 @@ async calculateWasherPayment(washerId: string, centreId: string): Promise<void> 
       }
 
       const response = await lastValueFrom(
-        this.paymentsService.validateMonthlyPayment(
-          paymentId,
-          this.currentUser.id,
-          'Validation manuelle'
-        ).pipe(takeUntil(this.destroy$))
+        this.paymentsService
+          .validateMonthlyPayment(
+            paymentId,
+            this.currentUser.id,
+            'Validation manuelle'
+          )
+          .pipe(takeUntil(this.destroy$))
       );
 
       if (response.success) {
@@ -583,35 +741,64 @@ async calculateWasherPayment(washerId: string, centreId: string): Promise<void> 
     }
   }
 
-  /**
-   * Annule un paiement
-   */
-  async cancelPayment(paymentId: string): Promise<void> {
-    try {
-      if (!this.currentUser?.id) {
-        this.handleError('Annulation', 'Utilisateur non connecté');
-        return;
-      }
-
-      const reason = prompt('Veuillez saisir la raison de l\'annulation:');
-      if (!reason) return;
-
-      const response = await lastValueFrom(
-        this.paymentsService.cancelMonthlyPayment(
-          paymentId,
-          this.currentUser.id,
-          reason
-        ).pipe(takeUntil(this.destroy$))
-      );
-
-      if (response.success) {
-        this.handleSuccess('Paiement annulé avec succès');
-        this.loadPayments();
-      }
-    } catch (error) {
-      this.handleError('Erreur lors de l\'annulation du paiement', error);
+/**
+ * Version simplifiée avec confirm() amélioré
+ */
+async cancelPayment(paymentId: string): Promise<void> {
+  try {
+    if (!this.currentUser?.id) {
+      this.handleError('Annulation', 'Utilisateur non connecté');
+      return;
     }
+
+    // Demander d'abord la raison
+    const reason = prompt(
+      'Annulation du paiement\n\n' +
+      'Veuillez saisir la raison de l\'annulation (minimum 5 caractères) :\n\n' +
+      'Exemples :\n' +
+      '- Erreur de calcul\n' +
+      '- Paiement déjà effectué\n' +
+      '- Laveur absent\n' +
+      '- etc.'
+    );
+
+    if (!reason) {
+      this.handleInfo('Annulation', 'Annulation annulée');
+      return;
+    }
+
+    if (reason.trim().length < 5) {
+      this.handleError('Validation', 'La raison doit contenir au moins 5 caractères');
+      return;
+    }
+
+    // Confirmation finale
+    const isConfirmed = confirm(
+      `CONFIRMATION D'ANNULATION\n\n` +
+      `Êtes-vous sûr de vouloir annuler ce paiement ?\n\n` +
+      `Raison : "${reason}"\n\n` +
+      `⚠️ Cette action est irréversible.`
+    );
+
+    if (!isConfirmed) {
+      this.handleInfo('Annulation', 'Annulation annulée');
+      return;
+    }
+
+    const response = await lastValueFrom(
+      this.paymentsService
+        .cancelMonthlyPayment(paymentId, this.currentUser.id, reason.trim())
+        .pipe(takeUntil(this.destroy$))
+    );
+
+    if (response.success) {
+      this.handleSuccess('Paiement annulé avec succès');
+      this.loadPayments();
+    }
+  } catch (error) {
+    this.handleError("Erreur lors de l'annulation du paiement", error);
   }
+}
   //#endregion
 
   //#region Gestion des rapports
@@ -620,7 +807,11 @@ async calculateWasherPayment(washerId: string, centreId: string): Promise<void> 
    */
   initializeReportForm(): void {
     const currentDate = new Date();
-    const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    const firstDay = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      1
+    );
 
     this.reportFilters = {
       type: 'payments',
@@ -628,44 +819,20 @@ async calculateWasherPayment(washerId: string, centreId: string): Promise<void> 
       startDate: firstDay.toISOString().split('T')[0],
       endDate: currentDate.toISOString().split('T')[0],
       centre: 'all',
-      washer: 'all'
+      washer: 'all',
     };
   }
 
   /**
-   * Génère un rapport
+   * Génère un reçu pour un paiement
    */
-  async generateReport(): Promise<void> {
-    try {
-      this.isLoading = true;
-
-      if (!this.reportFilters.startDate || !this.reportFilters.endDate) {
-        this.handleError('Validation', 'Veuillez sélectionner une période');
-        return;
-      }
-
-      if (this.reportFilters.format === 'excel') {
-        await this.exportToExcel();
-      } else {
-        await this.generateStandardReport();
-      }
-    } catch (error) {
-      this.handleError('Erreur lors de la génération du rapport', error);
-    } finally {
-      this.isLoading = false;
-    }
-  }
-
-  /**
- * Génère un reçu pour un paiement
- */
-async generateReceipt(paymentId: string): Promise<void> {
+  async generateReceipt(paymentId: string): Promise<void> {
     try {
       // Récupérer l'image du backend
       const blob = await lastValueFrom(
-        this.paymentsService.generatePaymentReceipt(paymentId).pipe(
-          takeUntil(this.destroy$)
-        )
+        this.paymentsService
+          .generatePaymentReceipt(paymentId)
+          .pipe(takeUntil(this.destroy$))
       );
 
       // Télécharger automatiquement
@@ -678,19 +845,20 @@ async generateReceipt(paymentId: string): Promise<void> {
 
       // Message de succès (optionnel)
       this.toastr.success('Reçu téléchargé avec succès');
-
     } catch (error) {
-      this.handleError('Erreur lors de la génération du reçu', error);
+      //this.handleError('Erreur lors de la génération du reçu', error);
     }
   }
-
 
   /**
    * Exporte vers Excel
    */
   public async exportToExcel(): Promise<void> {
     try {
-      const centreId = this.reportFilters.centre !== 'all' ? this.reportFilters.centre : this.centres[0]?.id;
+      const centreId =
+        this.reportFilters.centre !== 'all'
+          ? this.reportFilters.centre
+          : this.centres[0]?.id;
       if (!centreId) {
         this.handleError('Export', 'Aucun centre sélectionné');
         return;
@@ -698,18 +866,22 @@ async generateReceipt(paymentId: string): Promise<void> {
 
       const startDate = new Date(this.reportFilters.startDate);
       const blob = await lastValueFrom(
-        this.paymentsService.exportPaymentsToExcel(
-          centreId,
-          startDate.getMonth() + 1,
-          startDate.getFullYear()
-        ).pipe(takeUntil(this.destroy$))
+        this.paymentsService
+          .exportPaymentsToExcel(
+            centreId,
+            startDate.getMonth() + 1,
+            startDate.getFullYear()
+          )
+          .pipe(takeUntil(this.destroy$))
       );
 
-      const filename = `paiements_${centreId}_${startDate.getMonth() + 1}_${startDate.getFullYear()}.xlsx`;
+      const filename = `paiements_${centreId}_${
+        startDate.getMonth() + 1
+      }_${startDate.getFullYear()}.xlsx`;
       this.paymentsService.downloadBlob(blob, filename);
       this.handleSuccess('Export Excel terminé');
     } catch (error) {
-      this.handleError('Erreur lors de l\'export Excel', error);
+      this.handleError("Erreur lors de l'export Excel", error);
     }
   }
 
@@ -733,9 +905,12 @@ async generateReceipt(paymentId: string): Promise<void> {
 
   private getValidationFilter(): boolean | undefined {
     switch (this.selectedStatus) {
-      case 'paid': return true;
-      case 'pending': return false;
-      default: return undefined;
+      case 'paid':
+        return true;
+      case 'pending':
+        return false;
+      default:
+        return undefined;
     }
   }
 
@@ -744,7 +919,10 @@ async generateReceipt(paymentId: string): Promise<void> {
       totalAmount: summary.totalAmount,
       activeWashers: summary.totalPayments,
       pendingPayments: summary.pendingPayments,
-      averageCommission: summary.totalSessions > 0 ? (summary.totalCommission / summary.totalSessions) : 0
+      averageCommission:
+        summary.totalSessions > 0
+          ? summary.totalCommission / summary.totalSessions
+          : 0,
     };
   }
 
@@ -755,32 +933,35 @@ async generateReceipt(paymentId: string): Promise<void> {
       [PaymentType.Weekly]: 'Hebdomadaire',
       [PaymentType.Monthly]: 'Mensuel',
       [PaymentType.Bonus]: 'Bonus',
-      [PaymentType.Other]: 'Autre'
+      [PaymentType.Other]: 'Autre',
+      [PaymentType.Quarterly]: '',
     };
     return labels[type] || type;
   }
 
- getPaymentMethodLabel(method: string | PaymentMethod): string {
-  // Convertir la string en enum PaymentMethod si nécessaire
-  let paymentMethod: PaymentMethod;
+  getPaymentMethodLabel(method: string | PaymentMethod): string {
+    // Convertir la string en enum PaymentMethod si nécessaire
+    let paymentMethod: PaymentMethod;
 
-  if (typeof method === 'string') {
-    // Si c'est une string, essayer de la convertir en enum
-    paymentMethod = PaymentMethod[method as keyof typeof PaymentMethod] || PaymentMethod.CASH;
-  } else {
-    paymentMethod = method;
+    if (typeof method === 'string') {
+      // Si c'est une string, essayer de la convertir en enum
+      paymentMethod =
+        PaymentMethod[method as keyof typeof PaymentMethod] ||
+        PaymentMethod.CASH;
+    } else {
+      paymentMethod = method;
+    }
+
+    const labels: { [key in PaymentMethod]: string } = {
+      [PaymentMethod.CASH]: 'Espèces',
+      [PaymentMethod.MOBILE_MONEY]: 'Mobile Money',
+      [PaymentMethod.BANK_TRANSFER]: 'Virement Bancaire',
+      [PaymentMethod.CREDIT_CARD]: 'Carte de Crédit',
+      [PaymentMethod.CHECK]: 'Chèque',
+    };
+
+    return labels[paymentMethod] || 'Inconnu';
   }
-
-  const labels: { [key in PaymentMethod]: string } = {
-    [PaymentMethod.CASH]: 'Espèces',
-    [PaymentMethod.MOBILE_MONEY]: 'Mobile Money',
-    [PaymentMethod.BANK_TRANSFER]: 'Virement Bancaire',
-    [PaymentMethod.CREDIT_CARD]: 'Carte de Crédit',
-    [PaymentMethod.CHECK]: 'Chèque'
-  };
-
-  return labels[paymentMethod] || 'Inconnu';
-}
 
   getStatusBadgeClass(payment: Payment): string {
     if (payment.approvedBy) {
@@ -807,47 +988,60 @@ async generateReceipt(paymentId: string): Promise<void> {
   }
 
   getWasherName(washerId: string): string {
-    const washer = this.washers.find(w => w.id === washerId);
+    const washer = this.washers.find((w) => w.id === washerId);
     return washer ? `${washer.firstName} ${washer.lastName}` : 'N/A';
   }
 
   getCentreName(centreId: string): string {
-    const centre = this.centres.find(c => c.id === centreId);
+    const centre = this.centres.find((c) => c.id === centreId);
     return centre ? centre.name : 'N/A';
   }
   //#endregion
 
   //#region Gestion des erreurs et succès améliorée
-private handleError(title: string, error: any, duration?: number): void {
-  console.error(`${title}:`, error);
+  private handleError(title: string, error: any, duration?: number): void {
+    console.error(`${title}:`, error);
 
-  let errorMessage = 'Une erreur inattendue est survenue';
+    let errorMessage = 'Une erreur inattendue est survenue';
 
-  if (typeof error === 'string') {
-    errorMessage = error;
-  } else if (error?.message) {
-    errorMessage = error.message;
-  } else if (error?.error?.message) {
-    errorMessage = error.error.message;
-  } else if (error?.error) {
-    errorMessage = typeof error.error === 'string' ? error.error : 'Erreur serveur';
+    if (typeof error === 'string') {
+      errorMessage = error;
+    } else if (error?.message) {
+      errorMessage = error.message;
+    } else if (error?.error?.message) {
+      errorMessage = error.error.message;
+    } else if (error?.error) {
+      errorMessage =
+        typeof error.error === 'string' ? error.error : 'Erreur serveur';
+    }
+
+    this.notificationService.error(title, errorMessage, duration);
   }
 
-  this.notificationService.error(title, errorMessage, duration);
-}
+  private handleSuccess(
+    message: string,
+    title: string = 'Succès',
+    duration?: number
+  ): void {
+    this.notificationService.success(title, message, duration);
+  }
 
-private handleSuccess(message: string, title: string = 'Succès', duration?: number): void {
-  this.notificationService.success(title, message, duration);
-}
+  private handleWarning(
+    message: string,
+    title: string = 'Attention',
+    duration?: number
+  ): void {
+    this.notificationService.warning(title, message, duration);
+  }
 
-private handleWarning(message: string, title: string = 'Attention', duration?: number): void {
-  this.notificationService.warning(title, message, duration);
-}
-
-private handleInfo(message: string, title: string = 'Information', duration?: number): void {
-  this.notificationService.info(title, message, duration);
-}
-//#endregion
+  private handleInfo(
+    message: string,
+    title: string = 'Information',
+    duration?: number
+  ): void {
+    this.notificationService.info(title, message, duration);
+  }
+  //#endregion
 
   //#region User Management Methods
   /**
@@ -1032,16 +1226,13 @@ private handleInfo(message: string, title: string = 'Information', duration?: nu
     if (this.authService.isAuthenticated()) {
       try {
         // Log l'état du localStorage avant la déconnexion (pour debug)
-        console.log('État du localStorage avant déconnexion:', {
-        });
+        console.log('État du localStorage avant déconnexion:', {});
 
         // Appel au service de déconnexion
         this.authService.logout();
 
         // Vérifie que le localStorage a bien été vidé
-        console.log('État du localStorage après déconnexion:', {
-
-        });
+        console.log('État du localStorage après déconnexion:', {});
 
         // Redirige vers la page de login seulement après confirmation que tout est bien déconnecté
         this.router.navigate(['/auth/login']);

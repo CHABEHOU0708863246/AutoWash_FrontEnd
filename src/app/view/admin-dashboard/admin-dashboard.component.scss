@@ -141,31 +141,35 @@ body {
 /* Styles du menu de navigation */
 .nav-menu {
   padding: 10px 0;
-  /* Ajoutez ces propriétés */
   flex-grow: 1;
-  /* Prend tout l'espace disponible */
   overflow-y: auto;
-  /* Ajoute une scrollbar verticale si nécessaire */
   overflow-x: hidden;
-  /* Empêche le défilement horizontal */
   scrollbar-width: thin;
-  /* Pour Firefox */
   scrollbar-color: #00b8ff #f8f9fa;
-  /* Pour Firefox */
+
+  /* AJOUTS POUR DÉFILEMENT PLUS LENT */
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Style personnalisé de la scrollbar pour Chrome/Edge/Safari */
 .nav-menu::-webkit-scrollbar {
-  width: 6px;
+  width: 8px; /* Légèrement plus large */
 }
 
 .nav-menu::-webkit-scrollbar-track {
   background: #f8f9fa;
+  border-radius: 10px;
 }
 
 .nav-menu::-webkit-scrollbar-thumb {
   background-color: #00b8ff;
-  border-radius: 3px;
+  border-radius: 10px;
+  border: 2px solid #f8f9fa;
+}
+
+.nav-menu::-webkit-scrollbar-thumb:hover {
+  background-color: #0099cc; /* Couleur plus foncée au survol */
 }
 
 
@@ -282,7 +286,7 @@ body {
   /* Couleur par défaut */
   cursor: pointer;
   /* Curseur cliquable */
-  transition: color 9s;
+  transition: color 1s;
   /* Animation fluide */
 }
 
@@ -387,108 +391,179 @@ body {
 }
 
 /* Styles du menu déroulant de l'utilisateur */
+/* Styles du menu déroulant de l'utilisateur - MODIFIÉ */
 .user-dropdown {
   display: flex;
-  /* Disposition flexible */
   align-items: center;
-  /* Alignement vertical */
   margin-left: 20px;
-  /* Espacement à gauche */
   cursor: pointer;
-  /* Curseur cliquable */
   position: relative;
-  /* Positionnement relatif pour le menu */
   padding: 10px;
-  /* Espacement interne */
   border-radius: 5px;
-  /* Coins arrondis */
   background-color: #f8f9fa;
-  /* Fond clair */
   transition: background-color 0.3s;
-  /* Animation pour le survol */
 }
 
 .user-dropdown img {
   width: 32px;
-  /* Taille de l'image */
   height: 32px;
   border-radius: 50%;
-  /* Image circulaire */
   margin-right: 8px;
-  /* Espacement à droite */
 }
 
 .user-dropdown span {
   font-weight: 500;
-  /* Texte semi-gras */
 }
 
 .user-dropdown i {
   margin-left: 5px;
-  /* Espacement à gauche */
   font-size: 12px;
-  /* Taille de l'icône */
   transition: transform 0.3s;
-  /* Animation pour la rotation */
 }
 
 .user-dropdown.active i {
   transform: rotate(180deg);
-  /* Rotation de l'icône lorsqu'activée */
 }
 
 .user-dropdown-menu {
   position: absolute;
-  /* Positionnement absolu */
-  top: 40px;
-  /* Décalage sous l'élément */
+  top: 45px; /* Légèrement augmenté pour plus d'espace */
   right: 0;
-  /* Aligné à droite */
   background-color: white;
-  /* Fond blanc */
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-  /* Ombre subtile */
-  border-radius: 5px;
-  /* Coins arrondis */
-  width: 180px;
-  /* Largeur fixe */
+  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15); /* Ombre plus prononcée */
+  border-radius: 8px; /* Coins plus arrondis */
+  width: 200px; /* Légèrement plus large */
   display: none;
-  /* Caché par défaut */
-  z-index: 1000;
-  /* Au-dessus des autres éléments */
+  z-index: 1001; /* Augmenté pour être au-dessus */
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease; /* Animation fluide */
 }
 
 .user-dropdown-menu.show {
   display: block;
-  /* Affiché lorsqu'activé */
+  opacity: 1;
+  transform: translateY(0);
+  animation: fadeInDropdown 0.3s ease; /* Animation d'apparition */
+}
+
+/* Animation pour l'apparition du dropdown */
+@keyframes fadeInDropdown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .user-dropdown-menu a {
-  display: block;
-  /* Chaque lien prend toute la largeur */
-  padding: 10px 15px;
-  /* Espacement interne */
+  display: flex;
+  align-items: center;
+  padding: 12px 15px;
   color: #555;
-  /* Couleur de texte */
   text-decoration: none;
-  /* Pas de soulignement */
-  transition: background-color 0.3s;
-  /* Animation pour le survol */
+  transition: all 0.3s ease;
+  border-bottom: 1px solid #f8f9fa;
+  font-size: 14px;
+}
+
+.user-dropdown-menu a:last-child {
+  border-bottom: none;
 }
 
 .user-dropdown-menu a:hover {
   background-color: #f8f9fa;
-  /* Fond clair au survol */
   color: #00b8ff;
-  /* Couleur bleu vif */
+  padding-left: 20px; /* Effet de décalage au survol */
 }
 
 .user-dropdown-menu a i {
-  margin-right: 10px;
-  /* Espacement entre icône et texte */
-  width: 15px;
-  /* Largeur fixe pour alignement */
+  margin-right: 12px; /* Plus d'espace pour les icônes */
+  width: 16px;
+  text-align: center;
+  font-size: 14px;
 }
+
+/* Style spécifique pour le bouton de déconnexion */
+.user-dropdown-menu a:last-child {
+  color: #ff4444; /* Rouge pour la déconnexion */
+  border-top: 1px solid #f8f9fa;
+}
+
+.user-dropdown-menu a:last-child:hover {
+  background-color: #fff5f5;
+  color: #cc0000;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 /* Styles du contenu de la page */
 .page-content {

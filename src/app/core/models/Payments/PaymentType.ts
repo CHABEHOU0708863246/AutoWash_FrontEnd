@@ -4,5 +4,6 @@ export enum PaymentType {
   Monthly = 'Mensuel',
   PerService = 'Par service',
   Bonus = 'Bonus',
-  Other = 'Autre'
+  Other = 'Autre',
+  Quarterly = "Quarterly"
 }

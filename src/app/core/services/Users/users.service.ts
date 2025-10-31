@@ -10,6 +10,9 @@ import { AuthService } from '../Auth/auth.service';
   providedIn: 'root'
 })
 export class UsersService {
+  getManagersByCentre(centreId: string) {
+    throw new Error('Method not implemented.');
+  }
   createUser(userData: any) {
     throw new Error('Method not implemented.');
   }

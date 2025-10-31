@@ -1,0 +1,743 @@
+<html lang="fr">
+
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet">
+</head>
+
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fas fa-hashtag"></i> AUTOWASH
+    </div>
+    <div class="user-profile" *ngIf="currentUser">
+      <div class="user-photo-container">
+        <img *ngIf="currentUser.photoSafeUrl" [src]="currentUser.photoSafeUrl"
+          [alt]="'Photo de ' + (currentUser.firstName || 'Utilisateur')" class="user-avatar">
+        <div *ngIf="!currentUser.photoSafeUrl" class="user-initials">
+          {{ (currentUser.firstName?.charAt(0) || '') + (currentUser.lastName?.charAt(0) || '') }}
+        </div>
+      </div>
+      <div class="user-info">
+        <h4>{{ getFullName() }}</h4>
+        <p>{{ getUserRole() }}</p>
+      </div>
+    </div>
+    <div class="nav-menu">
+      <!-- Dashboard -->
+      <div class="dropdown dropdown-hover">
+        <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/admin/dashboard']">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
+
+      <!-- Gestion des Utilisateurs -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-users-cog"></i>
+          <span>Utilisateurs</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-list']"><i class="fas fa-list"></i> Liste des
+              utilisateurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-create']"><i class="fas fa-user-plus"></i> Ajouter
+              un utilisateur</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/users-attendance']"><i class="fas fa-user-clock"></i>
+              Présences</a></li>
+        </ul>
+      </div>
+
+      <!-- Centres de Lavage -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fa-solid fa-car"></i>
+          <span>Centres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-list']"><i class="fas fa-list"></i> Tous les
+              centres</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/centres-create']"><i class="fas fa-plus-circle"></i>
+              Nouveau centre</a></li>
+
+        </ul>
+      </div>
+
+      <!-- Sessions de Lavage -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-car-side"></i>
+          <span>Lavages</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-sessions']"><i class="fas fa-list"></i> Toutes les
+              sessions</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-now']"><i class="fas fa-play-circle"></i> Nouveau
+              lavage</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/wash-queue']"><i class="fas fa-clock"></i> File
+              d'attente</a></li>
+        </ul>
+      </div>
+
+      <!-- Paiements -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-money-bill-wave"></i>
+          <span>Paiements</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-washers']"><i class="fas fa-user-tie"></i>
+              Paiements laveurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-customers']"><i class="fas fa-users"></i>
+              Paiements clients</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-manager']"><i class="fas fa-user-tie"></i>
+              Paiement gérant</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/payments-reports']"><i
+                class="fas fa-file-invoice-dollar"></i> Rapports</a></li>
+        </ul>
+      </div>
+
+      <!-- Stocks -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-box-open"></i>
+          <span>Stocks</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-list']"><i class="fas fa-boxes"></i> Inventaire</a>
+          </li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-alerts']"><i
+                class="fas fa-exclamation-triangle"></i> Alertes stock</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-movements']"><i class="fas fa-exchange-alt"></i>
+              Mouvements</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/stocks-suppliers']"><i class="fas fa-truck"></i>
+              Fournisseurs</a></li>
+        </ul>
+      </div>
+
+      <!-- Statistiques & Rapports -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-chart-pie"></i>
+          <span>Statistiques</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-daily']"><i class="fas fa-calendar-day"></i>
+              Journalier</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-weekly']"><i class="fas fa-calendar-week"></i>
+              Hebdomadaire</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-monthly']"><i class="fas fa-calendar-alt"></i>
+              Mensuel</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-comparison']"><i class="fas fa-balance-scale"></i>
+              Comparaison</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/reports-export']"><i class="fas fa-file-export"></i>
+              Exports</a></li>
+        </ul>
+      </div>
+
+      <!-- Audit -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-clipboard-check"></i>
+          <span>Audit</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-logs']"><i class="fas fa-clipboard-list"></i>
+              Journal d'activité</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-changes']"><i class="fas fa-history"></i> Historique
+              modifications</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/audit-security']"><i class="fas fa-shield-alt"></i>
+              Sécurité</a></li>
+        </ul>
+      </div>
+
+      <!-- Dépenses -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-file-invoice-dollar"></i>
+          <span>Dépenses</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-utilities']"><i class="fas fa-tint"></i>Gestion
+              dépenses</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/expenses-profitability']"><i
+                class="fas fa-chart-line"></i> Rentabilité</a></li>
+        </ul>
+      </div>
+
+      <!-- Paramètres -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-cogs"></i>
+          <span>Paramètres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-schedule']"><i class="fas fa-clock"></i>
+              Horaires</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-services']"><i class="fas fa-concierge-bell"></i>
+              Prestations</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-vehicles']"><i class="fas fa-car"></i> Types de
+              véhicules</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-notifications']"><i class="fas fa-bell"></i>
+              Notifications</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-system']"><i class="fas fa-sliders-h"></i>
+              Système</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/admin/settings-templates']"><i class="fas fa-file-alt"></i>
+              Modèles de paramètres</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" id="main-content">
+    <div class="top-bar">
+      <div class="menu-toggle" id="menu-toggle">
+        <i class="fas fa-bars"></i>
+      </div>
+      <div class="top-right">
+        <div class="icon-button">
+          <i class="fas fa-envelope"></i>
+        </div>
+        <div class="icon-button">
+          <i class="fas fa-bell"></i>
+          <span class="badge">3</span>
+        </div>
+        <div class="dropdown dropdown-hover">
+          <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
+            <!-- Photo sécurisée si elle existe -->
+            <img *ngIf="currentUser?.photoSafeUrl as safeUrl" [src]="safeUrl" alt="User" class="user-avatar">
+            <!-- Nom complet -->
+            <span>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
+            <li><a class="dropdown-item" [routerLink]="['/admin/users-profil']"><i class="fas fa-user"></i> Mon
+                profil</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
+            <li><a class="dropdown-item" (click)="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <!-- En-tête de page -->
+      <div class="page-header">
+        <h1 class="page-title"><i class="fas fa-user-tie"></i> Paiements des Managers</h1>
+        <p class="page-subtitle">Gestion des rémunérations et commissions des responsables de centre</p>
+      </div>
+
+      <!-- Cartes de statistiques -->
+      <div class="stats-cards">
+        <div class="stat-card">
+          <div class="stat-icon blue">
+            <i class="fas fa-money-bill-wave"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Salaire Total</div>
+            <div class="stat-value">{{ formatAmount(stats.totalSalary) }}</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Commission Totale</div>
+            <div class="stat-value">{{ formatAmount(stats.totalCommission) }}</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon orange">
+            <i class="fas fa-user-tie"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Managers Actifs</div>
+            <div class="stat-value">{{ stats.activeManagers }}</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon purple">
+            <i class="fas fa-percentage"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-title">Taux Commission</div>
+            <div class="stat-value">{{ stats.commissionRate | number:'1.1-1' }}%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Onglets -->
+      <div class="tabs-container">
+        <div class="tabs">
+          <button class="tab" [class.active]="isTabActive('payments-list')" (click)="switchTab('payments-list')">
+            <i class="fas fa-list"></i>
+            Liste des Paiements
+          </button>
+          <button class="tab" [class.active]="isTabActive('new-payment')" (click)="switchTab('new-payment')">
+            <i class="fas fa-plus-circle"></i>
+            Nouveau Paiement
+          </button>
+          <button class="tab" [class.active]="isTabActive('reports')" (click)="switchTab('reports')">
+            <i class="fas fa-chart-bar"></i>
+            Rapports
+          </button>
+        </div>
+
+        <!-- Liste des paiements -->
+        <div class="tab-content" [class.active]="isTabActive('payments-list')">
+          <div class="section-header">
+            <h3 class="section-title">Historique des Paiements</h3>
+          </div>
+
+          <div class="filters">
+            <div class="filter-group">
+              <label for="filter-centre-manager">Centre</label>
+              <select id="filter-centre-manager" [(ngModel)]="selectedCentre"
+                (change)="onCentreFilterChange(selectedCentre)">
+                <option value="all">Tous les centres</option>
+                <option *ngFor="let centre of centres" [value]="centre.id">
+                  {{ centre.name }}
+                </option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="filter-manager">Manager</label>
+              <select id="filter-manager" [(ngModel)]="selectedManager" [disabled]="true" class="readonly-select">
+                <option value="all" *ngIf="selectedCentre === 'all'">
+                  Sélectionnez d'abord un centre
+                </option>
+                <option *ngIf="selectedCentreManager" [value]="selectedCentreManager.id">
+                  {{ selectedCentreManager.firstName }} {{ selectedCentreManager.lastName }}
+                </option>
+              </select>
+
+              <!-- Messages d'information -->
+              <div *ngIf="selectedCentre === 'all'" class="info-message">
+                <i class="fas fa-info-circle"></i> Sélectionnez un centre pour voir son manager
+              </div>
+              <div *ngIf="selectedCentre !== 'all' && !selectedCentreManager && !isLoadingManagers"
+                class="warning-message">
+                <i class="fas fa-exclamation-triangle"></i> Ce centre n'a pas de manager assigné
+              </div>
+              <div *ngIf="isLoadingManagers" class="loading-small">
+                <i class="fas fa-spinner fa-spin"></i> Chargement du manager...
+              </div>
+              <div *ngIf="selectedCentreManager && !isLoadingManagers" class="success-message">
+                <i class="fas fa-check-circle"></i> Manager du centre:
+                {{ selectedCentreManager.firstName }} {{ selectedCentreManager.lastName }}
+              </div>
+            </div>
+
+            <!-- SECTION 2: NOUVEAU PAIEMENT - Sélection Centre -->
+
+            <div class="filter-group">
+              <label for="filter-period">Période</label>
+              <select id="filter-period" [(ngModel)]="selectedPeriod" (change)="onPeriodFilterChange(selectedPeriod)">
+                <option value="current">Mois en cours</option>
+                <option value="last">Mois dernier</option>
+                <option value="quarter">Trimestre</option>
+                <option value="custom">Personnalisée</option>
+              </select>
+            </div>
+
+            <div class="filter-group">
+              <label for="filter-status-manager">Statut</label>
+              <select id="filter-status-manager" [(ngModel)]="selectedStatus"
+                (change)="onStatusFilterChange(selectedStatus)">
+                <option value="all">Tous les statuts</option>
+                <option value="approved">Approuvé</option>
+                <option value="pending">En attente</option>
+                <option value="rejected">Rejeté</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Loading State -->
+          <div *ngIf="isLoadingPayments" class="loading-state">
+            <i class="fas fa-spinner fa-spin"></i>
+            <span>Chargement des paiements managers...</span>
+          </div>
+
+          <!-- Tableau des paiements -->
+          <table class="payments-table" *ngIf="!isLoadingPayments">
+            <thead>
+              <tr>
+                <th>Manager</th>
+                <th>Centre</th>
+                <th>Salaire Base</th>
+                <th>Commission</th>
+                <th>Prime</th>
+                <th>Total</th>
+                <th>Période</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let payment of filteredPayments">
+                <td class="user-info">
+                  <div class="user-avatar">
+                    <i class="fas fa-user-tie"></i>
+                  </div>
+                  <div class="user-details">
+                    <div class="user-name">{{ getManagerName(payment.userId) }}</div>
+                    <div class="user-email">{{ getManagerEmail(payment.userId) }}</div>
+                  </div>
+                </td>
+                <td>{{ getCentreName(payment.centreId) }}</td>
+                <td class="amount">{{ formatAmount(getManagerBaseSalary(payment)) }}</td>
+                <td class="amount commission">{{ formatAmount(getManagerBonus(payment)) }}</td>
+                <td class="amount bonus">{{ formatAmount(payment.deductions) }}</td>
+                <!-- Utiliser deductions pour bonus -->
+                <td class="amount total">{{ formatAmount(getManagerTotalAmount(payment)) }}</td>
+                <td class="period">
+                  {{ getManagerPeriodMonth(payment) }}/{{ getManagerPeriodYear(payment) }}
+                </td>
+                <td>
+                  <span [class]="getStatusBadgeClass(payment)">
+                    <i [class]="getStatusIcon(payment)"></i>
+                    {{ getStatusText(payment) }}
+                  </span>
+                </td>
+                <td class="action-buttons">
+                  <button class="btn-icon success" title="Approuver" *ngIf="!payment.approvedBy"
+                    (click)="approvePayment(payment.id || '')">
+                    <i class="fas fa-check"></i>
+                  </button>
+
+                  <button class="btn-icon warning" title="Générer reçu" *ngIf="payment.approvedBy"
+                    (click)="generateReceipt(payment.id || '')">
+                    <i class="fas fa-receipt"></i>
+                  </button>
+
+                  <button class="btn-icon danger" title="Rejeter" *ngIf="!payment.approvedBy"
+                    (click)="rejectPayment(payment.id || '')">
+                    <i class="fas fa-times"></i>
+                  </button>
+                </td>
+              </tr>
+
+              <!-- Message si aucun paiement -->
+              <tr *ngIf="filteredPayments.length === 0">
+                <td colspan="9" class="no-data">
+                  <i class="fas fa-user-tie"></i>
+                  Aucun paiement manager trouvé avec les filtres sélectionnés
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Formulaire de nouveau paiement manager -->
+        <div class="tab-content" [class.active]="isTabActive('new-payment')">
+          <div class="form-container">
+            <div class="form-header">
+              <h2 class="form-title">
+                <i class="fas fa-money-check-alt"></i>
+                Nouveau Paiement Manager
+              </h2>
+              <p class="form-subtitle">Renseignez les informations pour effectuer le paiement d'un manager</p>
+            </div>
+
+            <form class="form-content" (ngSubmit)="submitManagerPayment()" #managerPaymentForm="ngForm">
+              <div class="form-section">
+                <h4 class="section-title">
+                  <i class="fas fa-building"></i>
+                  Informations du Centre
+                </h4>
+
+                <div class="form-group">
+                  <label for="manager-centre-select">
+                    <i class="fas fa-map-marker-alt"></i>
+                    Centre
+                  </label>
+                  <select id="manager-centre-select" [(ngModel)]="newManagerPayment.centreId" name="centreId" required
+                    (change)="onManagerCentreSelectChange(newManagerPayment.centreId)">
+                    <option value="" disabled selected>Sélectionnez un centre</option>
+                    <option *ngFor="let centre of centres" [value]="centre.id">
+                      {{ centre.name }} - {{ centre.location }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label for="manager-select">
+                    <i class="fas fa-user-tie"></i>
+                    Manager
+                  </label>
+                  <select id="manager-select" [(ngModel)]="newManagerPayment.managerId" name="managerId" required
+                    [disabled]="!newManagerPayment.centreId || isLoadingManagers"
+                    (change)="onManagerSelectChange(newManagerPayment.managerId)">
+                    <option value="" disabled selected>
+                      {{ isLoadingManagers ? 'Chargement...' : 'Sélectionnez un manager' }}
+                    </option>
+                    <option *ngFor="let manager of filteredManagers" [value]="manager.id">
+                      {{ manager.firstName }} {{ manager.lastName }} - {{ manager.email }}
+                    </option>
+                  </select>
+
+                  <!-- Messages d'état pour les managers -->
+                  <div *ngIf="isLoadingManagers" class="loading-small">
+                    <i class="fas fa-spinner fa-spin"></i> Chargement des managers...
+                  </div>
+                  <div *ngIf="!isLoadingManagers && newManagerPayment.centreId && filteredManagers.length === 0"
+                    class="no-data-message">
+                    <i class="fas fa-info-circle"></i> Aucun manager disponible pour ce centre
+                  </div>
+                  <div *ngIf="!newManagerPayment.centreId" class="info-message">
+                    <i class="fas fa-info-circle"></i> Veuillez d'abord sélectionner un centre
+                  </div>
+                </div>
+              </div>
+
+              <!-- Dans la section Période de Paiement -->
+              <div class="form-section">
+                <h4 class="section-title">
+                  <i class="fas fa-calendar-alt"></i>
+                  Période de Paiement
+                </h4>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="payment-month">Mois</label>
+                    <select id="payment-month" [(ngModel)]="newManagerPayment.month" name="month" required>
+                      <option value="" disabled selected>Sélectionnez le mois</option>
+                      <option *ngFor="let month of months; let i = index" [value]="i + 1">
+                        {{ month }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="payment-year">Année</label>
+                    <select id="payment-year" [(ngModel)]="newManagerPayment.year" name="year" required>
+                      <option value="" disabled selected>Sélectionnez l'année</option>
+                      <option *ngFor="let year of years" [value]="year" [selected]="year === getCurrentYear()">
+                        {{ year }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <h4 class="section-title">
+                  <i class="fas fa-money-bill-wave"></i>
+                  Détails de la Rémunération
+                </h4>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="base-salary">Salaire de Base (FCFA)</label>
+                    <input type="number" id="base-salary" [(ngModel)]="newManagerPayment.baseSalary" name="baseSalary"
+                      placeholder="Salaire mensuel fixe" step="0.01" required min="0">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="commission-rate">Taux de Commission (%)</label>
+                    <input type="number" id="commission-rate" [(ngModel)]="newManagerPayment.commissionRate"
+                      name="commissionRate" placeholder="5" step="0.1" min="0" max="100">
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="commission-amount">Commission (FCFA)</label>
+                    <input type="number" id="commission-amount" [(ngModel)]="newManagerPayment.commission"
+                      name="commission" placeholder="Montant commission" step="0.01" min="0" readonly>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="bonus-amount">Prime/Bonus (FCFA)</label>
+                    <input type="number" id="bonus-amount" [(ngModel)]="newManagerPayment.bonus" name="bonus"
+                      placeholder="Prime exceptionnelle" step="0.01" min="0">
+                  </div>
+                </div>
+
+                <div class="total-amount-display">
+                  <div class="total-label">Total à Payer</div>
+                  <div class="total-value">{{ calculateManagerTotal() | currency:'XOF':'symbol':'1.0-0' }}</div>
+                </div>
+              </div>
+
+              <div class="form-section">
+                <h4 class="section-title">
+                  <i class="fas fa-credit-card"></i>
+                  Méthode de Paiement
+                </h4>
+
+                <div class="form-group">
+                  <label for="manager-payment-method">Méthode</label>
+                  <select id="manager-payment-method" [(ngModel)]="newManagerPayment.method" name="method" required>
+                    <option value="" disabled selected>Sélectionnez une méthode</option>
+                    <option [value]="PaymentMethod.BANK_TRANSFER">Virement Bancaire</option>
+                    <option [value]="PaymentMethod.MOBILE_MONEY">Mobile Money</option>
+                    <option [value]="PaymentMethod.CASH">Espèces</option>
+                    <option [value]="PaymentMethod.CHECK">Chèque</option>
+                  </select>
+                </div>
+
+                <div class="form-group" *ngIf="newManagerPayment.method === PaymentMethod.BANK_TRANSFER">
+                  <label for="bank-account">Compte Bancaire</label>
+                  <input type="text" id="bank-account" [(ngModel)]="newManagerPayment.bankAccount" name="bankAccount"
+                    placeholder="Numéro de compte bancaire">
+                </div>
+
+                <div class="form-group" *ngIf="newManagerPayment.method === PaymentMethod.MOBILE_MONEY">
+                  <label for="mobile-number">Numéro Mobile Money</label>
+                  <input type="tel" id="mobile-number" [(ngModel)]="newManagerPayment.mobileNumber" name="mobileNumber"
+                    placeholder="+225 XX XX XX XX">
+                </div>
+              </div>
+
+              <div class="form-section">
+                <h4 class="section-title">
+                  <i class="fas fa-sticky-note"></i>
+                  Informations Complémentaires
+                </h4>
+
+                <div class="form-group full-width">
+                  <label for="manager-notes">Notes</label>
+                  <textarea id="manager-notes" [(ngModel)]="newManagerPayment.notes" name="notes"
+                    placeholder="Notes supplémentaires sur ce paiement (objectifs atteints, performances, etc.)"
+                    rows="4"></textarea>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn btn-outline" (click)="calculateManagerPayment()"
+                  [disabled]="!newManagerPayment.managerId || !newManagerPayment.centreId || isLoading">
+                  <i class="fas fa-calculator"></i>
+                  {{ isLoading ? 'Calcul en cours...' : 'Calculer Automatiquement' }}
+                </button>
+
+                <div class="action-buttons">
+                  <button type="submit" class="btn btn-primary"
+                    [disabled]="isLoading || !managerPaymentForm.form.valid">
+                    <span *ngIf="isLoading" class="loading-spinner"></span>
+                    <i class="fas fa-check-circle"></i>
+                    {{ isLoading ? 'Enregistrement...' : 'Valider le Paiement' }}
+                  </button>
+
+                  <button type="button" class="btn btn-secondary" (click)="resetManagerForm()">
+                    <i class="fas fa-redo"></i>
+                    Réinitialiser
+                  </button>
+
+                  <button type="button" class="btn btn-outline" (click)="switchTab('payments-list')">
+                    <i class="fas fa-arrow-left"></i>
+                    Retour à la liste
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Section Rapports -->
+        <div class="tab-content" [class.active]="isTabActive('reports')">
+          <div class="form-container">
+            <div class="form-header">
+              <h2 class="form-title">
+                <i class="fas fa-chart-bar"></i>
+                Rapports Managers
+              </h2>
+              <p class="form-subtitle">Générez des rapports détaillés sur les paiements des managers</p>
+            </div>
+
+            <div class="form-content">
+              <div class="form-section">
+                <h4 class="section-title">
+                  <i class="fas fa-cog"></i>
+                  Paramètres du Rapport
+                </h4>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="report-type">Type de Rapport</label>
+                    <select id="report-type" [(ngModel)]="reportFilters.type">
+                      <option value="payments">Paiements Managers</option>
+                      <option value="commissions">Commissions</option>
+                      <option value="performance">Performances</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="report-format">Format</label>
+                    <select id="report-format" [(ngModel)]="reportFilters.format">
+                      <option value="pdf">PDF</option>
+                      <option value="excel">Excel</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="report-centre">Centre</label>
+                    <select id="report-centre" [(ngModel)]="reportFilters.centre">
+                      <option value="all">Tous les centres</option>
+                      <option *ngFor="let centre of centres" [value]="centre.id">
+                        {{ centre.name }}
+                      </option>
+                    </select>
+                  </div>
+
+                  <div class="form-group">
+                    <label for="report-manager">Manager</label>
+                    <select id="report-manager" [(ngModel)]="reportFilters.manager">
+                      <option value="all">Tous les managers</option>
+                      <option *ngFor="let manager of managers" [value]="manager.id">
+                        {{ manager.firstName }} {{ manager.lastName }}
+                      </option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="start-date">Date de Début</label>
+                    <input type="date" id="start-date" [(ngModel)]="reportFilters.startDate">
+                  </div>
+
+                  <div class="form-group">
+                    <label for="end-date">Date de Fin</label>
+                    <input type="date" id="end-date" [(ngModel)]="reportFilters.endDate">
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button type="button" class="btn btn-primary" (click)="generateReport()" [disabled]="isLoading">
+                  <i class="fas fa-download"></i>
+                  {{ isLoading ? 'Génération...' : 'Générer le Rapport' }}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>©2026 AutoWash, Tous droit reservé.</div>
+      <div>Crée par <a href="https://www.linkedin.com/in/afferyauxencedelorschabehou/">Affery Auxence Delors
+          CHABEHOU</a></div>
+    </div>
+  </div>
+</body>
+
+</html>

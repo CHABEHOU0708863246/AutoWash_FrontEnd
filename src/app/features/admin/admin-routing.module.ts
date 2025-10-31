@@ -16,6 +16,7 @@ import { PaymentsWashersComponent } from '../../view/admin-dashboard/payments-wa
 import { PaymentsReportsComponent } from '../../view/admin-dashboard/payments-reports/payments-reports.component';
 import { UsersProfilComponent } from '../../view/admin-dashboard/users-profil/users-profil.component';
 import { UsersAttendanceComponent } from '../../view/admin-dashboard/users-attendance/users-attendance.component';
+import { PaymentsManagersComponent } from '../../view/admin-dashboard/payments-managers/payments-managers.component';
 const routes: Routes = [
   {
     path: '',
@@ -81,6 +82,10 @@ const routes: Routes = [
   {
     path: 'payments-washers',
     component: PaymentsWashersComponent
+  },
+  {
+    path: 'payments-manager',
+    component: PaymentsManagersComponent
   },
   {
     path: 'payments-reports',

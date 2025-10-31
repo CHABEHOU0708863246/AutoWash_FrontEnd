@@ -9,6 +9,7 @@ import { AuditSummary } from '../../models/Payments/AuditSummary';
 import { MonthlyPaymentFilter } from '../../models/Payments/MonthlyPaymentFilter';
 import { PaymentMethod } from '../../models/Payments/PaymentMethod';
 import { ApiResponseData } from '../../models/ApiResponseData';
+import { PaymentType } from '../../models/Payments/PaymentType';
 
 
 export interface ReceiptBase64 {
@@ -21,6 +22,9 @@ export interface ReceiptBase64 {
   providedIn: 'root'
 })
 export class PaymentsService {
+  createManagerPayment(paymentData: { managerId: string; centreId: string; paymentType: PaymentType; method: PaymentMethod; amount: number; baseAmount: number; bonus: number; deductions: number; paymentDate: Date; period: string; notes: string; approvedBy: string | undefined; }) {
+    throw new Error('Method not implemented.');
+  }
 
   private baseUrl = 'https://localhost:7139/api/Payments';
 
