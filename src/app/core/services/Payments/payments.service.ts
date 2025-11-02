@@ -10,6 +10,10 @@ import { MonthlyPaymentFilter } from '../../models/Payments/MonthlyPaymentFilter
 import { PaymentMethod } from '../../models/Payments/PaymentMethod';
 import { ApiResponseData } from '../../models/ApiResponseData';
 import { PaymentType } from '../../models/Payments/PaymentType';
+import { CustomerPayment } from '../../models/Payments/CustomerPayment';
+import { CustomerPaymentFilter } from '../../models/Payments/CustomerPaymentFilter';
+import { CustomerPaymentStatistics } from '../../models/Payments/CustomerPaymentStatistics';
+import { PaymentStatus } from '../../models/Payments/PaymentStatus';
 
 
 export interface ReceiptBase64 {
@@ -522,4 +526,213 @@ getPaymentsWithFilter(filter: MonthlyPaymentFilter): Observable<ApiResponseData<
   getDisplayPeriod(month: number, year: number): string {
     return `${this.getMonthName(month)} ${year}`;
   }
+
+  // ============================
+  // 🔹 Paiements Clients
+  // ============================
+
+  /**
+   * Récupère la liste des paiements clients avec filtres
+   */
+  getCustomerPayments(filter: CustomerPaymentFilter): Observable<ApiResponseData<CustomerPayment[]>> {
+    return this.http.post<ApiResponseData<CustomerPayment[]>>(
+      `${this.baseUrl}/customer-payments/list`,
+      filter
+    ).pipe(
+      tap(response => {
+        if (response.success) {
+          console.log(`✅ ${response.data.length} paiements clients récupérés`);
+        }
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Exporte les paiements clients en Excel
+   */
+  exportCustomerPaymentsToExcel(filter: CustomerPaymentFilter): Observable<Blob> {
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json'
+    });
+
+    return this.http.post(
+      `${this.baseUrl}/customer-payments/export`,
+      filter,
+      {
+        headers: headers,
+        responseType: 'blob'
+      }
+    ).pipe(
+      tap(blob => {
+        console.log('✅ Export Excel généré avec succès');
+        // Téléchargement automatique
+        this.downloadExcelBlob(blob, this.generateExportFileName());
+      }),
+      catchError(error => {
+        console.error('❌ Erreur lors de l\'export Excel:', error);
+        return throwError(() => new Error('Erreur lors de l\'export Excel'));
+      })
+    );
+  }
+
+  // ============================
+  // 🔹 Méthodes utilitaires pour les paiements clients
+  // ============================
+
+  /**
+   * Génère un nom de fichier pour l'export Excel
+   */
+  private generateExportFileName(): string {
+    const now = new Date();
+    const timestamp = now.toISOString()
+      .replace(/[:.]/g, '-')
+      .replace('T', '_')
+      .split('.')[0];
+    return `rapport_paiements_clients_${timestamp}.xlsx`;
+  }
+
+  /**
+   * Télécharge un blob Excel
+   */
+  private downloadExcelBlob(blob: Blob, filename: string): void {
+    // Créer un URL pour le blob
+    const url = window.URL.createObjectURL(blob);
+
+    // Créer un lien de téléchargement
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+
+    // Déclencher le téléchargement
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Libérer l'URL
+    window.URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Retourne le nom d'affichage d'une méthode de paiement
+   */
+  getPaymentMethodDisplayName(method: PaymentMethod): string {
+    const methodNames: Record<PaymentMethod, string> = {
+      [PaymentMethod.CASH]: '💵 Espèces',
+      [PaymentMethod.MOBILE_MONEY]: '📱 Mobile Money',
+      [PaymentMethod.BANK_TRANSFER]: '🏦 Virement',
+      [PaymentMethod.CHECK]: '📄 Chèque',
+      [PaymentMethod.CREDIT_CARD]: '💳 Carte Bancaire'
+    };
+    return methodNames[method] || method.toString();
+  }
+
+  /**
+   * Retourne le nom d'affichage d'un statut de paiement
+   */
+  getPaymentStatusDisplayName(status: PaymentStatus): string {
+    const statusNames: Record<PaymentStatus, string> = {
+      [PaymentStatus.Pending]: '⏳ En attente',
+      [PaymentStatus.Initiated]: '🚀 Initié',
+      [PaymentStatus.WaitingForCustomer]: '👤 En attente client',
+      [PaymentStatus.Accepted]: '✅ Accepté',
+      [PaymentStatus.Refused]: '❌ Refusé',
+      [PaymentStatus.Cancelled]: '🔴 Annulé',
+      [PaymentStatus.Failed]: '💥 Échoué',
+      [PaymentStatus.Expired]: '⏰ Expiré'
+    };
+    return statusNames[status] || status.toString();
+  }
+
+  /**
+   * Retourne la classe CSS pour un statut de paiement
+   */
+  getPaymentStatusClass(status: PaymentStatus): string {
+    const statusClasses: Record<PaymentStatus, string> = {
+      [PaymentStatus.Pending]: 'status-pending',
+      [PaymentStatus.Initiated]: 'status-initiated',
+      [PaymentStatus.WaitingForCustomer]: 'status-waiting',
+      [PaymentStatus.Accepted]: 'status-accepted',
+      [PaymentStatus.Refused]: 'status-refused',
+      [PaymentStatus.Cancelled]: 'status-cancelled',
+      [PaymentStatus.Failed]: 'status-failed',
+      [PaymentStatus.Expired]: 'status-expired'
+    };
+    return statusClasses[status] || 'status-unknown';
+  }
+
+  /**
+   * Calcule le total des paiements
+   */
+  calculateTotalAmount(payments: CustomerPayment[]): number {
+    return payments.reduce((total, payment) => total + payment.amount, 0);
+  }
+
+  /**
+   * Groupe les paiements par méthode
+   */
+  groupPaymentsByMethod(payments: CustomerPayment[]): Record<PaymentMethod, CustomerPayment[]> {
+    const grouped: Record<PaymentMethod, CustomerPayment[]> = {} as Record<PaymentMethod, CustomerPayment[]>;
+
+    payments.forEach(payment => {
+      if (!grouped[payment.method]) {
+        grouped[payment.method] = [];
+      }
+      grouped[payment.method].push(payment);
+    });
+
+    return grouped;
+  }
+
+  /**
+   * Récupère les statistiques des paiements clients
+   */
+  getCustomerPaymentStatistics(filter: CustomerPaymentFilter): Observable<ApiResponseData<CustomerPaymentStatistics>> {
+    return this.http.post<ApiResponseData<CustomerPaymentStatistics>>(
+      `${this.baseUrl}/customer-payments/statistics`,
+      filter
+    ).pipe(
+      tap(response => {
+        if (response.success) {
+          console.log('✅ Statistiques des paiements récupérées avec succès');
+        }
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Récupère les paiements clients avec pagination avancée
+   */
+  getCustomerPaymentsPaginated(filter: CustomerPaymentFilter): Observable<{
+    data: CustomerPayment[];
+    totalCount: number;
+    totalPages: number;
+    currentPage: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  }> {
+    return this.getCustomerPayments(filter).pipe(
+      map(response => {
+        if (!response.success) {
+          throw new Error(response.message);
+        }
+
+        const totalPages = Math.ceil(response.data.length / filter.pageSize);
+        const hasNextPage = filter.page < totalPages;
+        const hasPreviousPage = filter.page > 1;
+
+        return {
+          data: response.data,
+          totalCount: response.data.length,
+          totalPages: totalPages,
+          currentPage: filter.page,
+          hasNextPage: hasNextPage,
+          hasPreviousPage: hasPreviousPage
+        };
+      }),
+      catchError(this.handleError)
+    );
+  }
+
 }

@@ -238,17 +238,21 @@
         <h1 class="page-title"><i class="fas fa-user-tie"></i> Paiements des Laveurs</h1>
       </div>
 
-      <!-- Cartes de statistiques -->
+      <!-- Cartes de statistiques CORRIGÉES -->
       <div class="stats-cards">
+        <!-- ✅ Carte 1: Commissions (pas "Revenus") -->
         <div class="stat-card">
           <div class="stat-icon blue">
             <i class="fas fa-money-bill-wave"></i>
           </div>
           <div class="stat-content">
-            <div class="stat-title">Revenus du Mois</div>
+            <div class="stat-title">Commissions du Mois</div>
             <div class="stat-value">{{ formatAmount(stats.totalAmount) }}</div>
+            <small class="stat-description">Revenus des lavages uniquement</small>
           </div>
         </div>
+
+        <!-- ✅ Carte 2: Laveurs Actifs (excluant les gérants) -->
         <div class="stat-card">
           <div class="stat-icon green">
             <i class="fas fa-users"></i>
@@ -256,8 +260,11 @@
           <div class="stat-content">
             <div class="stat-title">Laveurs Actifs</div>
             <div class="stat-value">{{ stats.activeWashers }}</div>
+            <small class="stat-description">Ayant effectué des lavages ce mois</small>
           </div>
         </div>
+
+        <!-- ✅ Carte 3: Paiements en Attente -->
         <div class="stat-card">
           <div class="stat-icon orange">
             <i class="fas fa-file-invoice-dollar"></i>
@@ -265,8 +272,11 @@
           <div class="stat-content">
             <div class="stat-title">Paiements en Attente</div>
             <div class="stat-value">{{ stats.pendingPayments }}</div>
+            <small class="stat-description">Paiements non validés</small>
           </div>
         </div>
+
+        <!-- ✅ Carte 4: Commission Moyenne -->
         <div class="stat-card">
           <div class="stat-icon purple">
             <i class="fas fa-percentage"></i>
@@ -276,9 +286,21 @@
             <div class="stat-value">
               {{ stats.averageCommission | number:'1.0-0' }} FCFA
             </div>
-
+            <small class="stat-description">Par paiement de laveur</small>
           </div>
         </div>
+      </div>
+
+      <!-- 🔍 Indicateur de filtre actif (optionnel mais utile) -->
+      <div class="filter-indicator" *ngIf="selectedCentre !== 'all' || selectedWasher !== 'all'">
+        <i class="fas fa-filter"></i>
+        Filtres actifs:
+        <span *ngIf="selectedCentre !== 'all'">
+          Centre: {{ getCentreName(selectedCentre) }}
+        </span>
+        <span *ngIf="selectedWasher !== 'all'">
+          | Laveur: {{ getWasherName(selectedWasher) }}
+        </span>
       </div>
 
       <!-- Onglets -->

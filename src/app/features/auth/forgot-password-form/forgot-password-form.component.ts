@@ -68,7 +68,6 @@ export class ForgotPasswordFormComponent implements OnDestroy {
             }
           },
           error: () => {
-            // Erreur déjà gérée dans catchError
           }
         });
     } else {

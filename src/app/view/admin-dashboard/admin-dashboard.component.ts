@@ -287,7 +287,7 @@ export class AdminDashboardComponent implements OnInit {
   /**
    * Charger toutes les données du dashboard en fonction des filtres
    */
-  loadDashboardData(): void {
+ loadDashboardData(): void {
     if (!this.selectedCentreId) {
       this.resetDashboardData();
       return;
@@ -411,38 +411,52 @@ export class AdminDashboardComponent implements OnInit {
   /**
    * Construire les paramètres de filtre à partir des valeurs sélectionnées
    */
-  private buildFilterParams(): any {
-    const params: any = {};
+private buildFilterParams(): any {
+  const params: any = {
+    centreId: this.selectedCentreId
+  };
 
-    params.centreId = this.selectedCentreId;
-
-    // Filtre de service avec validation
-    if (this.selectedService && this.selectedService !== 'all') {
-      // Vérifier que le service appartient au centre sélectionné
-      const serviceExists = this.services.find(
-        (s) => s.id === this.selectedService
-      );
-      if (serviceExists) {
-        params.serviceId = this.selectedService;
-      }
+  // ✅ Filtre de service avec validation stricte
+  if (this.selectedService && this.selectedService !== 'all') {
+    const serviceExists = this.services.find(s => s.id === this.selectedService);
+    if (serviceExists) {
+      params.serviceId = this.selectedService;
+      console.log('✅ Filtre service appliqué:', this.selectedService);
+    } else {
+      console.warn('⚠️ Service invalide:', this.selectedService);
     }
+  }
 
-    // Dates avec validation
-    if (this.selectedPeriod === 'custom') {
-      if (this.startDate && this.endDate) {
+  // ✅ Filtre de période avec gestion des dates
+  if (this.selectedPeriod === 'custom') {
+    // Période personnalisée
+    if (this.startDate && this.endDate) {
+      // Valider que endDate >= startDate
+      if (new Date(this.endDate) >= new Date(this.startDate)) {
         params.startDate = this.startDate;
         params.endDate = this.endDate;
+        console.log('✅ Période personnalisée:', { startDate: this.startDate, endDate: this.endDate });
+      } else {
+        console.error('❌ Date de fin doit être >= date de début');
       }
     } else {
-      const dateRange = this.calculateDateRange(this.selectedPeriod);
-      if (dateRange.startDate && dateRange.endDate) {
-        params.startDate = dateRange.startDate;
-        params.endDate = dateRange.endDate;
-      }
+      console.warn('⚠️ Dates personnalisées incomplètes');
     }
-
-    return params;
+  } else {
+    // Période prédéfinie
+    const dateRange = this.calculateDateRange(this.selectedPeriod);
+    if (dateRange.startDate && dateRange.endDate) {
+      params.startDate = dateRange.startDate;
+      params.endDate = dateRange.endDate;
+      console.log('✅ Période prédéfinie:', this.selectedPeriod, dateRange);
+    } else {
+      console.warn('⚠️ Impossible de calculer la plage de dates pour:', this.selectedPeriod);
+    }
   }
+
+  console.log('📊 Paramètres de filtre construits:', params);
+  return params;
+}
 
   getCurrentDate(): string {
     return new Date().toISOString().split('T')[0];
@@ -451,100 +465,194 @@ export class AdminDashboardComponent implements OnInit {
   /**
    * Calculer la plage de dates en fonction de la période sélectionnée
    */
-  private calculateDateRange(period: string): {
-    startDate?: string;
-    endDate?: string;
-  } {
-    const today = new Date();
-    const endDate = today.toISOString().split('T')[0]; // Format YYYY-MM-DD
-    let startDate: string;
+private calculateDateRange(period: string): { startDate?: string; endDate?: string } {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-    switch (period) {
-      case 'today':
-        startDate = endDate;
-        break;
-      case 'week':
-        const weekStart = new Date(today);
-        weekStart.setDate(today.getDate() - 7);
-        startDate = weekStart.toISOString().split('T')[0];
-        break;
-      case 'month':
-        const monthStart = new Date(today);
-        monthStart.setMonth(today.getMonth() - 1);
-        startDate = monthStart.toISOString().split('T')[0];
-        break;
-      case 'quarter':
-        const quarterStart = new Date(today);
-        quarterStart.setMonth(today.getMonth() - 3);
-        startDate = quarterStart.toISOString().split('T')[0];
-        break;
-      case 'year':
-        const yearStart = new Date(today);
-        yearStart.setFullYear(today.getFullYear() - 1);
-        startDate = yearStart.toISOString().split('T')[0];
-        break;
-      default:
-        return {};
-    }
+  const endDate = today.toISOString().split('T')[0];
+  let startDate: string;
 
-    return { startDate, endDate };
+  switch (period) {
+    case 'today':
+      startDate = endDate;
+      break;
+
+    case 'week':
+      const weekStart = new Date(today);
+      weekStart.setDate(today.getDate() - 6);
+      startDate = weekStart.toISOString().split('T')[0];
+      break;
+
+    case 'month':
+      const monthStart = new Date(today);
+      monthStart.setDate(today.getDate() - 29);
+      startDate = monthStart.toISOString().split('T')[0];
+      break;
+
+    case 'quarter':
+      const quarterStart = new Date(today);
+      quarterStart.setDate(today.getDate() - 89);
+      startDate = quarterStart.toISOString().split('T')[0];
+      break;
+
+    case 'year':
+      const yearStart = new Date(today);
+      yearStart.setDate(today.getDate() - 364); // Inclure aujourd'hui
+      startDate = yearStart.toISOString().split('T')[0];
+      break;
+
+    default:
+      console.warn('⚠️ Période non reconnue:', period);
+      return {};
   }
+
+  console.log(`📅 Plage de dates pour "${period}":`, { startDate, endDate });
+  return { startDate, endDate };
+}
+
+/**
+ * Obtenir le label de la période sélectionnée
+ */
+getPeriodLabel(period: string): string {
+  const labels: { [key: string]: string } = {
+    today: "Aujourd'hui",
+    week: 'Cette semaine (7 jours)',
+    month: 'Ce mois (30 jours)',
+    quarter: 'Ce trimestre (90 jours)',
+    year: 'Cette année (365 jours)',
+    custom: 'Période personnalisée'
+  };
+  return labels[period] || period;
+}
+
+/**
+ * Obtenir le label du service sélectionné
+ */
+getServiceLabel(serviceId: string): string {
+  if (serviceId === 'all') {
+    return 'Tous les services';
+  }
+
+  const service = this.services.find(s => s.id === serviceId);
+  return service ? service.name : serviceId;
+}
+
+//#region Utilitaires
+/**
+ * Réinitialiser tous les filtres
+ */
+resetFilters(): void {
+  this.selectedPeriod = 'today';
+  this.selectedService = 'all';
+  this.startDate = '';
+  this.endDate = '';
+
+  console.log('🔄 Filtres réinitialisés');
+  this.triggerFilterChange();
+}
+
+/**
+ * Vérifier si les filtres sont actifs
+ */
+hasActiveFilters(): boolean {
+  return (
+    this.selectedPeriod !== 'today' ||
+    this.selectedService !== 'all'
+  );
+}
+//#endregion
 
   /**
    * Gérer le changement de centre
    */
   onCentreChange(): void {
-    if (this.selectedCentreId) {
-      this.loadServicesForCentre(this.selectedCentreId);
-      this.triggerFilterChange();
-    } else {
-      this.services = [];
-      this.updateCharts();
-    }
+  console.log('🏢 Changement de centre:', this.selectedCentreId);
+
+  if (this.selectedCentreId) {
+    // Réinitialiser le filtre service
+    this.selectedService = 'all';
+
+    // Charger les services du nouveau centre
+    this.loadServicesForCentre(this.selectedCentreId);
+
+    // Déclencher le rechargement
+    this.triggerFilterChange();
+  } else {
+    this.services = [];
+    this.selectedService = 'all';
+    this.resetDashboardData();
+    this.updateCharts();
   }
+}
 
   /**
    * Gérer le changement de période
    */
-  onPeriodChange(event: any): void {
-    const newPeriod = event.target.value;
+onPeriodChange(event: any): void {
+  const newPeriod = event.target.value;
 
-    // Validation du format de période
-    const validPeriods = [
-      'today',
-      'week',
-      'month',
-      'quarter',
-      'year',
-      'custom',
-    ];
-    if (!validPeriods.includes(newPeriod)) {
-      console.error('Période invalide:', newPeriod);
-      return;
-    }
-
-    this.selectedPeriod = newPeriod;
-
-    // Réinitialiser les dates personnalisées si on change de période
-    if (this.selectedPeriod !== 'custom') {
-      this.startDate = '';
-      this.endDate = '';
-      this.triggerFilterChange();
-    }
+  // Validation du format de période
+  const validPeriods = ['today', 'week', 'month', 'quarter', 'year', 'custom'];
+  if (!validPeriods.includes(newPeriod)) {
+    console.error('❌ Période invalide:', newPeriod);
+    return;
   }
+
+  console.log('🔄 Changement de période:', newPeriod);
+  this.selectedPeriod = newPeriod;
+
+  // Réinitialiser les dates personnalisées si on change de période prédéfinie
+  if (this.selectedPeriod !== 'custom') {
+    this.startDate = '';
+    this.endDate = '';
+    // ✅ Déclencher immédiatement le rechargement
+    this.triggerFilterChange();
+  }
+}
 
   /**
    * Gérer le changement de service
    */
   onServiceChange(event: any): void {
-    const newServiceId = event.target.value;
+  const newServiceId = event.target.value;
 
-    // Si le service a changé, mettre à jour et déclencher le filtre
-    if (this.selectedService !== newServiceId) {
-      this.selectedService = newServiceId;
-      this.triggerFilterChange();
-    }
+  console.log('🔄 Changement de service:', newServiceId);
+
+  // Valider que le service existe ou est 'all'
+  if (newServiceId === 'all' || this.services.find(s => s.id === newServiceId)) {
+    this.selectedService = newServiceId;
+    // ✅ Déclencher immédiatement le rechargement
+    this.triggerFilterChange();
+  } else {
+    console.error('❌ Service invalide:', newServiceId);
   }
+}
+
+/**
+ * Gérer le changement de date de début (période personnalisée)
+ */
+onStartDateChange(event: any): void {
+  this.startDate = event.target.value;
+  console.log('📅 Date de début:', this.startDate);
+
+  // Si les deux dates sont définies, déclencher le rechargement
+  if (this.startDate && this.endDate && this.selectedPeriod === 'custom') {
+    this.triggerFilterChange();
+  }
+}
+
+/**
+ * Gérer le changement de date de fin (période personnalisée)
+ */
+onEndDateChange(event: any): void {
+  this.endDate = event.target.value;
+  console.log('📅 Date de fin:', this.endDate);
+
+  // Si les deux dates sont définies, déclencher le rechargement
+  if (this.startDate && this.endDate && this.selectedPeriod === 'custom') {
+    this.triggerFilterChange();
+  }
+}
 
   /**
    * Gérer le changement des dates personnalisées

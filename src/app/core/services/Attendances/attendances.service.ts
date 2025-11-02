@@ -5,7 +5,6 @@ import { AttendanceRecord } from '../../models/Attendances/AttendanceRecord';
 import { AttendanceUpdateRequest } from '../../models/Attendances/AttendanceUpdateRequest';
 import { DailyAttendanceRequest } from '../../models/Attendances/DailyAttendanceRequest';
 import { MonthlyAttendanceSummary } from '../../models/Attendances/MonthlyAttendanceSummary';
-import { WasherForAttendance } from '../../models/Attendances/WasherForAttendance';
 import { ApiResponseData } from '../../models/ApiResponseData';
 
 @Injectable({
@@ -17,7 +16,7 @@ export class AttendancesService {
 
   constructor(private http: HttpClient) { }
 
-  // MARK: - Méthodes pour le Gérant
+  //#region - Méthodes pour le Gérant
 
   /**
    * Marquer les présences quotidiennes
@@ -30,6 +29,8 @@ export class AttendancesService {
       catchError(this.handleError)
     );
   }
+
+
 
   /**
    * Mettre à jour une présence spécifique
@@ -58,7 +59,9 @@ export class AttendancesService {
     );
   }
 
-  // MARK: - Méthodes pour l'Administrateur
+  //#endregion
+
+  //#region - Méthodes pour l'Administrateur
 
   /**
    * Récupérer les présences quotidiennes d'un centre
@@ -217,7 +220,9 @@ private handleBlobError(error: HttpErrorResponse): Observable<never> {
     );
   }
 
-  // MARK: - Méthodes pour le Laveur
+    //#endregion
+
+  //#region: - Méthodes pour le Laveur
 
   /**
    * Récupérer la présence du jour pour un utilisateur
@@ -250,7 +255,9 @@ private handleBlobError(error: HttpErrorResponse): Observable<never> {
     );
   }
 
-  // MARK: - Méthodes Utilitaires
+  //#endregion
+
+  //#region: - Méthodes Utilitaires
 
   /**
    * Récupérer les données du formulaire de présence
@@ -284,8 +291,9 @@ private handleBlobError(error: HttpErrorResponse): Observable<never> {
       catchError(this.handleError)
     );
   }
+  //#endregion
 
-  // MARK: - Méthodes Privées
+  //#region: - Méthodes Privées
 
   /**
    * Gestion centralisée des erreurs
@@ -347,8 +355,10 @@ private handleBlobError(error: HttpErrorResponse): Observable<never> {
     link.click();
     window.URL.revokeObjectURL(url);
   }
+  //#endregion
 
-  // MARK: - Méthodes Helper pour la Conversion de Dates
+  //#region: - Méthodes Helper pour la Conversion de Dates
+
 
   /**
    * Convertir une chaîne TimeSpan en minutes
@@ -388,4 +398,6 @@ private handleBlobError(error: HttpErrorResponse): Observable<never> {
   formatDateTimeForApi(date: Date): string {
     return date.toISOString();
   }
+  //#endregion
+
 }

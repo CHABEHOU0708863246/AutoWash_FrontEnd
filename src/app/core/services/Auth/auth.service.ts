@@ -75,14 +75,13 @@ export class AuthService {
    * @returns Observable contenant la réponse de l'API.
    */
   login(email: string, password: string): Observable<any> {
-    // Utilisation du bon endpoint pour le login
     return this.http.post<any>(this.loginApiUrl, { email, password }).pipe(
       tap(response => {
         if (response && response.token) {
-          // Stocker le token JWT dans le localStorage
+          // Stocke le token JWT dans le localStorage
           this.setInStorage(this.tokenKey, response.token);
 
-          // Décoder le token pour récupérer le rôle utilisateur
+          // Décode le token pour récupérer le rôle utilisateur
           const decodedToken = this.decodeToken(response.token);
           if (decodedToken && decodedToken.role) {
             this.setInStorage('userRole', decodedToken.role);
@@ -94,7 +93,7 @@ export class AuthService {
       }),
       catchError((error) => {
         console.error('Erreur lors de la connexion:', error);
-        return of(null); // Retourne une Observable nulle en cas d'erreur
+        return of(null);
       })
     );
   }
@@ -105,11 +104,8 @@ export class AuthService {
    * @returns Observable contenant les informations de l'utilisateur
    */
   loadCurrentUserProfile(forceRefresh: boolean = false): Observable<Users | null> {
-    // Si on force le refresh ou qu'on n'a pas de données en cache
     if (forceRefresh || !this.currentUserSubject.value) {
       const cachedProfile = this.getFromStorage('currentUserProfile');
-
-      // Si on a des données en cache et qu'on ne force pas le refresh
       if (cachedProfile && !forceRefresh) {
         try {
           const user = JSON.parse(cachedProfile);
@@ -124,8 +120,6 @@ export class AuthService {
       // Sinon, on fait un appel API
       return this.getCurrentUserProfile();
     }
-
-    // On a déjà les données dans le BehaviorSubject
     return of(this.currentUserSubject.value);
   }
 
@@ -238,7 +232,7 @@ export class AuthService {
 
     try {
       const decodedToken: any = this.decodeToken(token);
-      const currentTime = Date.now() / 1000; // Temps actuel en secondes
+      const currentTime = Date.now() / 1000;
 
       // Vérifier si le token n'est pas expiré
       if (decodedToken.exp && decodedToken.exp <= currentTime) {
@@ -250,7 +244,7 @@ export class AuthService {
       return true;
     } catch (error) {
       console.error('Erreur lors de la vérification du token:', error);
-      this.logout(); // Nettoyer en cas d'erreur
+      this.logout();
       return false;
     }
   }

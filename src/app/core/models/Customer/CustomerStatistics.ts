@@ -10,9 +10,5 @@ export class CustomerStatistics {
     };
   }
 
-  static calculatePotentialValue(customer: Customer): number {
-    const average = customer.getAverageSpending();
-    const remainingPotential = 100 - customer.totalCompletedBookings;
-    return average * remainingPotential;
-  }
+
 }

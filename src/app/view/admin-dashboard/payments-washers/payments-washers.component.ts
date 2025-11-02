@@ -118,19 +118,19 @@ export class PaymentsWashersComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  private async initializeComponent(): Promise<void> {
-    await this.loadCurrentUser();
-    await this.loadActiveCentres();
-    this.loadStatistics();
+  async initializeComponent(): Promise<void> {
+  await this.loadCurrentUser();
+  await this.loadActiveCentres();
+  await this.loadStatistics();
 
-    // S'abonner aux changements de l'utilisateur connecté
-    this.authService.currentUser$.subscribe((user) => {
-      if (user && user !== this.currentUser) {
-        this.currentUser = user;
-        this.loadCurrentUserPhoto();
-      }
-    });
-  }
+  // S'abonner aux changements de l'utilisateur connecté
+  this.authService.currentUser$.subscribe((user) => {
+    if (user && user !== this.currentUser) {
+      this.currentUser = user;
+      this.loadCurrentUserPhoto();
+    }
+  });
+}
   //#endregion
 
   //#region Chargement des données
@@ -292,38 +292,119 @@ export class PaymentsWashersComponent implements OnInit, OnDestroy {
    * Charge les statistiques
    */
   async loadStatistics(): Promise<void> {
-    try {
-      const currentDate = new Date();
+  try {
+    const currentDate = new Date();
 
-      // Déterminer l'ID du centre de manière sécurisée
-      let centreId: string;
+    // Déterminer l'ID du centre de manière sécurisée
+    let centreId: string;
 
-      if (this.selectedCentre !== 'all') {
-        centreId = this.selectedCentre;
-      } else if (this.centres.length > 0 && this.centres[0].id) {
-        centreId = this.centres[0].id;
-      } else {
-        console.warn('Aucun centre disponible pour charger les statistiques');
-        return;
-      }
-
-      const response = await lastValueFrom(
-        this.paymentsService
-          .getCentrePaymentStatistics(
-            centreId,
-            currentDate.getMonth() + 1,
-            currentDate.getFullYear()
-          )
-          .pipe(takeUntil(this.destroy$))
-      );
-
-      if (response.success) {
-        this.updateStatsFromAuditSummary(response.data);
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement des statistiques:', error);
+    if (this.selectedCentre !== 'all') {
+      centreId = this.selectedCentre;
+    } else if (this.centres.length > 0 && this.centres[0].id) {
+      centreId = this.centres[0].id;
+    } else {
+      console.warn('Aucun centre disponible pour charger les statistiques');
+      return;
     }
+
+    // ✅ Récupérer les statistiques du centre
+    const response = await lastValueFrom(
+      this.paymentsService
+        .getCentrePaymentStatistics(
+          centreId,
+          currentDate.getMonth() + 1,
+          currentDate.getFullYear()
+        )
+        .pipe(takeUntil(this.destroy$))
+    );
+
+    if (response.success && response.data) {
+      this.updateStatsFromAuditSummary(response.data);
+      await this.loadPaymentsForStats(centreId, currentDate);
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement des statistiques:', error);
+    // Initialiser avec des valeurs par défaut en cas d'erreur
+    this.stats = {
+      totalAmount: 0,
+      activeWashers: 0,
+      pendingPayments: 0,
+      averageCommission: 0,
+    };
   }
+}
+
+
+private async loadPaymentsForStats(centreId: string, currentDate: Date): Promise<void> {
+  try {
+    // Créer un filtre pour récupérer uniquement les paiements des LAVEURS
+    const filter: MonthlyPaymentFilter = {
+      centreId: centreId,
+      userType: 'washer',
+      month: currentDate.getMonth() + 1,
+      year: currentDate.getFullYear(),
+    };
+
+    const response = await lastValueFrom(
+      this.paymentsService
+        .getPaymentsWithFilter(filter)
+        .pipe(takeUntil(this.destroy$))
+    );
+
+    if (response.success && response.data) {
+      const washerPayments = response.data;
+      this.stats = {
+        // Somme des commissions des laveurs uniquement
+        totalAmount: washerPayments.reduce((sum, p) => sum + (p.commission || 0), 0),
+
+        // Nombre de laveurs uniques ayant des paiements
+        activeWashers: new Set(washerPayments.map(p => p.userId)).size,
+
+        // Paiements non validés
+        pendingPayments: washerPayments.filter(p => !p.approvedBy).length,
+
+        // Commission moyenne
+        averageCommission: washerPayments.length > 0
+          ? washerPayments.reduce((sum, p) => sum + (p.commission || 0), 0) / washerPayments.length
+          : 0,
+      };
+
+      console.log('📊 Statistiques mises à jour (laveurs uniquement):', this.stats);
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement des paiements pour stats:', error);
+  }
+}
+
+
+/**
+ * Obtenir le label correct pour les revenus
+ */
+getRevenueLabel(): string {
+  return 'Commissions du Mois'; // Plus précis que "Revenus du Mois"
+}
+
+private validatePaymentFilter(filter: MonthlyPaymentFilter): boolean {
+  if (!filter.userType) {
+    console.warn('⚠️ ATTENTION: userType non défini dans le filtre!');
+    return false;
+  }
+
+  if (filter.userType !== 'washer') {
+    console.warn('⚠️ ATTENTION: Les statistiques doivent filtrer uniquement les laveurs!');
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Obtenir la description des revenus
+ */
+getRevenueDescription(): string {
+  return 'Total des commissions perçues sur les lavages (hors salaires gérants)';
+}
+
   //#endregion
 
   //#region Gestion des onglets
@@ -437,7 +518,6 @@ export class PaymentsWashersComponent implements OnInit, OnDestroy {
         "Le format sélectionné n'est pas encore implémenté. Veuillez choisir Excel."
       );
 
-      // Optionnel : Revenir automatiquement à Excel après un délai
       setTimeout(() => {
         this.reportFilters.format = 'excel';
         this.cdr.detectChanges();
@@ -520,7 +600,6 @@ export class PaymentsWashersComponent implements OnInit, OnDestroy {
     }
   }
 
-  //#endregion
   //#endregion
 
   //#region Gestion des paiements
@@ -915,16 +994,26 @@ async cancelPayment(paymentId: string): Promise<void> {
   }
 
   private updateStatsFromAuditSummary(summary: AuditSummary): void {
-    this.stats = {
-      totalAmount: summary.totalAmount,
-      activeWashers: summary.totalPayments,
-      pendingPayments: summary.pendingPayments,
-      averageCommission:
-        summary.totalSessions > 0
-          ? summary.totalCommission / summary.totalSessions
-          : 0,
-    };
-  }
+  // IMPORTANT: Filtrer uniquement les paiements des LAVEURS (washer)
+  // Les paiements des gérants (manager) ne doivent PAS être comptabilisés comme revenus
+
+  this.stats = {
+    // ✅ Revenu total = Uniquement les commissions des laveurs
+    // (car les salaires des gérants sont des DÉPENSES, pas des revenus)
+    totalAmount: summary.totalCommission || 0,
+
+    // ✅ Nombre de laveurs actifs (exclure les gérants)
+    activeWashers: summary.totalPayments || 0,
+
+    // ✅ Paiements en attente
+    pendingPayments: summary.pendingPayments || 0,
+
+    // ✅ Commission moyenne par session
+    averageCommission: summary.totalSessions > 0
+      ? summary.totalCommission / summary.totalSessions
+      : 0,
+  };
+}
 
   getPaymentTypeLabel(type: PaymentType): string {
     const labels: { [key in PaymentType]: string } = {

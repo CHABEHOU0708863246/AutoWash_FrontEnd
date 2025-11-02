@@ -9,16 +9,13 @@ import { Centres } from '../../../core/models/Centres/Centres';
 import { Payment } from '../../../core/models/Payments/Payment';
 import { PaymentMethod } from '../../../core/models/Payments/PaymentMethod';
 import { PaymentType } from '../../../core/models/Payments/PaymentType';
-import { WasherPaymentSummary } from '../../../core/models/Payments/WasherPaymentSummary';
 import { Users } from '../../../core/models/Users/Users';
 import { AuthService } from '../../../core/services/Auth/auth.service';
 import { CentresService } from '../../../core/services/Centres/centres.service';
 import { NotificationService } from '../../../core/services/Notification/notification.service';
 import { PaymentsService } from '../../../core/services/Payments/payments.service';
 import { UsersService } from '../../../core/services/Users/users.service';
-import { WashsService } from '../../../core/services/Washs/washs.service';
 import { ManagerPaymentSummary } from '../../../core/models/Payments/ManagerPaymentSummary';
-import { ApiResponseData } from '../../../core/models/ApiResponseData';
 
 @Component({
   selector: 'app-payments-managers',
@@ -160,28 +157,42 @@ getCurrentMonth(): number {
   }
 
   private async initializeComponent(): Promise<void> {
+  try {
+    // 1. Charger l'utilisateur actuel
     await this.loadCurrentUser();
+
+    // 2. Charger les centres
     await this.loadActiveCentres();
 
-    // Initialiser avec le premier centre si disponible
+    // 3. Initialiser avec le premier centre si disponible
     if (this.centres.length > 0 && this.centres[0].id) {
       this.selectedCentre = this.centres[0].id;
       await this.loadManagersByCentre(this.selectedCentre);
     } else {
-      // Si aucun centre valide, utiliser 'all' comme valeur par défaut
       this.selectedCentre = 'all';
     }
 
-    this.loadStatistics();
-    this.loadPayments();
+    // 4. Charger les statistiques (qui chargera aussi les paiements)
+    await this.loadStatistics();
 
+    // 5. Charger les paiements pour la liste
+    await this.loadPayments();
+
+    // 6. S'abonner aux changements de l'utilisateur
     this.authService.currentUser$.subscribe((user) => {
       if (user && user !== this.currentUser) {
         this.currentUser = user;
         this.loadCurrentUserPhoto();
       }
     });
+
+    console.log(' Composant initialisé avec succès');
+  } catch (error) {
+    console.error(' Erreur lors de l\'initialisation du composant:', error);
+    this.handleError('Erreur d\'initialisation', error);
   }
+}
+
   //#endregion
 
   //#region Chargement des données
@@ -296,85 +307,194 @@ getCurrentMonth(): number {
     }
   }
   async loadPayments(): Promise<void> {
-    try {
-      this.isLoadingPayments = true;
+  try {
+    this.isLoadingPayments = true;
 
-      const filter: any = {
-        centreId:
-          this.selectedCentre !== 'all' ? this.selectedCentre : undefined,
-        managerId:
-          this.selectedManager !== 'all' ? this.selectedManager : undefined,
-        userType: 'manager',
-        month: this.getCurrentMonth(),
-        year: this.getCurrentYear(),
-        isValidated: this.getValidationFilter(),
-      };
+    const filter: any = {
+      centreId: this.selectedCentre !== 'all' ? this.selectedCentre : undefined,
+      managerId: this.selectedManager !== 'all' ? this.selectedManager : undefined,
+      userType: 'manager',
+      month: this.getCurrentMonth(),
+      year: this.getCurrentYear(),
+      isValidated: this.getValidationFilter(),
+    };
 
-      const cleanFilter = Object.fromEntries(
-        Object.entries(filter).filter(([_, v]) => v !== undefined)
-      );
-
-      const response = await lastValueFrom(
-        this.paymentsService
-          .getPaymentsWithFilter(cleanFilter)
-          .pipe(takeUntil(this.destroy$))
-      );
-
-      if (response.success) {
-        this.payments = response.data;
-        this.applyPaymentsFilters();
-      }
-    } catch (error: any) {
-      console.error('Erreur détaillée:', error);
-      this.handleError('Erreur lors du chargement des paiements', error);
-    } finally {
-      this.isLoadingPayments = false;
-      this.cdr.detectChanges();
-    }
-  }
-
-  async loadStatistics(): Promise<void> {
-    try {
-      const currentDate = new Date();
-      let centreId: string;
-
-      if (this.selectedCentre !== 'all') {
-        centreId = this.selectedCentre;
-      } else if (this.centres.length > 0 && this.centres[0].id) {
-        centreId = this.centres[0].id;
-      } else {
-        console.warn('Aucun centre disponible pour charger les statistiques');
-        return;
-      }
-
-      // Implémentation spécifique aux managers
-      this.updateManagerStats();
-    } catch (error) {
-      console.error('Erreur lors du chargement des statistiques:', error);
-    }
-  }
-
-  private updateManagerStats(): void {
-    // Logique de calcul des statistiques pour les managers
-    const managerPayments = this.payments.filter(
-      (p) => p.userId && this.managers.some((m) => m.id === p.userId)
+    const cleanFilter = Object.fromEntries(
+      Object.entries(filter).filter(([_, v]) => v !== undefined && v !== null)
     );
 
-    this.stats = {
-      totalSalary: managerPayments.reduce((sum, p) => sum + (p.amount || 0), 0),
-      totalCommission: managerPayments.reduce(
-        (sum, p) => sum + (p.commission || 0),
-        0
-      ),
-      activeManagers: new Set(managerPayments.map((p) => p.userId)).size,
-      commissionRate:
-        managerPayments.length > 0
-          ? (managerPayments.reduce((sum, p) => sum + (p.commission || 0), 0) /
-              managerPayments.reduce((sum, p) => sum + (p.amount || 0), 0)) *
-            100
-          : 0,
-    };
+    console.log(' Chargement des paiements avec filtre:', cleanFilter);
+
+    const response = await lastValueFrom(
+      this.paymentsService
+        .getPaymentsWithFilter(cleanFilter)
+        .pipe(takeUntil(this.destroy$))
+    );
+
+    if (response.success) {
+      this.payments = response.data || [];
+      console.log(' Paiements chargés:', this.payments.length);
+
+      this.applyPaymentsFilters();
+
+      // ✅ Recalculer les statistiques après le chargement
+      if (this.payments.length > 0) {
+        this.calculateManagerStatsFromPayments(this.payments);
+      } else {
+        this.initializeEmptyStats();
+      }
+    } else {
+      console.warn(' Échec du chargement des paiements');
+      this.payments = [];
+      this.initializeEmptyStats();
+    }
+  } catch (error: any) {
+    console.error(' Erreur détaillée:', error);
+    this.handleError('Erreur lors du chargement des paiements', error);
+    this.payments = [];
+    this.initializeEmptyStats();
+  } finally {
+    this.isLoadingPayments = false;
+    this.cdr.detectChanges();
   }
+}
+
+  async loadStatistics(): Promise<void> {
+  try {
+    const currentDate = new Date();
+    let centreId: string;
+
+    // Déterminer le centre
+    if (this.selectedCentre !== 'all') {
+      centreId = this.selectedCentre;
+    } else if (this.centres.length > 0 && this.centres[0].id) {
+      centreId = this.centres[0].id;
+    } else {
+      console.warn('Aucun centre disponible pour charger les statistiques');
+      // Initialiser avec des valeurs par défaut
+      this.initializeEmptyStats();
+      return;
+    }
+
+    await this.loadPaymentsForStats(centreId, currentDate);
+
+  } catch (error) {
+    console.error('Erreur lors du chargement des statistiques:', error);
+    this.initializeEmptyStats();
+  }
+}
+
+/**
+ * Charge les paiements des managers pour calculer les statistiques
+ * Nouvelle méthode pour filtrer correctement les paiements managers
+ */
+private async loadPaymentsForStats(centreId: string, currentDate: Date): Promise<void> {
+  try {
+    // Créer un filtre pour récupérer uniquement les paiements des MANAGERS
+    const filter: any = {
+      centreId: centreId,
+      userType: 'manager', // ✅ CRITIQUE: Filtrer uniquement les gérants
+      month: currentDate.getMonth() + 1,
+      year: currentDate.getFullYear(),
+    };
+
+    // Nettoyer le filtre
+    const cleanFilter = Object.fromEntries(
+      Object.entries(filter).filter(([_, v]) => v !== undefined && v !== null)
+    );
+
+    console.log('🔍 Chargement des paiements managers pour stats:', cleanFilter);
+
+    const response = await lastValueFrom(
+      this.paymentsService
+        .getPaymentsWithFilter(cleanFilter)
+        .pipe(takeUntil(this.destroy$))
+    );
+
+    if (response.success && response.data && response.data.length > 0) {
+      console.log('Paiements managers récupérés:', response.data.length);
+
+      // Calculer les statistiques à partir des paiements réels
+      this.calculateManagerStatsFromPayments(response.data);
+    } else {
+      console.warn('Aucun paiement manager trouvé');
+      this.initializeEmptyStats();
+    }
+  } catch (error) {
+    console.error('Erreur lors du chargement des paiements pour stats:', error);
+    this.initializeEmptyStats();
+  }
+}
+
+/**
+ * Calcule les statistiques à partir des paiements managers
+ * Nouvelle méthode avec calculs précis
+ */
+private calculateManagerStatsFromPayments(managerPayments: Payment[]): void {
+  console.log('Calcul des statistiques pour', managerPayments.length, 'paiements');
+
+  // Filtrer uniquement les paiements valides
+  const validPayments = managerPayments.filter(p =>
+    p && p.amount !== undefined && p.amount !== null
+  );
+
+  if (validPayments.length === 0) {
+    this.initializeEmptyStats();
+    return;
+  }
+
+  // Calcul du salaire total (montant de base)
+  const totalSalary = validPayments.reduce((sum, p) => {
+    const salary = p.amount || 0;
+    console.log(`Salaire du paiement ${p.id}:`, salary);
+    return sum + salary;
+  }, 0);
+
+  // Calcul de la commission totale (bonus)
+  const totalCommission = validPayments.reduce((sum, p) => {
+    const commission = p.commission || 0;
+    console.log(`Commission du paiement ${p.id}:`, commission);
+    return sum + commission;
+  }, 0);
+
+  // Nombre de managers uniques ayant des paiements
+  const uniqueManagerIds = new Set(
+    validPayments
+      .map(p => p.userId || p.userId) // userId pour les managers
+      .filter(id => id && id.trim() !== '')
+  );
+  const activeManagers = uniqueManagerIds.size;
+
+  // Taux de commission moyen
+  const commissionRate = totalSalary > 0
+    ? (totalCommission / totalSalary) * 100
+    : 0;
+
+  // Mettre à jour les statistiques
+  this.stats = {
+    totalSalary: totalSalary,
+    totalCommission: totalCommission,
+    activeManagers: activeManagers,
+    commissionRate: commissionRate,
+  };
+
+  console.log('✅ Statistiques calculées:', this.stats);
+  this.cdr.detectChanges();
+}
+
+/**
+ * Initialise les statistiques avec des valeurs vides
+ */
+private initializeEmptyStats(): void {
+  this.stats = {
+    totalSalary: 0,
+    totalCommission: 0,
+    activeManagers: 0,
+    commissionRate: 0,
+  };
+  console.log('📊 Statistiques initialisées à zéro');
+  this.cdr.detectChanges();
+}
   //#endregion
 
   //#region Gestion des onglets
@@ -401,53 +521,47 @@ getCurrentMonth(): number {
 
   //#region Gestion des filtres
 
- onCentreFilterChange(centreId: string): void {
+onCentreFilterChange(centreId: string): void {
   this.selectedCentre = centreId;
-  this.selectedManager = 'all';
-  this.selectedCentreManager = null;
 
   if (centreId !== 'all') {
-    // Récupérer le manager du centre sélectionné
-    const centre = this.centres.find(c => c.id === centreId);
-    if (centre && centre.ownerId) {
-      // Charger les informations du manager
-      this.usersService.getUserById(centre.ownerId)
-        .pipe(takeUntil(this.destroy$))
-        .subscribe({
-          next: (manager) => {
-            if (manager) {
-              this.selectedCentreManager = manager;
-              this.selectedManager = manager.id || 'all';
-              this.managers = [manager]; // Un seul manager dans la liste
-              this.filteredManagers = [manager];
-            } else {
-              this.selectedCentreManager = null;
-              this.selectedManager = 'all';
-              this.managers = [];
-              this.filteredManagers = [];
-            }
-            this.cdr.detectChanges();
-          },
-          error: (error) => {
-            console.error('Erreur lors du chargement du manager:', error);
-            this.managers = [];
-            this.filteredManagers = [];
-          }
-        });
-    }
+    this.loadManagersByCentre(centreId);
   } else {
     this.managers = [];
     this.filteredManagers = [];
   }
 
+  // Réinitialiser le filtre manager
+  this.selectedManager = 'all';
+
+  // Recharger les données
   this.loadPayments();
   this.loadStatistics();
 }
 
   onManagerFilterChange(managerId: string): void {
-    this.selectedManager = managerId;
-    this.loadPayments();
-  }
+  this.selectedManager = managerId;
+  console.log('Manager sélectionné:', managerId);
+
+  this.loadPayments();
+}
+
+
+/**
+ * Réinitialise tous les filtres
+ */
+resetAllFilters(): void {
+  this.selectedCentre = this.centres.length > 0 && this.centres[0].id
+    ? this.centres[0].id
+    : 'all';
+  this.selectedManager = 'all';
+  this.selectedStatus = 'all';
+  this.selectedPeriod = 'current';
+
+  // Recharger les données
+  this.loadStatistics();
+  this.loadPayments();
+}
 
   onStatusFilterChange(status: string): void {
     this.selectedStatus = status;
@@ -660,11 +774,7 @@ getManagerFullName(managerId: string): string {
       );
 
       if (response.success && response.data) {
-        // Utiliser les propriétés existantes du modèle ManagerPaymentSummary
         this.newManagerPayment.baseSalary = response.data.baseSalary || 0;
-
-        // Calculer la commission à partir des autres propriétés disponibles
-        // Par exemple, utiliser centrePerformanceBonus comme commission
         this.newManagerPayment.commission =
           response.data.centrePerformanceBonus || 0;
 
@@ -899,7 +1009,7 @@ getManagerFullName(managerId: string): string {
       [PaymentType.Daily]: 'Quotidien',
       [PaymentType.Weekly]: 'Hebdomadaire',
       [PaymentType.Monthly]: 'Mensuel',
-      [PaymentType.Quarterly]: 'Trimestriel', // Ajout de la valeur manquante
+      [PaymentType.Quarterly]: 'Trimestriel',
       [PaymentType.Bonus]: 'Bonus',
       [PaymentType.Other]: 'Autre',
     };

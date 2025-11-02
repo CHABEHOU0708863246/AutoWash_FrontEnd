@@ -239,26 +239,47 @@
         <p class="page-subtitle">Gestion des rémunérations et commissions des responsables de centre</p>
       </div>
 
-      <!-- Cartes de statistiques -->
+      <!-- Cartes de statistiques CORRIGÉES pour les gérants -->
       <div class="stats-cards">
+        <!-- ✅ Carte 1: Salaire Total -->
         <div class="stat-card">
           <div class="stat-icon blue">
             <i class="fas fa-money-bill-wave"></i>
           </div>
           <div class="stat-content">
             <div class="stat-title">Salaire Total</div>
-            <div class="stat-value">{{ formatAmount(stats.totalSalary) }}</div>
+            <div class="stat-value">
+              {{ formatAmount(stats.totalSalary) }}
+            </div>
+            <small class="stat-description" *ngIf="stats.totalSalary > 0">
+              Salaires de base versés ce mois
+            </small>
+            <small class="stat-description text-muted" *ngIf="stats.totalSalary === 0">
+              Aucun salaire enregistré
+            </small>
           </div>
         </div>
+
+        <!-- ✅ Carte 2: Commission Totale (Bonus) -->
         <div class="stat-card">
           <div class="stat-icon green">
             <i class="fas fa-chart-line"></i>
           </div>
           <div class="stat-content">
-            <div class="stat-title">Commission Totale</div>
-            <div class="stat-value">{{ formatAmount(stats.totalCommission) }}</div>
+            <div class="stat-title">Bonus Total</div>
+            <div class="stat-value">
+              {{ formatAmount(stats.totalCommission) }}
+            </div>
+            <small class="stat-description" *ngIf="stats.totalCommission > 0">
+              Commissions et bonus du mois
+            </small>
+            <small class="stat-description text-muted" *ngIf="stats.totalCommission === 0">
+              Aucun bonus enregistré
+            </small>
           </div>
         </div>
+
+        <!-- ✅ Carte 3: Managers Actifs -->
         <div class="stat-card">
           <div class="stat-icon orange">
             <i class="fas fa-user-tie"></i>
@@ -266,18 +287,41 @@
           <div class="stat-content">
             <div class="stat-title">Managers Actifs</div>
             <div class="stat-value">{{ stats.activeManagers }}</div>
+            <small class="stat-description" *ngIf="stats.activeManagers > 0">
+              Ayant reçu un paiement ce mois
+            </small>
+            <small class="stat-description text-muted" *ngIf="stats.activeManagers === 0">
+              Aucun paiement enregistré
+            </small>
           </div>
         </div>
+
+        <!-- ✅ Carte 4: Taux Commission -->
         <div class="stat-card">
           <div class="stat-icon purple">
             <i class="fas fa-percentage"></i>
           </div>
           <div class="stat-content">
-            <div class="stat-title">Taux Commission</div>
-            <div class="stat-value">{{ stats.commissionRate | number:'1.1-1' }}%</div>
+            <div class="stat-title">Taux Bonus Moyen</div>
+            <div class="stat-value">
+              {{ stats.commissionRate | number:'1.1-1' }}%
+            </div>
+            <small class="stat-description" *ngIf="stats.commissionRate > 0">
+              Bonus par rapport au salaire de base
+            </small>
+            <small class="stat-description text-muted" *ngIf="stats.commissionRate === 0">
+              Aucun bonus calculé
+            </small>
           </div>
         </div>
       </div>
+
+      <!-- 🔍 Indicateur de chargement -->
+      <div class="loading-indicator" *ngIf="isLoading || isLoadingPayments">
+        <div class="spinner"></div>
+        <p>Chargement des statistiques...</p>
+      </div>
+
 
       <!-- Onglets -->
       <div class="tabs-container">
@@ -314,33 +358,6 @@
               </select>
             </div>
 
-            <div class="filter-group">
-              <label for="filter-manager">Manager</label>
-              <select id="filter-manager" [(ngModel)]="selectedManager" [disabled]="true" class="readonly-select">
-                <option value="all" *ngIf="selectedCentre === 'all'">
-                  Sélectionnez d'abord un centre
-                </option>
-                <option *ngIf="selectedCentreManager" [value]="selectedCentreManager.id">
-                  {{ selectedCentreManager.firstName }} {{ selectedCentreManager.lastName }}
-                </option>
-              </select>
-
-              <!-- Messages d'information -->
-              <div *ngIf="selectedCentre === 'all'" class="info-message">
-                <i class="fas fa-info-circle"></i> Sélectionnez un centre pour voir son manager
-              </div>
-              <div *ngIf="selectedCentre !== 'all' && !selectedCentreManager && !isLoadingManagers"
-                class="warning-message">
-                <i class="fas fa-exclamation-triangle"></i> Ce centre n'a pas de manager assigné
-              </div>
-              <div *ngIf="isLoadingManagers" class="loading-small">
-                <i class="fas fa-spinner fa-spin"></i> Chargement du manager...
-              </div>
-              <div *ngIf="selectedCentreManager && !isLoadingManagers" class="success-message">
-                <i class="fas fa-check-circle"></i> Manager du centre:
-                {{ selectedCentreManager.firstName }} {{ selectedCentreManager.lastName }}
-              </div>
-            </div>
 
             <!-- SECTION 2: NOUVEAU PAIEMENT - Sélection Centre -->
 
