@@ -175,7 +175,6 @@ export class PaymentsService {
 getPaymentsWithFilter(filter: MonthlyPaymentFilter): Observable<ApiResponseData<Payment[]>> {
   return this.http.post<ApiResponseData<Payment[]>>(`${this.baseUrl}/filter`, filter)
     .pipe(
-      tap(response => console.log('Réponse brute:', response)),
       map(response => {
         // S'assurer que les données sont bien mappées vers des objets Payment
         if (response.success && response.data) {

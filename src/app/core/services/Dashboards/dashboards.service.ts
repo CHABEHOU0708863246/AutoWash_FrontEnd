@@ -222,8 +222,6 @@ export class DashboardsService {
         errorMessage = error.error.message;
       }
     }
-
-    console.error('Erreur dans DashboardsService:', errorMessage);
     return throwError(() => new Error(errorMessage));
   }
 

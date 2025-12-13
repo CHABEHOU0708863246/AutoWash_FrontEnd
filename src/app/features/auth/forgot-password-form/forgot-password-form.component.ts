@@ -75,7 +75,7 @@ export class ForgotPasswordFormComponent implements OnDestroy {
     }
   }
 
-  private handleSuccess(message: string): void {
+  handleSuccess(message: string): void {
     this.emailSent = true;
     this.successMessage = message;
     this.forgotPasswordForm.disable();
@@ -84,7 +84,7 @@ export class ForgotPasswordFormComponent implements OnDestroy {
     this.startCountdown(60); // 60 secondes avant de permettre un autre envoi
   }
 
-  private handleError(error: any): void {
+  handleError(error: any): void {
     this.isLoading = false;
     if (error.status === 0) {
       this.errorMessage = 'Erreur de connexion. Vérifiez votre connexion internet.';
@@ -97,7 +97,7 @@ export class ForgotPasswordFormComponent implements OnDestroy {
     }
   }
 
-  private startCountdown(seconds: number): void {
+  startCountdown(seconds: number): void {
     this.countdown = seconds;
     this.countdownTimer = setInterval(() => {
       this.countdown--;
@@ -108,7 +108,7 @@ export class ForgotPasswordFormComponent implements OnDestroy {
     }, 1000);
   }
 
-  private enableResend(): void {
+  enableResend(): void {
     this.forgotPasswordForm.enable();
     this.emailSent = false;
   }

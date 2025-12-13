@@ -20,24 +20,26 @@ export class RolesService {
    * Cache les rôles pour éviter les appels répétés
    * Version corrigée avec firstValueFrom
    */
-  async loadRoles(): Promise<void> {
-    const now = Date.now();
+async loadRoles(): Promise<void> {
+  const now = Date.now();
 
-    if (this.rolesCache.length === 0 || now > this.cacheExpiry) {
-      try {
-        // Utilisation de firstValueFrom au lieu de toPromise()
-        this.rolesCache = await firstValueFrom(this.getRoles());
-        this.cacheExpiry = now + this.CACHE_DURATION;
-      } catch (error) {
-        console.error('Erreur lors du chargement des rôles:', error);
-        // En cas d'erreur, on garde le cache existant s'il y en a un
-        if (this.rolesCache.length === 0) {
-          this.rolesCache = []; // S'assurer que c'est un tableau vide
-        }
-        throw error;
+  if (this.rolesCache.length === 0 || now > this.cacheExpiry) {
+    try {
+      console.log('🔄 Chargement des rôles depuis l\'API...');
+      this.rolesCache = await firstValueFrom(this.getRoles());
+      console.log('✅ Rôles chargés dans le cache:', this.rolesCache);
+      this.cacheExpiry = now + this.CACHE_DURATION;
+    } catch (error) {
+      console.error('❌ Erreur lors du chargement des rôles:', error);
+      if (this.rolesCache.length === 0) {
+        this.rolesCache = [];
       }
+      throw error;
     }
+  } else {
+    console.log('♻️ Utilisation du cache des rôles:', this.rolesCache);
   }
+}
 
   /**
    * Méthode pour vérifier si un utilisateur est admin par code
@@ -66,43 +68,53 @@ export class RolesService {
    * Méthode générique pour vérifier n'importe quel rôle
    */
   async hasRole(userRoleIds: string[], roleCode: string): Promise<boolean> {
-    if (!userRoleIds || userRoleIds.length === 0 || !roleCode) {
-      return false;
-    }
-
-    try {
-      await this.loadRoles();
-
-      const role = this.rolesCache.find(r =>
-        r.code?.toLowerCase() === roleCode.toLowerCase()
-      );
-
-      return role ? userRoleIds.includes(role.id) : false;
-    } catch (error) {
-      console.error(`Erreur lors de la vérification du rôle ${roleCode}:`, error);
-      return false;
-    }
+  if (!userRoleIds || userRoleIds.length === 0 || !roleCode) {
+    return false;
   }
+
+  try {
+    await this.loadRoles();
+
+    const role = this.rolesCache.find(r =>
+      r.code?.toLowerCase() === roleCode.toLowerCase() || // ← Comparaison insensible à la casse
+      r.roleName?.toLowerCase() === roleCode.toLowerCase() // ← Aussi le nom
+    );
+
+    return role ? userRoleIds.includes(role.id) : false;
+  } catch (error) {
+    console.error(`Erreur lors de la vérification du rôle ${roleCode}:`, error);
+    return false;
+  }
+}
 
   /**
    * Obtenir les noms des rôles à partir des IDs
    */
-  async getRoleNames(roleIds: string[]): Promise<string[]> {
-    if (!roleIds || roleIds.length === 0) {
-      return [];
-    }
-
-    try {
-      await this.loadRoles();
-
-      return this.rolesCache
-        .filter(role => roleIds.includes(role.id))
-        .map(role => role.roleName || role.code || 'Unknown');
-    } catch (error) {
-      console.error('Erreur lors de la récupération des noms de rôles:', error);
-      return [];
-    }
+async getRoleNames(roleIds: string[]): Promise<string[]> {
+  if (!roleIds || roleIds.length === 0) {
+    return [];
   }
+
+  try {
+    await this.loadRoles();
+
+    console.log('🔍 DEBUG getRoleNames:');
+    console.log('   - IDs reçus:', roleIds);
+    console.log('   - Cache des rôles:', this.rolesCache);
+    console.log('   - IDs dans le cache:', this.rolesCache.map(r => r.id));
+
+    const roleNames = this.rolesCache
+      .filter(role => roleIds.includes(role.id))
+      .map(role => role.roleName || role.code || 'Unknown');
+
+    console.log('   - Noms trouvés:', roleNames);
+
+    return roleNames;
+  } catch (error) {
+    console.error('Erreur lors de la récupération des noms de rôles:', error);
+    return [];
+  }
+}
 
   /**
    * Obtenir un rôle par son code

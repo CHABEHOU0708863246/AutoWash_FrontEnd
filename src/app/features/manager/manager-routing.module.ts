@@ -4,6 +4,8 @@ import { ManagerDashboardComponent } from '../../view/manager-dashboard/manager-
 import { WashersListComponent } from '../../view/manager-dashboard/washers-list/washers-list.component';
 import { UsersAttendanceComponent } from '../../view/admin-dashboard/users-attendance/users-attendance.component';
 import { WashersAttendanceComponent } from '../../view/manager-dashboard/washers-attendance/washers-attendance.component';
+import { WashNewComponent } from '../../view/manager-dashboard/wash-new/wash-new.component';
+import { WashTodayComponent } from '../../view/manager-dashboard/wash-today/wash-today.component';
 
 const routes: Routes = [
   {
@@ -22,6 +24,14 @@ const routes: Routes = [
   {
       path: 'washers-attendance',
       component: WashersAttendanceComponent
+  },
+  {
+       path: 'wash-new',
+      component: WashNewComponent
+  },
+  {
+       path: 'wash-today',
+      component: WashTodayComponent
   },
 ];
 

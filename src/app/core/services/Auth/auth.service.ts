@@ -302,9 +302,6 @@ validateResetToken(email: string, token: string): Observable<any> {
     token: decodedToken
   };
 
-  console.log('Validation token - Email:', email);
-  console.log('Validation token - Token length:', decodedToken.length);
-
   return this.http.post<any>(`${this.apiUrl}/validate-reset-token`, request);
 }
 

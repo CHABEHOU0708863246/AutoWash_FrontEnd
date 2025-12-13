@@ -33,7 +33,7 @@ export class LoginComponent implements OnInit {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],
-      rememberMe: [false]
+      rememberMe: [true]
     });
   }
 
@@ -53,7 +53,7 @@ export class LoginComponent implements OnInit {
           if (response && response.token) {
             // Si rememberMe est coché, stocker cette préférence
             if (rememberMe) {
-              // Implémentez la connexion persistante ici si nécessaire
+              // Implémentez la connexion persistante ici
             }
 
             // Récupère le rôle de l'utilisateur
@@ -85,7 +85,7 @@ export class LoginComponent implements OnInit {
           if (err.status === 401) {
             errorTitle = 'Identifiants invalides';
             errorMessage = 'L\'email ou le mot de passe est incorrect.';
-          } else if (err.status === 0) {
+          } else if (err.status === 500) {
             errorTitle = 'Problème de connexion';
             errorMessage = 'Impossible de se connecter au serveur. Vérifiez votre connexion internet.';
           } else if (err.status >= 500) {
@@ -130,7 +130,6 @@ export class LoginComponent implements OnInit {
       'admin': '/admin/dashboard',
       'manager': '/manager/dashboard',
       'washer': '/washer/dashboard',
-      'client': '/client/dashboard',
       'default': '/'
     };
 

@@ -1,63 +1,1168 @@
-import { Component } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../core/services/Auth/auth.service';
 import { UsersService } from '../../core/services/Users/users.service';
-import { DomSanitizer } from '@angular/platform-browser';
 import { Users } from '../../core/models/Users/Users';
+import { DomSanitizer } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
+import { DashboardAlert } from '../../core/models/Dashboards/DashboardAlert';
+import { DashboardKpiDto } from '../../core/models/Dashboards/DashboardKpiDto';
+import { DashboardSnapshot } from '../../core/models/Dashboards/DashboardSnapshot';
+import { WeeklyComparisonDto } from '../../core/models/Dashboards/WeeklyComparisonDto';
+import { DashboardsService } from '../../core/services/Dashboards/dashboards.service';
+import { FormsModule } from '@angular/forms';
+import { Centres } from '../../core/models/Centres/Centres';
+import { CentresService } from '../../core/services/Centres/centres.service';
+import {
+  BehaviorSubject,
+  debounceTime,
+  distinctUntilChanged,
+  forkJoin,
+  Subscription,
+} from 'rxjs';
+import { ServiceSettings } from '../../core/models/Settings/Services/ServiceSettings';
+import { ServiceSettingsService } from '../../core/services/ServiceSettings/service-settings.service';
+
+import {
+  Chart,
+  ChartConfiguration,
+  ChartData,
+  ChartType,
+  registerables,
+} from 'chart.js';
+import { BaseChartDirective } from 'ng2-charts';
+import { ApiResponseData } from '../../core/models/ApiResponseData';
+
+// Enregistrer tous les composants Chart.js
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-manager-dashboard',
-  imports: [RouterLink, CommonModule],
+  imports: [RouterLink, CommonModule, FormsModule, BaseChartDirective],
   templateUrl: './manager-dashboard.component.html',
   styleUrl: './manager-dashboard.component.scss',
 })
-export class ManagerDashboardComponent {
+export class ManagerDashboardComponent implements OnInit {
+  //#region View Children
+  @ViewChild('salesChart') salesChart?: ElementRef;
+  @ViewChild('revenueChart') revenueChart?: ElementRef;
+  @ViewChild(BaseChartDirective) chart?: BaseChartDirective;
+  //#endregion
+
+  //#region Properties
+  // Utilisateurs
   users: Users[] = []; // Liste complète des utilisateurs.
   displayedUsers: Users[] = []; // Liste des utilisateurs affichés sur la page actuelle.
   currentUser: Users | null = null; // Utilisateur actuellement connecté.
   user: Users | null = null; // Informations sur l'utilisateur connecté.
+  isSidebarCollapsed = false;
 
+  public isPercentageMode = false;
+  public activeServicesCount = 0;
+
+  // Données du dashboard
+  dashboardData: DashboardSnapshot | null = null;
+  kpiData: DashboardKpiDto | null = null;
+  weeklyComparison: WeeklyComparisonDto | null = null;
+  activeAlerts: DashboardAlert[] = [];
+  last7DaysRevenue: number[] = [];
+  last7DaysWashCount: number[] = [];
+  currentCentre: Centres | null = null;
+  services: ServiceSettings[] = [];
+
+  // États de chargement
+  loadingDashboard = false;
+  loadingKpis = false;
+  loadingAlerts = false;
+  loadingCharts = false;
+  loadingCentre = false;
+  loadingServices = false;
+
+  // Filtres (sans sélection de centre pour le manager)
+  selectedPeriod = 'today';
+  selectedService = 'all';
+  startDate: string = '';
+  endDate: string = '';
+
+  // Configuration des graphiques
+  public lineChartData: ChartData<'line'> = {
+    labels: [],
+    datasets: [
+      {
+        label: 'Revenus (FCFA)',
+        data: [],
+        fill: true,
+        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 2,
+        tension: 0.4,
+        pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: 'rgba(54, 162, 235, 1)',
+        yAxisID: 'y',
+      },
+      {
+        label: 'Nombre de lavages',
+        data: [...this.last7DaysWashCount],
+        fill: true,
+        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+        borderColor: 'rgba(255, 99, 132, 1)',
+        borderWidth: 2,
+        tension: 0.4,
+        pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+        pointBorderColor: '#fff',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: 'rgba(255, 99, 132, 1)',
+        yAxisID: 'y1',
+      },
+    ],
+  };
+
+  public lineChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: true,
+        position: 'top',
+      },
+      tooltip: {
+        mode: 'index',
+        intersect: false,
+      },
+    },
+    interaction: {
+      mode: 'nearest',
+      axis: 'x',
+      intersect: false,
+    },
+    scales: {
+      x: {
+        display: true,
+        title: {
+          display: true,
+          text: 'Date',
+        },
+      },
+      y: {
+        display: true,
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Revenus (FCFA)',
+        },
+        position: 'left',
+      },
+      y1: {
+        display: true,
+        beginAtZero: true,
+        title: {
+          display: true,
+          text: 'Nombre de lavages',
+        },
+        position: 'right',
+        grid: {
+          drawOnChartArea: false,
+        },
+      },
+    },
+  };
+
+  public pieChartData: ChartData<'pie'> = {
+    labels: [],
+    datasets: [
+      {
+        data: [],
+        backgroundColor: [
+          '#FF6384',
+          '#36A2EB',
+          '#FFCE56',
+          '#4BC0C0',
+          '#9966FF',
+        ],
+        borderWidth: 2,
+        borderColor: '#fff',
+      },
+    ],
+  };
+
+  public pieChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right',
+        labels: {
+          usePointStyle: true,
+          padding: 20,
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label: function (context) {
+            const label = context.label || '';
+            const value = context.parsed;
+            const total = context.dataset.data.reduce(
+              (a: any, b: any) => a + b,
+              0
+            );
+            const percentage = Math.round((value / total) * 100);
+            return `${label}: ${value}FCFA (${percentage}%)`;
+          },
+        },
+      },
+    },
+  };
+
+  public lineChartType: ChartType = 'line';
+  public pieChartType: ChartType = 'pie';
+
+  // Sujet pour le debounce des changements de filtre
+  private filterChangeSubject = new BehaviorSubject<void>(undefined);
+
+  // Souscriptions
+  private currentUserSubscription!: Subscription;
+  private filterSubscription!: Subscription;
+  //#endregion
+
+  //#region Constructor
   constructor(
     private sanitizer: DomSanitizer,
-    private router: Router, // Service pour la navigation entre les routes.
-    private usersService: UsersService, // Service pour interagir avec les utilisateurs.
-    private authService: AuthService // Service pour gérer l'authentification.
+    private usersService: UsersService,
+    private router: Router,
+    private authService: AuthService,
+    private centresService: CentresService,
+    private dashboardService: DashboardsService,
+    private serviceSettingsService: ServiceSettingsService
   ) {}
+  //#endregion
 
+  //#region Lifecycle Hooks
   ngOnInit(): void {
-    this.getUsers(); // Récupère les utilisateurs.
-    this.loadCurrentUser(); // Charge l'utilisateur connecté
+    this.getUsers();
+    this.loadCurrentUser();
+    this.setupFilterListener();
 
     // S'abonner aux changements de l'utilisateur connecté
-    this.authService.currentUser$.subscribe((user) => {
-      if (user && user !== this.currentUser) {
-        this.currentUser = user;
-        this.loadCurrentUserPhoto();
+    this.currentUserSubscription = this.authService.currentUser$.subscribe(
+      (user) => {
+        if (user && user !== this.currentUser) {
+          this.currentUser = user;
+          this.loadCurrentUserPhoto();
+
+          // Charger automatiquement le centre du manager - MODIFIÉ
+          this.loadManagerCentre();
+        }
       }
+    );
+  }
+
+  ngAfterViewInit(): void {
+    console.log('Manager Dashboard ngAfterViewInit');
+    // Forcer la mise à jour des graphiques après l'initialisation de la vue
+    setTimeout(() => {
+      this.updateCharts();
+    }, 100);
+  }
+
+  ngOnDestroy(): void {
+    // Nettoyer les souscriptions
+    if (this.currentUserSubscription) {
+      this.currentUserSubscription.unsubscribe();
+    }
+    if (this.filterSubscription) {
+      this.filterSubscription.unsubscribe();
+    }
+  }
+
+  //#region Utility Methods for Display
+  /**
+   * Vérifie si un centre est disponible
+   */
+  hasCentreAssigned(): boolean {
+    return !!this.currentCentre?.id;
+  }
+
+  /**
+   * Obtenir le statut du centre
+   */
+  getCentreStatus(): string {
+    if (this.loadingCentre) return 'Chargement...';
+    if (this.hasCentreAssigned())
+      return `Centre: ${this.getCurrentCentreName()}`;
+    return 'Aucun centre assigné';
+  }
+
+  /**
+   * Méthode pour forcer la recherche de centre
+   */
+  searchForCentre(): void {
+    console.log('🔍 Recherche manuelle de centre...');
+    this.loadManagerCentre();
+  }
+  //#endregion
+  //#endregion
+
+  //#region Dashboard Data Methods
+  /**
+   * Charger le centre du manager
+   */
+  private loadManagerCentre(): void {
+    this.loadingCentre = true;
+
+    // Si l'utilisateur a un centreId, charger ce centre
+    if (this.currentUser?.centreId) {
+      this.centresService.getCentreById(this.currentUser.centreId).subscribe({
+        next: (centre) => {
+          this.currentCentre = centre;
+          this.loadingCentre = false;
+          this.loadServicesForCentre(centre.id!);
+          this.loadDashboardData();
+        },
+        error: (error) => {
+          console.error('Erreur lors du chargement du centre:', error);
+          this.tryFindCentreByOwner();
+        },
+      });
+    } else {
+      // Si pas de centreId, essayer de trouver par propriétaire
+      this.tryFindCentreByOwner();
+    }
+  }
+
+  /**
+   * Essayer de trouver un centre par le propriétaire
+   */
+  private tryFindCentreByOwner(): void {
+    this.centresService.getAllCentres().subscribe({
+      next: (centres) => {
+        // Chercher un centre où l'utilisateur est le propriétaire
+        const userCentre = centres.find(
+          (centre) =>
+            centre.ownerId === this.currentUser?.id ||
+            centre.ownerName
+              ?.toLowerCase()
+              .includes(this.currentUser?.firstName?.toLowerCase() || '')
+        );
+
+        if (userCentre) {
+          this.currentCentre = userCentre;
+          console.log('✅ Centre trouvé par propriétaire:', userCentre.name);
+
+          // Mettre à jour l'utilisateur avec le centreId
+          this.updateUserWithCentre(userCentre.id!);
+        } else {
+          console.warn('⚠️ Aucun centre trouvé pour cet utilisateur');
+          this.currentCentre = null;
+        }
+        this.loadingCentre = false;
+
+        if (this.currentCentre) {
+          this.loadServicesForCentre(this.currentCentre.id!);
+          this.loadDashboardData();
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors de la recherche des centres:', error);
+        this.loadingCentre = false;
+      },
     });
   }
 
   /**
-   * Charge les photos des utilisateurs et les sécurise pour l'affichage.
-   * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
+   * Mettre à jour l'utilisateur avec le centreId
    */
-  loadUserPhotos(): void {
-    this.displayedUsers.forEach((user) => {
-      if (user.photoUrl && typeof user.photoUrl === 'string') {
-        this.usersService.getUserPhoto(user.photoUrl).subscribe((blob) => {
-          const reader = new FileReader();
-          reader.onload = () => {
-            user.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
-              reader.result as string
-            );
-          };
-          reader.readAsDataURL(blob);
-        });
-      }
+  private updateUserWithCentre(centreId: string): void {
+    // Ici vous devriez appeler un service pour mettre à jour l'utilisateur
+    console.log("📝 Mise à jour de l'utilisateur avec centreId:", centreId);
+
+    // Pour l'instant, on met à jour localement
+    if (this.currentUser) {
+      this.currentUser.centreId = centreId;
+    }
+  }
+
+  /**
+   * Charger toutes les données du dashboard en fonction des filtres
+   */
+  loadDashboardData(): void {
+    if (!this.currentCentre?.id) {
+      this.resetDashboardData();
+      return;
+    }
+
+    this.loadingDashboard = true;
+    this.loadingKpis = true;
+    this.loadingAlerts = true;
+    this.loadingCharts = true;
+
+    // Réinitialiser les données avant de charger les nouvelles
+    this.resetDashboardData();
+
+    // Construire les paramètres de filtre
+    const filterParams = this.buildFilterParams();
+
+    // Charger toutes les données en parallèle avec les filtres
+    forkJoin({
+      snapshot: this.dashboardService.getDashboardSnapshot(
+        this.currentCentre.id
+      ),
+      kpis: this.dashboardService.getMainKpis(this.currentCentre.id),
+      alerts: this.dashboardService.getActiveAlerts(this.currentCentre.id),
+      revenue: this.dashboardService.getLast7DaysRevenue(this.currentCentre.id),
+      washCount: this.dashboardService.getLast7DaysWashCount(
+        this.currentCentre.id
+      ),
+      comparison: this.dashboardService.getWeeklyComparison(
+        this.currentCentre.id
+      ),
+    }).subscribe({
+      next: (results) => {
+        if (results.snapshot.success)
+          this.dashboardData = results.snapshot.data;
+        if (results.kpis.success) this.kpiData = results.kpis.data;
+        if (results.alerts.success) this.activeAlerts = results.alerts.data;
+        if (results.revenue.success)
+          this.last7DaysRevenue = results.revenue.data;
+        if (results.washCount.success)
+          this.last7DaysWashCount = results.washCount.data;
+        if (results.comparison.success)
+          this.weeklyComparison = results.comparison.data;
+
+        this.updateCharts();
+
+        this.loadingDashboard = false;
+        this.loadingKpis = false;
+        this.loadingAlerts = false;
+        this.loadingCharts = false;
+      },
+      error: (error) => {
+        console.error(
+          'Erreur lors du chargement des données du dashboard:',
+          error
+        );
+        this.loadingDashboard = false;
+        this.loadingKpis = false;
+        this.loadingAlerts = false;
+        this.loadingCharts = false;
+      },
     });
   }
 
+  /**
+   * Réinitialise les données du dashboard
+   */
+  private resetDashboardData(): void {
+    this.dashboardData = null;
+    this.kpiData = null;
+    this.weeklyComparison = null;
+    this.activeAlerts = [];
+    this.last7DaysRevenue = [];
+    this.last7DaysWashCount = [];
+  }
+
+  /**
+   * Rafraîchir manuellement le dashboard
+   */
+  refreshDashboard(): void {
+    if (!this.currentCentre?.id) return;
+
+    this.loadingDashboard = true;
+
+    this.dashboardService.refreshDashboard(this.currentCentre.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.dashboardData = response.data;
+          // Recharger les autres données avec les filtres
+          this.loadDashboardData();
+        }
+        this.loadingDashboard = false;
+      },
+      error: (error) => {
+        console.error('Erreur lors du rafraîchissement:', error);
+        this.loadingDashboard = false;
+      },
+    });
+  }
+  //#endregion
+
+  //#region Filter Methods
+  /**
+   * Configuration de l'écoute des changements de filtre avec debounce
+   */
+  private setupFilterListener(): void {
+    this.filterSubscription = this.filterChangeSubject
+      .pipe(debounceTime(300), distinctUntilChanged())
+      .subscribe(() => {
+        this.loadDashboardData();
+      });
+  }
+
+  /**
+   * Déclencher le rechargement des données avec debounce
+   */
+  private triggerFilterChange(): void {
+    this.filterChangeSubject.next();
+  }
+
+  /**
+   * Construire les paramètres de filtre à partir des valeurs sélectionnées
+   */
+  private buildFilterParams(): any {
+    const params: any = {
+      centreId: this.currentCentre?.id,
+    };
+
+    // ✅ Filtre de service avec validation stricte
+    if (this.selectedService && this.selectedService !== 'all') {
+      const serviceExists = this.services.find(
+        (s) => s.id === this.selectedService
+      );
+      if (serviceExists) {
+        params.serviceId = this.selectedService;
+        console.log('✅ Filtre service appliqué:', this.selectedService);
+      } else {
+        console.warn('⚠️ Service invalide:', this.selectedService);
+      }
+    }
+
+    // ✅ Filtre de période avec gestion des dates
+    if (this.selectedPeriod === 'custom') {
+      // Période personnalisée
+      if (this.startDate && this.endDate) {
+        // Valider que endDate >= startDate
+        if (new Date(this.endDate) >= new Date(this.startDate)) {
+          params.startDate = this.startDate;
+          params.endDate = this.endDate;
+          console.log('✅ Période personnalisée:', {
+            startDate: this.startDate,
+            endDate: this.endDate,
+          });
+        } else {
+          console.error('❌ Date de fin doit être >= date de début');
+        }
+      } else {
+        console.warn('⚠️ Dates personnalisées incomplètes');
+      }
+    } else {
+      // Période prédéfinie
+      const dateRange = this.calculateDateRange(this.selectedPeriod);
+      if (dateRange.startDate && dateRange.endDate) {
+        params.startDate = dateRange.startDate;
+        params.endDate = dateRange.endDate;
+        console.log('✅ Période prédéfinie:', this.selectedPeriod, dateRange);
+      } else {
+        console.warn(
+          '⚠️ Impossible de calculer la plage de dates pour:',
+          this.selectedPeriod
+        );
+      }
+    }
+
+    console.log('📊 Paramètres de filtre construits:', params);
+    return params;
+  }
+
+  getCurrentDate(): string {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  /**
+   * Calculer la plage de dates en fonction de la période sélectionnée
+   */
+  private calculateDateRange(period: string): {
+    startDate?: string;
+    endDate?: string;
+  } {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const endDate = today.toISOString().split('T')[0];
+    let startDate: string;
+
+    switch (period) {
+      case 'today':
+        startDate = endDate;
+        break;
+
+      case 'week':
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - 6);
+        startDate = weekStart.toISOString().split('T')[0];
+        break;
+
+      case 'month':
+        const monthStart = new Date(today);
+        monthStart.setDate(today.getDate() - 29);
+        startDate = monthStart.toISOString().split('T')[0];
+        break;
+
+      case 'quarter':
+        const quarterStart = new Date(today);
+        quarterStart.setDate(today.getDate() - 89);
+        startDate = quarterStart.toISOString().split('T')[0];
+        break;
+
+      case 'year':
+        const yearStart = new Date(today);
+        yearStart.setDate(today.getDate() - 364); // Inclure aujourd'hui
+        startDate = yearStart.toISOString().split('T')[0];
+        break;
+
+      default:
+        console.warn('⚠️ Période non reconnue:', period);
+        return {};
+    }
+
+    console.log(`📅 Plage de dates pour "${period}":`, { startDate, endDate });
+    return { startDate, endDate };
+  }
+
+  /**
+   * Obtenir le label de la période sélectionnée
+   */
+  getPeriodLabel(period: string): string {
+    const labels: { [key: string]: string } = {
+      today: "Aujourd'hui",
+      week: 'Cette semaine (7 jours)',
+      month: 'Ce mois (30 jours)',
+      quarter: 'Ce trimestre (90 jours)',
+      year: 'Cette année (365 jours)',
+      custom: 'Période personnalisée',
+    };
+    return labels[period] || period;
+  }
+
+  /**
+   * Obtenir le label du service sélectionné
+   */
+  getServiceLabel(serviceId: string): string {
+    if (serviceId === 'all') {
+      return 'Tous les services';
+    }
+
+    const service = this.services.find((s) => s.id === serviceId);
+    return service ? service.name : serviceId;
+  }
+
+  /**
+   * Réinitialiser tous les filtres
+   */
+  resetFilters(): void {
+    this.selectedPeriod = 'today';
+    this.selectedService = 'all';
+    this.startDate = '';
+    this.endDate = '';
+
+    console.log('🔄 Filtres réinitialisés');
+    this.triggerFilterChange();
+  }
+
+  /**
+   * Vérifier si les filtres sont actifs
+   */
+  hasActiveFilters(): boolean {
+    return this.selectedPeriod !== 'today' || this.selectedService !== 'all';
+  }
+
+  /**
+   * Gérer le changement de période
+   */
+  onPeriodChange(event: any): void {
+    const newPeriod = event.target.value;
+
+    // Validation du format de période
+    const validPeriods = [
+      'today',
+      'week',
+      'month',
+      'quarter',
+      'year',
+      'custom',
+    ];
+    if (!validPeriods.includes(newPeriod)) {
+      console.error('❌ Période invalide:', newPeriod);
+      return;
+    }
+
+    console.log('🔄 Changement de période:', newPeriod);
+    this.selectedPeriod = newPeriod;
+
+    // Réinitialiser les dates personnalisées si on change de période prédéfinie
+    if (this.selectedPeriod !== 'custom') {
+      this.startDate = '';
+      this.endDate = '';
+      // ✅ Déclencher immédiatement le rechargement
+      this.triggerFilterChange();
+    }
+  }
+
+  /**
+   * Gérer le changement de service
+   */
+  onServiceChange(event: any): void {
+    const newServiceId = event.target.value;
+
+    console.log('🔄 Changement de service:', newServiceId);
+
+    // Valider que le service existe ou est 'all'
+    if (
+      newServiceId === 'all' ||
+      this.services.find((s) => s.id === newServiceId)
+    ) {
+      this.selectedService = newServiceId;
+      // ✅ Déclencher immédiatement le rechargement
+      this.triggerFilterChange();
+    } else {
+      console.error('❌ Service invalide:', newServiceId);
+    }
+  }
+
+  /**
+   * Gérer le changement de date de début (période personnalisée)
+   */
+  onStartDateChange(event: any): void {
+    this.startDate = event.target.value;
+    console.log('📅 Date de début:', this.startDate);
+
+    // Si les deux dates sont définies, déclencher le rechargement
+    if (this.startDate && this.endDate && this.selectedPeriod === 'custom') {
+      this.triggerFilterChange();
+    }
+  }
+
+  /**
+   * Gérer le changement de date de fin (période personnalisée)
+   */
+  onEndDateChange(event: any): void {
+    this.endDate = event.target.value;
+    console.log('📅 Date de fin:', this.endDate);
+
+    // Si les deux dates sont définies, déclencher le rechargement
+    if (this.startDate && this.endDate && this.selectedPeriod === 'custom') {
+      this.triggerFilterChange();
+    }
+  }
+  //#endregion
+
+  //#region Chart Methods
+  private initializeCharts(): void {
+    console.log('Initializing charts with test data');
+
+    // Définir les données de test si elles n'existent pas
+    if (this.last7DaysRevenue.length === 0) {
+      this.last7DaysRevenue = [];
+      this.last7DaysWashCount = [];
+    }
+
+    // Mettre à jour immédiatement les graphiques
+    this.updateCharts();
+  }
+
+  private updateCharts(): void {
+    console.log('Updating charts');
+    this.updateSalesChart();
+    this.updateRevenueChart();
+    this.updateLineChart();
+  }
+
+  /**
+   * Mettre à jour le graphique linéaire
+   */
+  updateLineChart(): void {
+    // Mettre à jour les données du graphique linéaire
+    const labels = this.generateLast7DaysLabels();
+
+    this.lineChartData = {
+      ...this.lineChartData,
+      labels: labels,
+      datasets: [
+        {
+          ...this.lineChartData.datasets[0],
+          data:
+            this.last7DaysRevenue.length > 0
+              ? this.last7DaysRevenue
+              : [0, 0, 0, 0, 0, 0, 0],
+        },
+        {
+          ...this.lineChartData.datasets[1],
+          data:
+            this.last7DaysWashCount.length > 0
+              ? this.last7DaysWashCount
+              : [0, 0, 0, 0, 0, 0, 0],
+        },
+      ],
+    };
+
+    // Forcer la mise à jour du graphique
+    if (this.chart) {
+      this.chart.update();
+    }
+  }
+
+  /**
+   * Générer les labels des 7 derniers jours
+   */
+  private generateLast7DaysLabels(): string[] {
+    const labels: string[] = [];
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      labels.push(
+        date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+      );
+    }
+    return labels;
+  }
+
+  private updateSalesChart(): void {
+    console.log('Updating sales chart', this.last7DaysRevenue);
+
+    try {
+      // Générer les labels des 7 derniers jours
+      const labels = [];
+      const today = new Date();
+
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date(today);
+        date.setDate(today.getDate() - i);
+        labels.push(
+          date.toLocaleDateString('fr-FR', {
+            day: '2-digit',
+            month: '2-digit',
+          })
+        );
+      }
+
+      this.lineChartData = {
+        ...this.lineChartData,
+        labels: labels,
+        datasets: [
+          {
+            label: 'Revenus (FCFA)',
+            data: [...this.last7DaysRevenue],
+            fill: true,
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 2,
+            tension: 0.4,
+            pointBackgroundColor: 'rgba(54, 162, 235, 1)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgba(54, 162, 235, 1)',
+            yAxisID: 'y',
+          },
+          {
+            label: 'Nombre de lavages',
+            data: [...this.last7DaysWashCount],
+            fill: true,
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 2,
+            tension: 0.4,
+            pointBackgroundColor: 'rgba(255, 99, 132, 1)',
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: 'rgba(255, 99, 132, 1)',
+            yAxisID: 'y1',
+          },
+        ],
+      };
+
+      console.log('Sales chart updated:', this.lineChartData);
+    } catch (error) {
+      console.error(
+        'Erreur lors de la mise à jour du graphique des ventes:',
+        error
+      );
+    }
+  }
+
+  private updateRevenueChart(): void {
+    console.log('Updating revenue chart', this.services);
+
+    try {
+      if (this.services.length > 0 && this.currentCentre?.id) {
+        // Récupérer les revenus réels par service depuis l'API
+        this.dashboardService
+          .getRevenueByService(this.currentCentre.id, this.buildFilterParams())
+          .subscribe({
+            next: (
+              response: ApiResponseData<
+                { serviceName: string; revenue: number }[]
+              >
+            ) => {
+              if (response.success && response.data) {
+                this.updateChartWithRealData(response.data);
+              } else {
+                // Fallback sur les pourcentages si les données absolues sont incohérentes
+                this.updateChartWithPercentages();
+              }
+            },
+            error: (error) => {
+              console.error(
+                'Erreur lors de la récupération des revenus par service:',
+                error
+              );
+              // Utiliser les pourcentages en cas d'erreur
+              this.updateChartWithPercentages();
+            },
+          });
+      }
+    } catch (error) {
+      console.error(
+        'Erreur lors de la mise à jour du graphique des revenus:',
+        error
+      );
+      this.updateChartWithPercentages();
+    }
+  }
+
+  /**
+   * Met à jour le graphique avec les données réelles de l'API
+   */
+  private updateChartWithRealData(
+    serviceRevenues: { serviceName: string; revenue: number }[]
+  ): void {
+    const validRevenues = serviceRevenues.filter((item) => item.revenue > 0);
+
+    if (validRevenues.length === 0) {
+      this.updateChartWithPercentages();
+      return;
+    }
+
+    const totalRevenue = validRevenues.reduce(
+      (sum, item) => sum + item.revenue,
+      0
+    );
+
+    // Vérifier l'incohérence des données : si le total est anormalement bas ou haut
+    const isDataInconsistent = totalRevenue < 100 || totalRevenue > 10000000; // Plage réaliste pour des revenus en FCFA
+
+    if (isDataInconsistent) {
+      this.updateChartWithPercentages();
+      return;
+    }
+
+    const serviceLabels = validRevenues.map((item) => item.serviceName);
+    const serviceData = validRevenues.map((item) => item.revenue);
+    const backgroundColors = this.generateChartColors(validRevenues.length);
+
+    this.pieChartData = {
+      labels: serviceLabels,
+      datasets: [
+        {
+          data: serviceData,
+          backgroundColor: backgroundColors,
+          borderWidth: 2,
+          borderColor: '#fff',
+        },
+      ],
+    };
+
+    // Mettre à jour les options pour afficher les valeurs absolues
+    this.pieChartOptions = this.getAbsoluteValueOptions();
+
+    console.log('Revenue chart updated with real data:', this.pieChartData);
+  }
+
+  /**
+   * Met à jour le graphique avec des pourcentages basés sur le prix de base des services
+   */
+  private updateChartWithPercentages(): void {
+    console.log('Using percentage-based revenue chart');
+
+    const activeServices = this.services.filter((service) => service.isActive);
+
+    if (activeServices.length === 0) {
+      this.pieChartData = {
+        labels: ['Aucun service actif'],
+        datasets: [
+          {
+            data: [100],
+            backgroundColor: ['#CCCCCC'],
+            borderWidth: 2,
+            borderColor: '#fff',
+          },
+        ],
+      };
+      return;
+    }
+
+    // Utiliser le prix de base comme indicateur de proportion
+    const totalBasePrice = activeServices.reduce(
+      (sum, service) => sum + service.basePrice,
+      0
+    );
+
+    const serviceLabels = activeServices.map((service) => service.name);
+    const servicePercentages = activeServices.map((service) =>
+      totalBasePrice > 0 ? (service.basePrice / totalBasePrice) * 100 : 0
+    );
+
+    const backgroundColors = this.generateChartColors(activeServices.length);
+
+    this.pieChartData = {
+      labels: serviceLabels,
+      datasets: [
+        {
+          data: servicePercentages,
+          backgroundColor: backgroundColors,
+          borderWidth: 2,
+          borderColor: '#fff',
+        },
+      ],
+    };
+
+    // Mettre à jour les options pour afficher les pourcentages
+    this.pieChartOptions = this.getPercentageOptions();
+
+    console.log('Revenue chart updated with percentages:', this.pieChartData);
+  }
+
+  /**
+   * Génère des couleurs pour le graphique
+   */
+  private generateChartColors(count: number): string[] {
+    const baseColors = [
+      '#FF6384',
+      '#36A2EB',
+      '#FFCE56',
+      '#4BC0C0',
+      '#9966FF',
+      '#FF9F40',
+      '#C9CBCF',
+      '#7EBF49',
+      '#E74C3C',
+      '#9B59B6',
+      '#1ABC9C',
+      '#F39C12',
+    ];
+
+    if (count <= baseColors.length) {
+      return baseColors.slice(0, count);
+    }
+
+    // Générer des couleurs supplémentaires si nécessaire
+    const colors = [...baseColors];
+    for (let i = baseColors.length; i < count; i++) {
+      const hue = (i * 137.508) % 360; // Utiliser l'angle d'or pour une distribution uniforme
+      colors.push(`hsl(${hue}, 70%, 65%)`);
+    }
+
+    return colors;
+  }
+
+  /**
+   * Options pour l'affichage des valeurs absolues
+   */
+  private getAbsoluteValueOptions(): ChartConfiguration['options'] {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            usePointStyle: true,
+            padding: 20,
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const label = context.label || '';
+              const value = context.parsed;
+              const total = context.dataset.data.reduce(
+                (a: any, b: any) => a + b,
+                0
+              );
+              const percentage = Math.round((value / total) * 100);
+              return `${label}: ${value.toLocaleString(
+                'fr-FR'
+              )} FCFA (${percentage}%)`;
+            },
+          },
+        },
+      },
+    };
+  }
+
+  /**
+   * Options pour l'affichage des pourcentages
+   */
+  private getPercentageOptions(): ChartConfiguration['options'] {
+    return {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'right',
+          labels: {
+            usePointStyle: true,
+            padding: 20,
+          },
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const label = context.label || '';
+              const value = context.parsed;
+              return `${label}: ${value.toFixed(1)}%`;
+            },
+          },
+        },
+      },
+    };
+  }
+
+  /**
+   * Retourne le pourcentage de croissance des revenus en toute sécurité
+   */
+  getRevenueGrowthPercentage(): number | null {
+    return this.weeklyComparison?.revenueGrowthPercentage ?? null;
+  }
+
+  /**
+   * Détermine si la croissance est positive
+   */
+  isRevenueGrowthPositive(): boolean {
+    return (this.weeklyComparison?.revenueGrowthPercentage ?? 0) > 0;
+  }
+
+  /**
+   * Détermine si la croissance est négative
+   */
+  isRevenueGrowthNegative(): boolean {
+    return (this.weeklyComparison?.revenueGrowthPercentage ?? 0) < 0;
+  }
+
+  /**
+   * Formate le pourcentage de croissance pour l'affichage
+   */
+  getFormattedGrowthPercentage(): string {
+    const percentage = this.weeklyComparison?.revenueGrowthPercentage;
+    if (percentage === undefined || percentage === null) {
+      return '-';
+    }
+    return percentage.toFixed(2) + '%';
+  }
+
+  getTotalRevenue(): number {
+    return this.kpiData?.totalRevenue ?? 0;
+  }
+
+  getTotalWashCount(): number {
+    return this.kpiData?.totalWashCount ?? 0;
+  }
+
+  getTodayRevenue(): number {
+    return this.dashboardData?.todayRevenue ?? 0;
+  }
+  //#endregion
+
+  //#region User Management Methods
   /**
    * Récupère tous les utilisateurs et charge leurs photos.
    * Utilise le service UsersService pour obtenir la liste des utilisateurs.
@@ -117,6 +1222,26 @@ export class ManagerDashboardComponent {
           },
         });
       },
+    });
+  }
+
+  /**
+   * Charge les photos des utilisateurs et les sécurise pour l'affichage.
+   * Utilise `DomSanitizer` pour éviter les problèmes de sécurité liés aux URLs.
+   */
+  loadUserPhotos(): void {
+    this.displayedUsers.forEach((user) => {
+      if (user.photoUrl && typeof user.photoUrl === 'string') {
+        this.usersService.getUserPhoto(user.photoUrl).subscribe((blob) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            user.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
+              reader.result as string
+            );
+          };
+          reader.readAsDataURL(blob);
+        });
+      }
     });
   }
 
@@ -202,6 +1327,56 @@ export class ManagerDashboardComponent {
 
     return roleMapping[roleId] || 'Manager/Gerant';
   }
+  //#endregion
+
+  //#region Centre and Service Methods
+  /**
+   * Charger les services pour un centre spécifique
+   */
+  loadServicesForCentre(centreId: string): void {
+    this.loadingServices = true;
+    this.serviceSettingsService.getServicesByCentre(centreId).subscribe({
+      next: (response: ApiResponseData<ServiceSettings[]>) => {
+        if (response.success && response.data) {
+          this.services = response.data;
+        } else {
+          this.services = [];
+          console.warn('Aucun service trouvé pour ce centre');
+        }
+        this.loadingServices = false;
+      },
+      error: (error) => {
+        console.error('Erreur lors du chargement des services:', error);
+        this.services = [];
+        this.loadingServices = false;
+      },
+    });
+  }
+
+  /**
+   * Obtenir le nom du centre actuel du manager
+   */
+  getCurrentCentreName(): string {
+    return this.currentCentre?.name || 'Centre non défini';
+  }
+  //#endregion
+
+  //#region UI Interaction Methods
+  /**
+   * Bascule l'état de la barre latérale entre "collapsée" et "étendue".
+   */
+  toggleSidebar() {
+    this.isSidebarCollapsed = !this.isSidebarCollapsed;
+
+    // Ajoute/retire les classes nécessaires
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.querySelector('.main-content');
+
+    if (sidebar && mainContent) {
+      sidebar.classList.toggle('collapsed');
+      mainContent.classList.toggle('collapsed');
+    }
+  }
 
   /**
    * Déconnecte l'utilisateur et le redirige vers la page de connexion.
@@ -210,24 +1385,10 @@ export class ManagerDashboardComponent {
     // Vérifie si l'utilisateur est bien authentifié avant de le déconnecter
     if (this.authService.isAuthenticated()) {
       try {
-        // Log l'état du localStorage avant la déconnexion (pour debug)
-        console.log('État du localStorage avant déconnexion:', {
-          token: !!this.authService.getToken(),
-          userRole: localStorage.getItem('userRole'),
-          profile: localStorage.getItem('currentUserProfile'),
-        });
-
         // Appel au service de déconnexion
         this.authService.logout();
 
-        // Vérifie que le localStorage a bien été vidé
-        console.log('État du localStorage après déconnexion:', {
-          token: !!this.authService.getToken(),
-          userRole: localStorage.getItem('userRole'),
-          profile: localStorage.getItem('currentUserProfile'),
-        });
-
-        // Redirige vers la page de login seulement après confirmation que tout est bien déconnecté
+        // Redirige vers la page de login
         this.router.navigate(['/auth/login']);
       } catch (error) {
         console.error('Erreur lors de la déconnexion:', error);
@@ -239,4 +1400,5 @@ export class ManagerDashboardComponent {
       this.router.navigate(['/auth/login']);
     }
   }
+  //#endregion
 }

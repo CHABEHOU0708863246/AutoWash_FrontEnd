@@ -35,8 +35,44 @@ body {
 
 /* État de la barre latérale lorsqu'elle est repliée */
 .sidebar.collapsed {
-  transform: translateX(-250px);
-  /* Déplace la barre hors de l'écran */
+  width: 70px; /* Largeur réduite pour ne montrer que les icônes */
+  transition: width 0.3s ease;
+}
+
+.sidebar.collapsed .logo {
+  justify-content: center;
+  padding: 20px 5px;
+}
+
+.sidebar.collapsed .logo i {
+  margin-right: 0;
+}
+
+.sidebar.collapsed .logo span,
+.sidebar.collapsed .user-info,
+.sidebar.collapsed .nav-item span,
+.sidebar.collapsed .dropdown-toggle::after {
+  display: none; /* Cache le texte */
+}
+
+.sidebar.collapsed .nav-item {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.sidebar.collapsed .user-profile {
+  justify-content: center;
+  padding: 15px 0;
+}
+
+.sidebar.collapsed .user-photo-container {
+  margin-right: 0;
+}
+
+/* Ajustement du contenu principal */
+.main-content.collapsed {
+  margin-left: 70px;
+  width: calc(100% - 70px);
 }
 
 /* Styles du logo dans la barre latérale */
@@ -541,11 +577,6 @@ body {
 
 
 
-
-
-
-
-
 // PARTIE AJOUTER
 
 /* Ajouts/modifications pour les dropdowns avec design premium */
@@ -898,8 +929,10 @@ body {
   padding: 30px;
   margin-bottom: 30px;
   /* Augmentation de la largeur maximale */
-  max-width: 1200px; /* Augmenter selon vos besoins */
-  width: 95%; /* Utiliser un pourcentage pour la responsivité */
+  max-width: 1200px;
+  /* Augmenter selon vos besoins */
+  width: 95%;
+  /* Utiliser un pourcentage pour la responsivité */
   margin-left: auto;
   margin-right: auto;
 }
@@ -968,7 +1001,8 @@ body {
   width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  table-layout: fixed; /* Pour un meilleur contrôle de la largeur des colonnes */
+  table-layout: fixed;
+  /* Pour un meilleur contrôle de la largeur des colonnes */
 }
 
 .page-content {
@@ -1018,21 +1052,46 @@ body {
 .user-info-cell {
   display: flex;
   align-items: center;
-  min-width: 200px; /* Garantir un minimum de largeur */
+  gap: 10px;
 }
 
-.user-avatar {
+.user-avatar-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.user-photo {
   width: 40px;
   height: 40px;
   border-radius: 50%;
   object-fit: cover;
-  margin-right: 15px;
+  border: 2px solid #e9ecef;
+  transition: all 0.2s ease;
+}
+
+.user-photo:hover {
+  border-color: #007bff;
+  transform: scale(1.05);
+}
+
+.user-initials {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
 }
 
 .user-name {
   font-weight: 500;
-  color: #2d3748;
-  margin-bottom: 2px;
+  color: #2c3e50;
+  margin: 0;
 }
 
 .user-email {
@@ -1206,80 +1265,184 @@ body {
 
 
 .actions-cell {
-    display: flex;
-    gap: 8px;
-    align-items: center;
+  display: flex;
+  gap: 8px;
+  align-items: center;
 }
 
 .btn-toggle {
-    position: relative;
-    width: 60px;
-    height: 30px;
-    border-radius: 15px;
-    border: none;
-    background-color: #e0e0e0;
-    cursor: pointer;
-    padding: 0;
+  position: relative;
+  width: 60px;
+  height: 30px;
+  border-radius: 15px;
+  border: none;
+  background-color: #e0e0e0;
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 5px;
+
+  &.active {
+    background-color: #4CAF50;
+  }
+
+  .toggle-thumb {
+    position: absolute;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background-color: white;
+    left: 2px;
     transition: all 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 5px;
+  }
 
-    &.active {
-        background-color: #4CAF50;
+  &.active .toggle-thumb {
+    left: calc(100% - 28px);
+  }
+
+  i {
+    color: white;
+    font-size: 14px;
+    transition: all 0.3s ease;
+
+    &.fa-toggle-on {
+      opacity: 1;
     }
 
-    .toggle-thumb {
-        position: absolute;
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        background-color: white;
-        left: 2px;
-        transition: all 0.3s ease;
+    &.fa-toggle-off {
+      opacity: 0.7;
     }
+  }
 
-    &.active .toggle-thumb {
-        left: calc(100% - 28px);
-    }
-
-    i {
-        color: white;
-        font-size: 14px;
-        transition: all 0.3s ease;
-
-        &.fa-toggle-on {
-            opacity: 1;
-        }
-
-        &.fa-toggle-off {
-            opacity: 0.7;
-        }
-    }
-
-    &:hover {
-        opacity: 0.9;
-    }
+  &:hover {
+    opacity: 0.9;
+  }
 }
 
 .btn-icon-action {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
 
-    &.btn-view {
-        background-color: #2196F3;
-        color: white;
-    }
+  &.btn-view {
+    background-color: #2196F3;
+    color: white;
+  }
 
-    &:hover {
-        transform: scale(1.1);
-    }
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+
+/* Style pour les photos des utilisateurs */
+.user-photo-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.user-photo-small {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e9ecef;
+}
+
+.user-initials-small {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #007bff;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* Badge de rôle */
+.role-badge {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.role-washer {
+  background: #e3f2fd;
+  color: #1976d2;
+  border: 1px solid #bbdefb;
+}
+
+/* Indicateur de chargement */
+.loading-container {
+  text-align: center;
+  padding: 40px;
+  color: #6c757d;
+}
+
+.loading-spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #007bff;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 16px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Message aucune donnée */
+.no-data-message {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
+}
+
+.no-data-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  color: #dee2e6;
+}
+
+.no-data-message h3 {
+  margin-bottom: 8px;
+  color: #495057;
+}
+
+/* Indicateur de non-gérable */
+.not-manageable-hint {
+  color: #6c757d;
+  margin-left: 8px;
+  cursor: help;
+}
+
+/* Pagination améliorée */
+.pagination-current {
+  background: #007bff;
+  color: white;
+  border-radius: 1px;
+  margin: 0 2px;
+}
+
+/* Désactivation du bouton toggle */
+.btn-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

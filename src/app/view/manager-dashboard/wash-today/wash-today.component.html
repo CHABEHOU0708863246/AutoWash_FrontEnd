@@ -147,11 +147,6 @@
       <div class="menu-toggle" id="menu-toggle">
         <i class="fas fa-bars"></i>
       </div>
-      <div class="search-box">
-        <input type="text"
-          class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all duration-200"
-          placeholder="Rechercher un laveur..." [(ngModel)]="searchTerm" (ngModelChange)="filterUsers()" />
-      </div>
       <div class="top-right">
         <div class="icon-button">
           <i class="fas fa-envelope"></i>
@@ -172,135 +167,157 @@
             <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Mon profil</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
             <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
-            <li>
-              <a class="dropdown-item" (click)="logout()">
-                <i class="fas fa-sign-out-alt"></i> Déconnexion
-              </a>
-            </li>
-
+            <li><a class="dropdown-item" (click)="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
           </ul>
         </div>
       </div>
     </div>
 
     <div class="page-content">
-  <div class="blank-page">
-    <div class="page-content">
-      <div class="users-table-container">
-        <!-- En-tête avec titre spécifique aux laveurs -->
-        <div class="table-header">
-          <div class="table-title">Liste des Laveurs</div>
-        </div>
-
-        <!-- Indicateur de chargement -->
-        <div *ngIf="isLoading" class="loading-container">
-          <div class="loading-spinner"></div>
-          <p>Chargement des laveurs...</p>
-        </div>
-
-        <!-- Message si aucun laveur trouvé -->
-        <div *ngIf="!isLoading && users.length === 0" class="no-data-message">
-          <i class="fas fa-users-slash no-data-icon"></i>
-          <h3>Aucun laveur trouvé</h3>
-          <p>Aucun laveur n'est actuellement assigné à votre centre.</p>
-        </div>
-
-        <!-- Tableau des laveurs -->
-        <table *ngIf="!isLoading && users.length > 0" class="users-table">
-          <thead>
-            <tr>
-              <th>Photo</th>
-              <th>Prénom</th>
-              <th>Nom</th>
-              <th>Rôle</th>
-              <th>Email</th>
-              <th>Statut</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let user of displayedUsers">
-              <!-- Colonne Photo -->
-              <td>
-                <div class="user-photo-cell">
-                  <img *ngIf="user?.photoSafeUrl"
-                       [src]="user.photoSafeUrl"
-                       alt="Photo de profil"
-                       class="user-photo-small">
-                  <div *ngIf="!user?.photoSafeUrl" class="user-initials-small">
-                    {{ (user?.firstName?.charAt(0) || '') + (user?.lastName?.charAt(0) || '') }}
+      <div class="container-fluid">
+        <div class="container-fluid py-4">
+          <div class="row">
+            <div class="col-12">
+              <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0 text-primary">
+                      <i class="fas fa-car me-2"></i> Historique des Sessions de Lavage
+                    </h5>
+                    <div class="d-flex">
+                      <div class="dropdown me-1">
+                        <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                          aria-expanded="false">
+                          <i class="fas fa-filter me-2"></i>Filtrer par centre
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </td>
-              <!-- Colonne Prénom -->
-              <td>{{ user?.firstName || 'Non renseigné' }}</td>
-              <!-- Colonne Nom -->
-              <td>{{ user?.lastName || 'Non renseigné' }}</td>
-              <!-- Colonne Rôle - affiché de manière lisible -->
-              <td>
-                <span class="role-badge role-washer">
-                  {{ getUserRoleName(user) }}
-                </span>
-              </td>
-              <!-- Colonne Email -->
-              <td>{{ user?.email || 'Non renseigné' }}</td>
-              <!-- Colonne Statut -->
-              <td>
-                <span class="status"
-                      [class.status-active]="user?.isEnabled"
-                      [class.status-inactive]="!user?.isEnabled">
-                  {{ user?.isEnabled ? 'Actif' : 'Inactif' }}
-                </span>
-              </td>
-              <!-- Colonne Actions -->
-              <td>
-                <div class="actions-cell">
-                  <!-- Bouton toggle actif/inactif -->
-                  <button (click)="toggleAccount(user)"
-                          class="btn-toggle"
-                          [class.active]="user.isEnabled"
-                          [title]="user.isEnabled ? 'Désactiver le compte' : 'Activer le compte'"
-                          [disabled]="!canManageWasher(user)">
-                    <span class="toggle-thumb"></span>
-                  </button>
 
-                  <!-- Indicateur si non gérable -->
-                  <span *ngIf="!canManageWasher(user)" class="not-manageable-hint"
-                        title="Vous ne pouvez pas gérer ce laveur">
-                    <i class="fas fa-lock"></i>
-                  </span>
+                <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                      <thead class="text-uppercase text-xs text-muted">
+                        <tr>
+                          <th>Client</th>
+                          <th>Véhicule</th>
+                          <th>Service</th>
+                          <th>Centre</th>
+                          <th>Date</th>
+                          <th>Prix (FCFA)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <!-- Afficher un message de chargement -->
+                        <tr *ngIf="isLoading">
+                          <td colspan="8" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-2">Chargement des sessions...</p>
+                          </td>
+                        </tr>
+
+                        <!-- Afficher un message si aucune session -->
+                        <tr *ngIf="!isLoading && filteredSessions.length === 0">
+                          <td colspan="8" class="text-center py-4 text-muted">
+                            <i class="fas fa-info-circle fa-2x mb-3"></i>
+                            <p>Aucune session de lavage trouvée</p>
+                          </td>
+                        </tr>
+
+                        <!-- Afficher les sessions -->
+                        <tr *ngFor="let session of paginatedSessions" class="border-bottom">
+                          <td>
+                            <div class="d-flex align-items-center">
+                              <div class="avatar avatar-sm me-3">
+                                <span class="avatar-initial rounded-circle bg-primary text-white">
+                                  {{ session.customer.name?.charAt(0) || '?' }}
+                                </span>
+                              </div>
+                              <div>
+                                <h6 class="mb-0">{{ session.customer.name || 'Non renseigné' }}</h6>
+                                <small class="text-muted">{{ session.customer.phoneNumber || 'N/A' }}</small>
+                              </div>
+                            </div>
+                          </td>
+                          <td>
+                            <div>
+                              <span class="d-block fw-bold">
+                                {{ session.vehicleBrand || 'N/A' }}
+                                <span *ngIf="session.vehicleColor">({{ session.vehicleColor }})</span>
+                              </span>
+                              <small class="text-muted">{{ session.vehiclePlate || 'N/A' }}</small>
+                            </div>
+                          </td>
+                          <td>
+                            <span class="badge bg-info-light text-info">
+                              <i class="fas fa-concierge-bell me-1"></i>
+                              {{ getServiceName(session.serviceId) }}
+                            </span>
+                          </td>
+                          <td>
+                            <span class="d-block fw-bold">
+                              {{ getCentreName(session.centreId) }}
+                            </span>
+                          </td>
+                          <td>
+                            <span class="d-block">
+                              {{ session.updatedAt| date: 'dd/MM/yyyy HH:mm' }}
+                            </span>
+                          <td>
+                            <span class="fw-bold text-primary">
+                              {{ session.price }}
+                            </span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <!-- Pagination -->
+                  <div class="d-flex justify-content-between align-items-center mt-4"
+                    *ngIf="filteredSessions.length > 0">
+                    <div class="text-muted">
+                      Affichage de <span class="fw-bold">{{ (currentPage - 1) * itemsPerPage + 1 }}</span>
+                      à
+                      <span class="fw-bold">{{ Math.min(currentPage * itemsPerPage, totalItems) }}</span>
+                      sur <span class="fw-bold">{{ totalItems }}</span> sessions
+                    </div>
+
+                    <nav aria-label="Page navigation">
+                      <ul class="pagination pagination-sm mb-0">
+                        <!-- Bouton Précédent -->
+                        <li class="page-item" [class.disabled]="currentPage === 1">
+                          <a class="page-link" (click)="goToPage(currentPage - 1)" aria-label="Previous">
+                            <i class="fas fa-chevron-left"></i>
+                          </a>
+                        </li>
+
+                        <!-- Numéros de page -->
+                        <li class="page-item" *ngFor="let page of getPages()" [class.active]="page === currentPage"
+                          [class.disabled]="page === '...'">
+                          <a class="page-link" (click)="goToPage(page)" *ngIf="page !== '...'">
+                            {{ page }}
+                          </a>
+                          <span class="page-link" *ngIf="page === '...'">...</span>
+                        </li>
+
+                        <!-- Bouton Suivant -->
+                        <li class="page-item" [class.disabled]="currentPage === totalPages">
+                          <a class="page-link" (click)="goToPage(currentPage + 1)" aria-label="Next">
+                            <i class="fas fa-chevron-right"></i>
+                          </a>
+                        </li>
+                      </ul>
+                    </nav>
+                  </div>
                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-
-        <!-- Pagination -->
-        <div *ngIf="!isLoading && users.length > 0" class="table-pagination">
-          <div class="pagination-info">
-            Page {{ currentPage }} sur {{ totalPages }} •
-            {{ totalItems }} laveur{{ totalItems > 1 ? 's' : '' }} dans votre centre
-          </div>
-          <div class="pagination-controls">
-            <button (click)="previousPage()"
-                    [disabled]="currentPage === 1"
-                    class="pagination-btn">
-              <i class="fas fa-chevron-left"></i>
-            </button>
-            <span class="pagination-current">
-              {{ currentPage }}
-            </span>
-            <button (click)="nextPage()"
-                    [disabled]="currentPage === totalPages"
-                    class="pagination-btn">
-              <i class="fas fa-chevron-right"></i>
-            </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</div>
 
     <div class="footer">
       <div>©2026 AutoWash, Tous droit reservé.</div>

@@ -174,99 +174,298 @@
     </div>
 
     <div class="page-content">
-      <!-- Cartes de statistiques (comme dans l'image) -->
-      <div class="stats-cards">
-        <div class="stat-card">
-          <div class="stat-icon blue">
-            <i class="fas fa-chart-line"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-title">Today Sale</div>
-            <div class="stat-value">1234 €</div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon green">
-            <i class="fas fa-chart-bar"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-title">Total Sale</div>
-            <div class="stat-value">1234 €</div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon orange">
-            <i class="fas fa-chart-area"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-title">Today Revenue</div>
-            <div class="stat-value">1234 €</div>
-          </div>
-        </div>
-
-        <div class="stat-card">
-          <div class="stat-icon purple">
-            <i class="fas fa-chart-pie"></i>
-          </div>
-          <div class="stat-content">
-            <div class="stat-title">Total Revenue</div>
-            <div class="stat-value">1234 €</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Graphiques (comme dans l'image) -->
-      <div class="charts-container">
-        <div class="chart-card">
-          <div class="chart-header">
-            <div class="chart-title">Worldwide Sales</div>
-            <a href="#" class="chart-action">Show All</a>
-          </div>
-          <div class="chart-content">
-            <!-- Code pour simuler le graphique à barres -->
-            <div
-              style="width:100%; height:100%; background-image: url('/api/placeholder/600/300'); background-size: contain; background-repeat: no-repeat; background-position: center;">
+      <div class="container">
+        <!-- En-tête avec centre automatique -->
+        <!-- En-tête avec centre automatique -->
+        <div class="dashboard-header">
+          <div class="header-content">
+            <div>
+              <h1 class="dashboard-title">Tableau de Bord Gérant</h1>
+              <p class="dashboard-subtitle">{{ getCentreStatus() }}</p>
             </div>
-            <div class="chart-legend">
-              <div class="legend-item">
-                <div class="legend-color" style="background-color: #36a2eb;"></div>
-                <span>USA</span>
+            <div class="center-info">
+              <div class="center-badge" [class.loading]="loadingCentre" [class.assigned]="hasCentreAssigned()">
+                <i class="fas" [class.fa-store]="hasCentreAssigned()" [class.fa-spinner]="loadingCentre"
+                  [class.fa-store-slash]="!hasCentreAssigned() && !loadingCentre"></i>
+                <span>{{ getCentreStatus() }}</span>
               </div>
-              <div class="legend-item">
-                <div class="legend-color" style="background-color: #67e8f9;"></div>
-                <span>UK</span>
-              </div>
-              <div class="legend-item">
-                <div class="legend-color" style="background-color: #a5f3fc;"></div>
-                <span>AU</span>
-              </div>
+              <button *ngIf="!hasCentreAssigned() && !loadingCentre" class="retry-button" (click)="searchForCentre()">
+                <i class="fas fa-sync-alt"></i> Rechercher
+              </button>
             </div>
           </div>
         </div>
 
-        <div class="chart-card">
-          <div class="chart-header">
-            <div class="chart-title">Salse & Revenue</div>
-            <a href="#" class="chart-action">Show All</a>
+        <!-- Message si aucun centre n'est disponible -->
+        <div *ngIf="!hasCentreAssigned() && !loadingCentre" class="no-data-message">
+          <div class="message-icon">
+            <i class="fas fa-store-slash"></i>
           </div>
-          <div class="chart-content">
-            <!-- Code pour simuler le graphique en ligne -->
-            <div
-              style="width:100%; height:100%; background-image: url('/api/placeholder/600/300'); background-size: contain; background-repeat: no-repeat; background-position: center;">
-            </div>
-            <div class="chart-legend">
-              <div class="legend-item">
-                <div class="legend-color" style="background-color: #36a2eb;"></div>
-                <span>Salse</span>
+          <h3>Aucun centre assigné</h3>
+          <p>Vous n'êtes actuellement assigné à aucun centre de lavage.</p>
+          <div class="action-buttons">
+            <button class="btn-primary" (click)="searchForCentre()">
+              <i class="fas fa-search"></i> Rechercher automatiquement
+            </button>
+            <button class="btn-secondary" routerLink="/contact-admin">
+              <i class="fas fa-envelope"></i> Contacter l'administrateur
+            </button>
+          </div>
+        </div>
+
+        <!-- Section de filtres adaptée pour le manager -->
+        <div class="filters-section">
+          <h2 class="filters-title">Filtres d'analyse</h2>
+          <div class="filters-grid">
+
+            <!-- Info Centre (lecture seule pour le manager) -->
+            <div class="filter-group">
+              <label class="filter-label">Centre</label>
+              <div class="center-display">
+                <i class="fas fa-store"></i>
+                <span>{{ getCurrentCentreName() }}</span>
               </div>
-              <div class="legend-item">
-                <div class="legend-color" style="background-color: #a5f3fc;"></div>
-                <span>Revenue</span>
+              <div *ngIf="loadingCentre" class="loading-spinner-small">
+                <i class="fas fa-spinner fa-spin"></i>
+              </div>
+            </div>
+
+            <!-- Filtre Période -->
+            <div class="filter-group">
+              <label class="filter-label">Période</label>
+              <select class="filter-select" id="periodFilter" [(ngModel)]="selectedPeriod"
+                (change)="onPeriodChange($event)" [disabled]="!currentCentre?.id">
+                <option value="today">Aujourd'hui</option>
+                <option value="week">Cette semaine</option>
+                <option value="month">Ce mois</option>
+                <option value="quarter">Ce trimestre</option>
+                <option value="year">Cette année</option>
+                <option value="custom">Période personnalisée</option>
+              </select>
+            </div>
+
+            <!-- Filtre Service -->
+            <div class="filter-group">
+              <label class="filter-label">Type de service</label>
+              <select class="filter-select" id="serviceFilter" [(ngModel)]="selectedService"
+                (change)="onServiceChange($event)"
+                [disabled]="loadingServices || !currentCentre?.id || services.length === 0">
+                <option value="all">Tous les services</option>
+                <option *ngFor="let service of services" [value]="service.id">
+                  {{ service.name }}
+                </option>
+              </select>
+              <div *ngIf="loadingServices" class="loading-spinner-small">
+                <i class="fas fa-spinner fa-spin"></i>
+              </div>
+            </div>
+
+            <!-- Dates personnalisées -->
+            <div class="filter-group" *ngIf="selectedPeriod === 'custom'">
+              <label class="filter-label">Date de début</label>
+              <input type="date" class="filter-input" id="startDate" [(ngModel)]="startDate"
+                (change)="onStartDateChange($event)" [max]="endDate || getCurrentDate()"
+                [disabled]="!currentCentre?.id">
+            </div>
+
+            <div class="filter-group" *ngIf="selectedPeriod === 'custom'">
+              <label class="filter-label">Date de fin</label>
+              <input type="date" class="filter-input" id="endDate" [(ngModel)]="endDate"
+                (change)="onEndDateChange($event)" [min]="startDate" [max]="getCurrentDate()"
+                [disabled]="!currentCentre?.id">
+            </div>
+
+            <!-- Bouton de rafraîchissement -->
+            <div class="filter-group">
+              <label class="filter-label">&nbsp;</label>
+              <button class="refresh-button" (click)="refreshDashboard()"
+                [disabled]="!currentCentre?.id || loadingDashboard || loadingKpis">
+                <i class="fas fa-sync-alt" [class.fa-spin]="loadingDashboard"></i>
+                {{ loadingDashboard ? 'Rafraîchissement...' : 'Rafraîchir' }}
+              </button>
+            </div>
+
+            <!-- Bouton réinitialiser les filtres -->
+            <div class="filter-group" *ngIf="hasActiveFilters()">
+              <label class="filter-label">&nbsp;</label>
+              <button class="reset-button" (click)="resetFilters()">
+                <i class="fas fa-times"></i> Réinitialiser
+              </button>
+            </div>
+          </div>
+
+          <!-- Indicateur de période active -->
+          <div class="active-filters-info" *ngIf="hasActiveFilters()">
+            <div class="active-filter-badge">
+              <i class="fas fa-filter"></i>
+              <span>Filtres actifs : </span>
+              <span class="filter-item">{{ getPeriodLabel(selectedPeriod) }}</span>
+              <span *ngIf="selectedService !== 'all'" class="filter-item">{{ getServiceLabel(selectedService) }}</span>
+              <span *ngIf="selectedPeriod === 'custom' && startDate && endDate" class="filter-item">
+                Du {{ startDate }} au {{ endDate }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Indicateurs de chargement -->
+        <div *ngIf="loadingDashboard || loadingKpis" class="loading-overlay">
+          <div class="spinner"></div>
+          <span>Chargement des données...</span>
+        </div>
+
+        <!-- Message si aucun centre n'est disponible -->
+        <div *ngIf="!currentCentre?.id && !loadingCentre" class="no-data-message">
+          <div class="message-icon">
+            <i class="fas fa-store-slash"></i>
+          </div>
+          <h3>Aucun centre assigné</h3>
+          <p>Vous n'êtes actuellement assigné à aucun centre de lavage.</p>
+          <p>Veuillez contacter l'administrateur pour vous assigner à un centre.</p>
+        </div>
+
+        <!-- Cartes de statistiques (affichées seulement si un centre est disponible) -->
+        <div *ngIf="currentCentre?.id" class="stats-cards">
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <i class="fas fa-franc-sign"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-title">Ventes Aujourd'hui</div>
+              <div class="stat-value" id="todaySales">
+                {{ dashboardData?.todayRevenue || 0 }}
+              </div>
+              <div class="stat-change" [class.positive]="isRevenueGrowthPositive()"
+                [class.negative]="isRevenueGrowthNegative()">
+                <i class="fas" [class.fa-arrow-up]="isRevenueGrowthPositive()"
+                  [class.fa-arrow-down]="isRevenueGrowthNegative()">
+                </i>
+                <span>{{ getFormattedGrowthPercentage() }}</span>
               </div>
             </div>
           </div>
+
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-title">Ventes Totales</div>
+              <div class="stat-value" id="totalSales">
+                {{ kpiData?.totalWashCount || 0 }}
+              </div>
+              <div class="stat-change neutral">
+                <i class="fas fa-chart-bar"></i>
+                <span>Total cumulé</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon orange">
+              <i class="fas fa-coins"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-title">Revenus Aujourd'hui (Fcfa)</div>
+              <div class="stat-value" id="todayRevenue">
+                {{ getTodayRevenue() | number }}
+              </div>
+              <div class="stat-change" [class.positive]="isRevenueGrowthPositive()"
+                [class.negative]="isRevenueGrowthNegative()">
+                <i class="fas" [class.fa-arrow-up]="isRevenueGrowthPositive()"
+                  [class.fa-arrow-down]="isRevenueGrowthNegative()">
+                </i>
+                <span>{{ getFormattedGrowthPercentage() }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon purple">
+              <i class="fas fa-wallet"></i>
+            </div>
+            <div class="stat-content">
+              <div class="stat-title">Revenus Totaux (Fcfa)</div>
+              <div class="stat-value" id="totalRevenue">
+                {{ getTotalRevenue() | number }}
+              </div>
+              <div class="stat-change neutral">
+                <i class="fas fa-chart-line"></i>
+                <span>Total cumulé</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Graphiques (affichés seulement si un centre est disponible) -->
+        <div *ngIf="currentCentre?.id" class="charts-container">
+          <div class="chart-card">
+            <div class="chart-header">
+              <div class="chart-title">Évolution des Ventes (7 derniers jours)</div>
+              <div class="chart-subtitle">Centre : {{ getCurrentCentreName() }}</div>
+            </div>
+            <div class="chart-content">
+              <div *ngIf="loadingCharts" class="loading">
+                <div class="spinner"></div>
+                <span>Chargement des données...</span>
+              </div>
+              <div *ngIf="!loadingCharts && (!last7DaysRevenue || last7DaysRevenue.length === 0)"
+                class="chart-placeholder">
+                <i class="fas fa-chart-bar"></i>
+                <p>Aucune donnée disponible pour la période sélectionnée</p>
+              </div>
+              <!-- GRAPHIQUE LINE CHART -->
+              <div *ngIf="!loadingCharts && last7DaysRevenue && last7DaysRevenue.length > 0" class="chart-wrapper">
+                <canvas baseChart [data]="lineChartData" [options]="lineChartOptions" [type]="lineChartType" width="400"
+                  height="300">
+                </canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <div class="chart-title">Répartition des Revenus par Service</div>
+              <div class="chart-subtitle">Centre : {{ getCurrentCentreName() }}</div>
+            </div>
+            <div class="chart-content">
+              <div *ngIf="loadingCharts" class="loading">
+                <div class="spinner"></div>
+                <span>Chargement des données...</span>
+              </div>
+              <div *ngIf="!loadingCharts && (!services || services.length === 0)" class="chart-placeholder">
+                <i class="fas fa-chart-pie"></i>
+                <p>Aucun service disponible pour ce centre</p>
+              </div>
+              <!-- GRAPHIQUE PIE CHART -->
+              <div *ngIf="!loadingCharts && services && services.length > 0" class="chart-wrapper">
+                <canvas baseChart [data]="pieChartData" [options]="pieChartOptions" [type]="pieChartType" width="400"
+                  height="300">
+                </canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section alertes (optionnelle) -->
+        <div *ngIf="currentCentre?.id && activeAlerts && activeAlerts.length > 0" class="alerts-section">
+          <div class="alerts-header">
+            <h3><i class="fas fa-exclamation-triangle"></i> Alertes Actives</h3>
+          </div>
+          <!-- <div class="alerts-list">
+        <div *ngFor="let alert of activeAlerts" class="alert-item" [class]="'alert-' + alert.type">
+          <div class="alert-icon">
+            <i class="fas" [class.fa-exclamation-circle]="alert.type === 'warning'"
+               [class.fa-info-circle]="alert.type === 'info'"
+               [class.fa-exclamation-triangle]="alert.type === 'critical'"></i>
+          </div>
+          <div class="alert-content">
+            <div class="alert-title">{{ alert.title }}</div>
+            <div class="alert-message">{{ alert.message }}</div>
+          </div>
+          <div class="alert-time">{{ alert.timestamp | date:'short' }}</div>
+        </div>
+      </div> -->
         </div>
       </div>
     </div>

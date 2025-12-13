@@ -174,124 +174,188 @@
     </div>
 
     <div class="page-content">
-<div class="container">
+      <div class="container">
         <!-- Header -->
         <div class="header">
-            <div class="header-top">
-                <div class="header-title">
-                    <div class="header-icon">
-                        <i class="fas fa-clipboard-check"></i>
-                    </div>
-                    <div>
-                        <h1>Gestion des Présences</h1>
-                        <p class="subtitle">Enregistrez les présences de vos laveurs pour aujourd'hui</p>
-                    </div>
-                </div>
-                <div class="date-badge">
-                    <i class="fas fa-calendar-day"></i>
-                    <span id="currentDate">Lundi 13 Octobre 2025</span>
-                </div>
+          <div class="header-top">
+            <div class="header-title">
+              <div class="header-icon">
+                <i class="fas fa-clipboard-check"></i>
+              </div>
+              <div>
+                <h1>Gestion des Présences</h1>
+                <p class="subtitle">Enregistrez les présences de vos laveurs pour aujourd'hui</p>
+              </div>
             </div>
+            <div class="date-badge">
+              <i class="fas fa-calendar-day"></i>
+              <span>{{ getFormattedDate() }}</span>
+            </div>
+          </div>
 
-            <!-- Centre Selector -->
-            <div class="center-selector">
-                <label for="centerSelect">
-                    <i class="fas fa-building"></i> Sélectionner un Centre
-                </label>
-                <select id="centerSelect">
-                    <option value="">-- Choisir un centre --</option>
-                    <option value="centre1">Centre Abidjan Nord</option>
-                    <option value="centre2">Centre Abidjan Sud</option>
-                    <option value="centre3">Centre Cocody</option>
-                    <option value="centre4">Centre Yopougon</option>
-                    <option value="centre5">Centre Plateau</option>
-                </select>
+          <!-- Centre Info (lecture seule pour le manager) -->
+          <div class="center-info" *ngIf="currentUser?.centreId">
+            <label>
+              <i class="fas fa-building"></i> Centre
+            </label>
+            <div class="centre-display">
+              {{ currentUser?.email }} - {{ getFullName() }}
             </div>
+          </div>
 
-            <!-- Info Cards -->
-            <div class="info-cards">
-                <div class="info-card">
-                    <i class="fas fa-users"></i>
-                    <div class="number" id="totalWashers">0</div>
-                    <div class="label">Total Laveurs</div>
-                </div>
-                <div class="info-card">
-                    <i class="fas fa-user-check"></i>
-                    <div class="number" id="presentCount">0</div>
-                    <div class="label">Présents</div>
-                </div>
-                <div class="info-card">
-                    <i class="fas fa-user-times"></i>
-                    <div class="number" id="absentCount">0</div>
-                    <div class="label">Absents</div>
-                </div>
-                <div class="info-card">
-                    <i class="fas fa-percentage"></i>
-                    <div class="number" id="attendanceRate">0%</div>
-                    <div class="label">Taux présence</div>
-                </div>
+          <!-- Info Cards -->
+          <div class="info-cards">
+            <div class="info-card">
+              <i class="fas fa-users"></i>
+              <div class="number">{{ totalWashers }}</div>
+              <div class="label">Total Laveurs</div>
             </div>
+            <div class="info-card">
+              <i class="fas fa-user-check"></i>
+              <div class="number">{{ presentCount }}</div>
+              <div class="label">Présents</div>
+            </div>
+            <div class="info-card">
+              <i class="fas fa-user-times"></i>
+              <div class="number">{{ absentCount }}</div>
+              <div class="label">Absents</div>
+            </div>
+            <div class="info-card">
+              <i class="fas fa-percentage"></i>
+              <div class="number">{{ attendanceRate }}%</div>
+              <div class="label">Taux présence</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="isLoading" class="loading-container">
+          <div class="loading-spinner"></div>
+          <p>Chargement des laveurs...</p>
+        </div>
+
+        <!-- No Washers Message -->
+        <div *ngIf="!isLoading && washerAttendances.length === 0" class="no-data-message">
+          <i class="fas fa-users-slash no-data-icon"></i>
+          <h3>Aucun laveur trouvé</h3>
+          <p>Aucun laveur n'est actuellement assigné à votre centre.</p>
         </div>
 
         <!-- Main Content -->
-        <div class="main-card">
-            <div class="card-header">
-                <h2 class="card-title">
-                    <i class="fas fa-list-check"></i>
-                    Liste des Laveurs
-                </h2>
-                <div class="search-bar">
-                    <input type="text" id="searchInput" placeholder="Rechercher un laveur...">
-                    <i class="fas fa-search"></i>
+        <div *ngIf="!isLoading && washerAttendances.length > 0" class="main-card">
+          <div class="card-header">
+            <h2 class="card-title">
+              <i class="fas fa-list-check"></i>
+              Liste des Laveurs
+            </h2>
+            <div class="search-bar">
+              <input type="text" [(ngModel)]="searchTerm" (input)="filterWashers()"
+                placeholder="Rechercher un laveur...">
+              <i class="fas fa-search"></i>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="quick-actions">
+            <button class="quick-btn" (click)="selectAllWashers()">
+              <i class="fas fa-check-double"></i> Tout sélectionner
+            </button>
+            <button class="quick-btn" (click)="deselectAllWashers()">
+              <i class="fas fa-times"></i> Tout désélectionner
+            </button>
+          </div>
+
+          <!-- Washers Grid -->
+          <div class="washers-grid">
+            <div *ngFor="let washer of washerAttendances" class="washer-card" [class.selected]="washer.isSelected"
+              [class.present]="washer.isPresent">
+
+              <!-- Header avec photo et infos -->
+              <div class="washer-header">
+                <div class="washer-photo">
+                  <img *ngIf="washer.user.photoSafeUrl" [src]="washer.user.photoSafeUrl" alt="Photo de profil"
+                    class="user-photo">
+                  <div *ngIf="!washer.user.photoSafeUrl" class="user-initials">
+                    {{ (washer.user.firstName?.charAt(0) || '') + (washer.user.lastName?.charAt(0) || '') }}
+                  </div>
                 </div>
-            </div>
+                <div class="washer-info">
+                  <h3>{{ washer.user.firstName }} {{ washer.user.lastName }}</h3>
+                  <p class="washer-email">{{ washer.user.email }}</p>
+                </div>
+                <div class="washer-actions">
+                  <button class="btn-select" (click)="toggleWasherSelection(washer)"
+                    [class.selected]="washer.isSelected">
+                    <i class="fas" [class.fa-check]="washer.isSelected" [class.fa-plus]="!washer.isSelected"></i>
+                  </button>
+                </div>
+              </div>
 
-            <!-- Quick Actions -->
-            <div class="quick-actions">
-                <button class="quick-btn" id="selectAllBtn">
-                    <i class="fas fa-check-double"></i> Tout sélectionner
-                </button>
-                <button class="quick-btn" id="deselectAllBtn">
-                    <i class="fas fa-times"></i> Tout désélectionner
-                </button>
-            </div>
+              <!-- Contrôles de présence -->
+              <div class="attendance-controls">
+                <!-- Statut de présence -->
+                <div class="presence-toggle">
+                  <label class="toggle-label">Présent</label>
+                  <div class="toggle-switch">
+                    <input type="checkbox" [id]="'presence-' + washer.user.id" [(ngModel)]="washer.isPresent"
+                      (change)="togglePresence(washer)">
+                    <label [for]="'presence-' + washer.user.id" class="toggle-slider"></label>
+                  </div>
+                </div>
 
-            <!-- Washers Grid -->
-            <div class="washers-grid" id="washersGrid">
-                <!-- Les cartes seront générées dynamiquement -->
-            </div>
-
-            <!-- Actions Bar -->
-            <div class="actions-bar">
-                <div class="selection-info">
-                    <div class="selection-badge">
-                        <i class="fas fa-check-circle"></i>
-                        <span id="selectedCount">0</span> laveurs sélectionnés
+                <!-- Heures d'arrivée et départ -->
+                <div class="time-controls" *ngIf="washer.isPresent">
+                  <div class="time-input">
+                    <label>Arrivée</label>
+                    <input type="time" [(ngModel)]="washer.arrivalTime"
+                      (change)="updateArrivalTime(washer, washer.arrivalTime)">
+                    <div class="delay-indicator" *ngIf="calculateDelay(washer.arrivalTime) !== '0min'">
+                      Retard: {{ calculateDelay(washer.arrivalTime) }}
                     </div>
+                  </div>
+
+                  <div class="time-input">
+                    <label>Départ</label>
+                    <input type="time" [(ngModel)]="washer.departureTime"
+                      (change)="updateDepartureTime(washer, washer.departureTime)">
+                    <div class="hours-indicator">
+                      Total: {{ calculateWorkedHours(washer.arrivalTime, washer.departureTime) }}
+                    </div>
+                  </div>
                 </div>
-                <div style="display: flex; gap: 15px;">
-                    <button class="btn btn-success" id="exportExcelBtn">
-                        <i class="fas fa-file-excel"></i>
-                        Exporter Excel
-                    </button>
-                    <button class="btn btn-primary" id="saveBtn">
-                        <i class="fas fa-save"></i>
-                        Enregistrer en BDD
-                    </button>
+
+                <!-- Notes -->
+                <div class="notes-input" *ngIf="washer.isPresent">
+                  <label>Notes</label>
+                  <textarea [(ngModel)]="washer.notes" (blur)="updateNotes(washer, washer.notes)"
+                    placeholder="Notes...">
+</textarea>
                 </div>
+              </div>
             </div>
-        </div>
-    </div>
+          </div>
 
-    <!-- Notification -->
-    <div class="notification" id="notification">
-        <i class="fas fa-check-circle"></i>
-        <div>
-            <strong>Succès!</strong>
-            <p id="notificationText">Opération effectuée avec succès</p>
+          <!-- Actions Bar -->
+          <div class="actions-bar">
+            <div class="selection-info">
+              <div class="selection-badge">
+                <i class="fas fa-check-circle"></i>
+                <span>{{ selectedWashers.length }}</span> laveurs sélectionnés
+              </div>
+            </div>
+            <div class="action-buttons">
+              <button class="btn btn-success" (click)="exportToExcel()" [disabled]="isSaving">
+                <i class="fas fa-file-excel"></i>
+                Exporter Excel
+              </button>
+              <button class="btn btn-primary" (click)="saveAttendances()" [disabled]="isSaving || presentCount === 0">
+                <i class="fas" [class.fa-save]="!isSaving" [class.fa-spinner]="isSaving"></i>
+                {{ isSaving ? 'Enregistrement...' : 'Enregistrer en BDD' }}
+              </button>
+            </div>
+          </div>
         </div>
-    </div>
-
+      </div>
     </div>
 
     <div class="footer">

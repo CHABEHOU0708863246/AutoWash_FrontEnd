@@ -65,7 +65,7 @@ export class ResetPasswordComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-private validateToken(): void {
+validateToken(): void {
   this.authService.validateResetToken(this.email, this.token)
     .pipe(
       takeUntil(this.destroy$),
@@ -125,7 +125,7 @@ hasSpecialChar(): boolean {
   return /[#?!@$%^&*-]/.test(this.newPassword?.value || '');
 }
 
-  private handleTokenValidationError(error: any): void {
+  handleTokenValidationError(error: any): void {
     this.isValidating = false;
     this.tokenValid = false;
 
@@ -173,7 +173,7 @@ hasSpecialChar(): boolean {
   }
 }
 
-  private handleResetSuccess(message: string): void {
+  handleResetSuccess(message: string): void {
     this.successMessage = message;
     this.resetPasswordForm.disable();
 
@@ -185,7 +185,7 @@ hasSpecialChar(): boolean {
     }, 3000);
   }
 
-  private handleResetError(error: any): void {
+  handleResetError(error: any): void {
     this.isLoading = false;
 
     if (error.status === 0) {
@@ -200,7 +200,7 @@ hasSpecialChar(): boolean {
   }
 
   // Validateurs personnalisés
-  private passwordStrengthValidator(control: AbstractControl): ValidationErrors | null {
+  passwordStrengthValidator(control: AbstractControl): ValidationErrors | null {
     const value = control.value;
 
     if (!value) {
@@ -225,7 +225,7 @@ hasSpecialChar(): boolean {
     };
   }
 
-  private passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
+  passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
     const password = group.get('newPassword')?.value;
     const confirmPassword = group.get('confirmPassword')?.value;
 

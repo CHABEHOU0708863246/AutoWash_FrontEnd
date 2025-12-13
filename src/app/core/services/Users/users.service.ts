@@ -10,12 +10,6 @@ import { AuthService } from '../Auth/auth.service';
   providedIn: 'root'
 })
 export class UsersService {
-  getManagersByCentre(centreId: string) {
-    throw new Error('Method not implemented.');
-  }
-  createUser(userData: any) {
-    throw new Error('Method not implemented.');
-  }
 
   private baseUrl = 'https://localhost:7139/api/User';
 
@@ -183,7 +177,7 @@ registerUserWithPhoto(userData: Users, photoFile?: File): Observable<any> {
   /**
    * Crée les headers avec le token d'authentification
    */
-  private getAuthHeaders(): HttpHeaders {
+  getAuthHeaders(): HttpHeaders {
     const token = this.authService.getToken();
     if (!token) {
       throw new Error('Token d\'authentification manquant');
@@ -198,7 +192,7 @@ registerUserWithPhoto(userData: Users, photoFile?: File): Observable<any> {
   /**
    * Crée les headers pour FormData (sans Content-Type car il sera défini automatiquement)
    */
-  private getAuthHeadersForFormData(): HttpHeaders {
+  getAuthHeadersForFormData(): HttpHeaders {
     const token = this.authService.getToken();
     if (!token) {
       throw new Error('Token d\'authentification manquant');

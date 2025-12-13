@@ -23,7 +23,7 @@ export class AttendancesService {
    */
   markAttendance(request: DailyAttendanceRequest): Observable<ApiResponseData<AttendanceRecord>> {
     return this.http.post<ApiResponseData<AttendanceRecord>>(
-      `${this.apiUrl}/daily`,
+      `${this.apiUrl}/mark-daily`,
       request
     ).pipe(
       catchError(this.handleError)

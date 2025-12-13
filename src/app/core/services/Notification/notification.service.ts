@@ -51,7 +51,7 @@ public notifications$ = this.notificationsSubject.asObservable();
       type: 'success',
       title,
       message,
-      duration,
+      duration: duration || 5000,
       icon: 'fas fa-check-circle'
     });
   }
@@ -61,7 +61,7 @@ public notifications$ = this.notificationsSubject.asObservable();
       type: 'error',
       title,
       message,
-      duration: duration || 8000, // Plus long pour les erreurs
+      duration: duration || 5000,
       icon: 'fas fa-exclamation-circle'
     });
   }
@@ -71,7 +71,7 @@ public notifications$ = this.notificationsSubject.asObservable();
       type: 'warning',
       title,
       message,
-      duration,
+      duration: duration || 5000,
       icon: 'fas fa-exclamation-triangle'
     });
   }
@@ -81,7 +81,7 @@ public notifications$ = this.notificationsSubject.asObservable();
       type: 'info',
       title,
       message,
-      duration,
+      duration: duration || 5000,
       icon: 'fas fa-info-circle'
     });
   }
