@@ -1,0 +1,436 @@
+<html lang="fr">
+
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet">
+</head>
+
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fas fa-hashtag"></i> AUTOWASH
+    </div>
+    <div class="user-profile" *ngIf="currentUser">
+      <div class="user-photo-container">
+        <img *ngIf="currentUser.photoSafeUrl" [src]="currentUser.photoSafeUrl"
+          [alt]="'Photo de ' + (currentUser.firstName || 'Utilisateur')" class="user-avatar">
+        <div *ngIf="!currentUser.photoSafeUrl" class="user-initials">
+          {{ (currentUser.firstName?.charAt(0) || '') + (currentUser.lastName?.charAt(0) || '') }}
+        </div>
+      </div>
+      <div class="user-info">
+        <h4>{{ getFullName() }}</h4>
+        <p>{{ getUserRole() }}</p>
+      </div>
+    </div>
+    <div class="nav-menu">
+      <!-- Tableau de bord -->
+      <div class="dropdown dropdown-hover">
+        <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/manager/dashboard']">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
+
+      <!-- Laveurs -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-user-tie"></i>
+          <span>Laveurs</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/manager/washers-list']"><i class="fas fa-list"></i> Liste des
+              laveurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/washers-schedule']"><i class="fas fa-calendar-alt"></i>
+              Planning</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/washers-attendance']"><i class="fas fa-user-clock"></i>
+              Présences</a></li>
+        </ul>
+      </div>
+
+      <!-- Lavages -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-car-side"></i>
+          <span>Lavages</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/manager/wash-today']"><i class="fas fa-list"></i> Sessions du
+              jour</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/wash-new']"><i class="fas fa-plus-circle"></i> Nouveau
+              lavage</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/wash-queue']"><i class="fas fa-clock"></i> File
+              d'attente</a></li>
+        </ul>
+      </div>
+
+      <!-- Paiements -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-money-bill-wave"></i>
+          <span>Paiements</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/manager/payments-washers']"><i
+                class="fas fa-hand-holding-usd"></i> Paiements laveurs</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/payments-customers']"><i
+                class="fas fa-cash-register"></i> Paiements clients</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/payments-daily']"><i class="fas fa-file-invoice"></i>
+              Rapport journalier</a></li>
+        </ul>
+      </div>
+
+      <!-- Stocks -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-box-open"></i>
+          <span>Stocks</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/manager/stocks-products']"><i class="fas fa-box"></i>
+              Produits</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/stocks-supplies']"><i class="fas fa-tools"></i>
+              Fournitures</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/stocks-equipment']"><i class="fas fa-cogs"></i>
+              Équipements</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/stocks-alerts']"><i
+                class="fas fa-exclamation-triangle"></i> Alertes</a></li>
+        </ul>
+      </div>
+
+      <!-- Rapports -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-chart-line"></i>
+          <span>Rapports</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/manager/reports-sales']"><i class="fas fa-chart-bar"></i>
+              Ventes</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/reports-revenue']"><i class="fas fa-chart-pie"></i>
+              Revenus</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/reports-customers']"><i class="fas fa-users"></i>
+              Clients</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/reports-attendance']"><i class="fas fa-user-clock"></i>
+              Présences</a></li>
+        </ul>
+      </div>
+
+      <!-- Paramètres -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-cogs"></i>
+          <span>Paramètres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/manager/settings-schedule']"><i class="fas fa-clock"></i>
+              Horaires</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/settings-notifications']"><i class="fas fa-bell"></i>
+              Notifications</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/manager/settings-pricing']"><i class="fas fa-tags"></i>
+              Tarification</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" id="main-content">
+    <div class="top-bar">
+      <div class="menu-toggle" id="menu-toggle">
+        <i class="fas fa-bars"></i>
+      </div>
+      <div class="top-right">
+        <div class="icon-button">
+          <i class="fas fa-envelope"></i>
+        </div>
+        <div class="icon-button">
+          <i class="fas fa-bell"></i>
+          <span class="badge">3</span>
+        </div>
+        <div class="dropdown dropdown-hover">
+          <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
+            <!-- Photo sécurisée si elle existe -->
+            <img *ngIf="currentUser?.photoSafeUrl as safeUrl" [src]="safeUrl" alt="User" class="user-avatar">
+            <!-- Nom complet -->
+            <span>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
+            <li><a class="dropdown-item" href="#"><i class="fas fa-user"></i> Mon profil</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
+            <li><a class="dropdown-item" (click)="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="container">
+        <!-- En-tête du profil -->
+        <div class="profile-header">
+          <div class="profile-content">
+            <div class="profile-photo-section">
+              <div class="photo-container">
+                <div class="profile-photo" id="profilePhoto">
+                  <i class="fas fa-user"></i>
+                </div>
+                <div class="photo-upload-btn" *ngIf="canEdit('canEditPhoto')">
+                  <i class="fas fa-camera"></i>
+                </div>
+                <input type="file" id="photoInput" class="hidden-input" accept="image/*">
+              </div>
+              <div class="profile-info">
+                <h1 class="profile-name" id="profileName">
+                  {{ userEditableFields?.currentUser?.firstName || 'Prénom' }}
+                  {{ userEditableFields?.currentUser?.lastName || 'Nom' }}
+                </h1>
+                <p class="profile-role" id="profileRole">
+                  {{ userEditableFields?.currentUser?.roles?.join(', ') || 'Rôle' }}
+                </p>
+                <span class="profile-status" id="profileStatus">Actif</span>
+
+                <div class="stats-mini">
+                  <div class="stat-mini">
+                    <div class="stat-mini-value" id="workingHoursDisplay">
+                      {{ userEditableFields?.currentUser?.workingHours || '40' }}
+                    </div>
+                    <div class="stat-mini-label">Heures/semaine</div>
+                  </div>
+                  <div class="stat-mini">
+                    <div class="stat-mini-value" id="hireDateDisplay">2 ans</div>
+                    <div class="stat-mini-label">Ancienneté</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Formulaire avec onglets -->
+        <div class="form-container">
+          <!-- Navigation des onglets -->
+          <div class="form-tabs">
+            <button type="button" class="tab-btn" [class.active]="activeTab === 'personal'"
+              (click)="setActiveTab('personal')">
+              <i class="fas fa-user"></i>
+              Informations Personnelles
+            </button>
+            <button type="button" class="tab-btn" [class.active]="activeTab === 'professional'"
+              (click)="setActiveTab('professional')">
+              <i class="fas fa-briefcase"></i>
+              Informations Professionnelles
+            </button>
+            <button type="button" class="tab-btn" [class.active]="activeTab === 'security'"
+              *ngIf="canEdit('canChangePassword')" (click)="setActiveTab('security')">
+              <i class="fas fa-lock"></i>
+              Sécurité
+            </button>
+          </div>
+
+          <!-- Messages de succès/erreur globaux -->
+          <div id="successMessage" class="alert alert-success" *ngIf="updateMessageType === 'success'">
+            <i class="fas fa-check-circle"></i>
+            <span>{{ updateMessage }}</span>
+          </div>
+
+          <div id="errorMessage" class="alert alert-error" *ngIf="updateMessageType === 'error'">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span>{{ updateMessage }}</span>
+          </div>
+
+          <!-- Formulaire principal -->
+          <form #profileFormRef="ngForm" (ngSubmit)="onSubmit()">
+
+            <!-- Onglet Informations Personnelles -->
+            <div class="tab-content" [class.active]="activeTab === 'personal'" *ngIf="activeTab === 'personal'">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Prénom *</label>
+                  <input type="text" class="form-input" [(ngModel)]="profileForm.firstName" name="firstName"
+                    [readonly]="!canEdit('canEditFirstName')" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Nom *</label>
+                  <input type="text" class="form-input" [(ngModel)]="profileForm.lastName" name="lastName"
+                    [readonly]="!canEdit('canEditLastName')" required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Email *</label>
+                  <input type="email" class="form-input" [(ngModel)]="profileForm.email" name="email" readonly required>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Téléphone</label>
+                  <input type="tel" class="form-input" [(ngModel)]="profileForm.phoneNumber" name="phoneNumber"
+                    [readonly]="!canEdit('canEditPhoneNumber')">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Genre</label>
+                  <select class="form-select" [(ngModel)]="profileForm.gender" name="gender"
+                    [disabled]="!canEdit('canEditGender')">
+                    <option value="">Sélectionner</option>
+                    <option value="M">Masculin</option>
+                    <option value="F">Féminin</option>
+                    <option value="Other">Autre</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">État Civil</label>
+                  <select class="form-select" [(ngModel)]="profileForm.maritalStatus" name="maritalStatus"
+                    [disabled]="!canEdit('canEditMaritalStatus')">
+                    <option value="">Sélectionner</option>
+                    <option value="Single">Célibataire</option>
+                    <option value="Married">Marié(e)</option>
+                    <option value="Divorced">Divorcé(e)</option>
+                    <option value="Widowed">Veuf/Veuve</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Nombre d'enfants</label>
+                  <input type="number" class="form-input" [(ngModel)]="profileForm.numberOfChildren"
+                    name="numberOfChildren" [readonly]="!canEdit('canEditNumberOfChildren')" min="0">
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Ville de résidence</label>
+                  <input type="text" class="form-input" [(ngModel)]="profileForm.residence" name="residence"
+                    [readonly]="!canEdit('canEditResidence')">
+                </div>
+
+                <div class="form-group full-width">
+                  <label class="form-label">Adresse postale</label>
+                  <textarea class="form-textarea" [(ngModel)]="profileForm.postalAddress" name="postalAddress"
+                    [readonly]="!canEdit('canEditPostalAddress')" rows="3"></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Onglet Informations Professionnelles -->
+            <div class="tab-content" [class.active]="activeTab === 'professional'" *ngIf="activeTab === 'professional'">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Date d'embauche</label>
+                  <input type="date" class="form-input"
+                    [value]="userEditableFields?.currentUser?.hireDate | date:'yyyy-MM-dd'" readonly>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Type de contrat</label>
+                  <select class="form-select" [(ngModel)]="profileForm.contractType" name="contractType"
+                    [disabled]="!canEdit('canEditContractType')">
+                    <option value="">Sélectionner</option>
+                    <option value="CDI">CDI</option>
+                    <option value="CDD">CDD</option>
+                    <option value="Freelance">Freelance</option>
+                    <option value="Stage">Stage</option>
+                    <option value="Apprentissage">Apprentissage</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Heures de travail par semaine</label>
+                  <input type="number" class="form-input" min="0" max="60"
+                    [value]="userEditableFields?.currentUser?.workingHours || 35" readonly>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Centre de lavage</label>
+                  <select class="form-select" [(ngModel)]="profileForm.centreId" name="centreId"
+                    [disabled]="!canEdit('canEditCentreId')">
+                    <option value="">Sélectionner un centre</option>
+                  </select>
+                </div>
+
+                <div class="form-group full-width">
+                  <label class="form-label">Rôles et permissions</label>
+                  <div class="role-tags">
+                    <span class="role-tag" *ngFor="let role of userEditableFields?.currentUser?.roles">
+                      {{ role }}
+                    </span>
+                  </div>
+                </div>
+
+                <div class="checkbox-group">
+                  <input type="checkbox" class="checkbox-input" id="isPartTime"
+                    [checked]="userEditableFields?.currentUser?.isPartTime" disabled>
+                  <label class="checkbox-label" for="isPartTime">Temps partiel</label>
+                </div>
+
+                <div class="checkbox-group">
+                  <input type="checkbox" class="checkbox-input" id="isEnabled"
+                    [checked]="userEditableFields?.currentUser?.isEnabled" readonly>
+                  <label class="checkbox-label" for="isEnabled">Compte actif</label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Onglet Sécurité -->
+            <div class="tab-content" [class.active]="activeTab === 'security'"
+              *ngIf="activeTab === 'security' && canEdit('canChangePassword')">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Mot de passe actuel</label>
+                  <div style="position: relative;">
+                    <input type="password" class="form-input" [(ngModel)]="profileForm.currentPassword"
+                      name="currentPassword" placeholder="Mot de passe actuel">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Nouveau mot de passe</label>
+                  <div style="position: relative;">
+                    <input type="password" class="form-input" [(ngModel)]="profileForm.newPassword" name="newPassword"
+                      placeholder="Nouveau mot de passe">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Confirmer le mot de passe</label>
+                  <div style="position: relative;">
+                    <input type="password" class="form-input" [(ngModel)]="profileForm.confirmNewPassword"
+                      name="confirmPassword" placeholder="Confirmer le mot de passe">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Actions du formulaire -->
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" (click)="resetForm()">
+                <i class="fas fa-undo"></i>
+                Réinitialiser
+              </button>
+              <button type="submit" class="btn btn-primary" [disabled]="isLoading">
+                <i class="fas fa-save"></i>
+                <span *ngIf="!isLoading">Sauvegarder</span>
+                <span *ngIf="isLoading">Sauvegarde...</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>©2026 AutoWash, Tous droit reservé.</div>
+      <div>Crée par <a href="https://www.linkedin.com/in/afferyauxencedelorschabehou/">Affery Auxence Delors
+          CHABEHOU</a></div>
+    </div>
+  </div>
+</body>
+
+</html>

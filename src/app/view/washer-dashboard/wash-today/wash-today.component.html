@@ -1,0 +1,462 @@
+<html lang="fr">
+
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet">
+</head>
+
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fas fa-hashtag"></i> AUTOWASH
+    </div>
+    <div class="user-profile" *ngIf="currentUser">
+      <div class="user-photo-container">
+        <img *ngIf="currentUser.photoSafeUrl" [src]="currentUser.photoSafeUrl"
+          [alt]="'Photo de ' + (currentUser.firstName || 'Utilisateur')" class="user-avatar">
+        <div *ngIf="!currentUser.photoSafeUrl" class="user-initials">
+          {{ (currentUser.firstName?.charAt(0) || '') + (currentUser.lastName?.charAt(0) || '') }}
+        </div>
+      </div>
+      <div class="user-info">
+        <h4>{{ getFullName() }}</h4>
+        <p>{{ getUserRole() }}</p>
+      </div>
+    </div>
+    <div class="nav-menu">
+      <!-- Tableau de bord -->
+      <div class="dropdown dropdown-hover">
+        <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/washer/dashboard']">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
+
+      <!-- Mes lavages -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-car-side"></i>
+          <span>Mes lavages</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/washer/wash-today']"><i class="fas fa-list"></i> Lavages du
+              jour</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/washer/wash-queue']"><i class="fas fa-clock"></i> File
+              d'attente</a></li>
+        </ul>
+      </div>
+
+      <!-- Mes paiements -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-money-bill-wave"></i>
+          <span>Mes paiements</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/washer/payments-history']"><i class="fas fa-history"></i>
+              Historique</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/washer/payments-commissions']"><i
+                class="fas fa-hand-holding-usd"></i> Commissions</a></li>
+        </ul>
+      </div>
+
+      <!-- Mon planning -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-calendar-alt"></i>
+          <span>Mon planning</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/washer/schedule-week']"><i class="fas fa-calendar-week"></i>
+              Semaine</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/washer/schedule-today']"><i class="fas fa-calendar-day"></i>
+              Aujourd'hui</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/washer/attendance-today']"><i class="fas fa-calendar-day"></i>
+              Liste de presences</a></li>
+        </ul>
+      </div>
+
+      <!-- Notifications -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-bell"></i>
+          <span>Notifications</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/washer/notifications-list']"><i class="fas fa-list"></i> Liste
+              des notifications</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/washer/notifications-settings']"><i class="fas fa-cog"></i>
+              Préférences</a></li>
+        </ul>
+      </div>
+
+      <!-- Paramètres -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-cogs"></i>
+          <span>Paramètres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/washer/settings-notifications']"><i class="fas fa-bell"></i>
+              Notifications</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" id="main-content">
+    <div class="top-bar">
+      <div class="menu-toggle" id="menu-toggle">
+        <i class="fas fa-bars"></i>
+      </div>
+      <div class="top-right">
+        <div class="icon-button">
+          <i class="fas fa-envelope"></i>
+        </div>
+        <div class="icon-button">
+          <i class="fas fa-bell"></i>
+          <span class="badge">3</span>
+        </div>
+        <div class="dropdown dropdown-hover">
+          <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
+            <!-- Photo sécurisée si elle existe -->
+            <img *ngIf="currentUser?.photoSafeUrl as safeUrl" [src]="safeUrl" alt="User" class="user-avatar">
+            <!-- Nom complet -->
+            <span>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
+            <li><a class="dropdown-item" [routerLink]="['/admin/washer-profil']"><i class="fas fa-user"></i> Mon
+                profil</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
+            <li><a class="dropdown-item" (click)="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+  <div class="container-fluid">
+    <div class="container-fluid py-4">
+      <div class="row">
+        <div class="col-12">
+          <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom">
+              <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0 text-primary">
+                  <i class="fas fa-history me-2"></i> Mon Historique de Lavages
+                </h5>
+                <div class="d-flex align-items-center gap-2">
+                  <!-- Centre actuel du laveur -->
+                  <div class="badge bg-primary-subtle text-primary p-2 me-2" *ngIf="currentCentre">
+                    <i class="fas fa-store me-1"></i> {{ getCurrentCentreName() }}
+                  </div>
+
+                  <!-- Bouton de rafraîchissement -->
+                  <button class="btn btn-outline-primary btn-sm" (click)="refreshData()" [disabled]="isLoading">
+                    <i class="fas fa-sync" [class.fa-spin]="isLoading"></i>
+                    {{ isLoading ? 'Chargement...' : 'Rafraîchir' }}
+                  </button>
+                </div>
+              </div>
+
+              <!-- Statistiques du laveur -->
+              <div class="row mt-3 g-3">
+                <div class="col-md-3 col-sm-6">
+                  <div class="card bg-primary-subtle border-0">
+                    <div class="card-body py-2">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <small class="text-muted">Lavages Aujourd'hui</small>
+                          <h5 class="mb-0">{{ washerStats.totalSessionsToday }}</h5>
+                        </div>
+                        <i class="fas fa-car-wash text-primary fs-4"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-3 col-sm-6">
+                  <div class="card bg-success-subtle border-0">
+                    <div class="card-body py-2">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <small class="text-muted">Revenu Aujourd'hui</small>
+                          <h5 class="mb-0">{{ formatCurrency(washerStats.totalRevenueToday) }}</h5>
+                        </div>
+                        <i class="fas fa-money-bill-wave text-success fs-4"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="col-md-3 col-sm-6">
+  <div class="card bg-warning-subtle border-0">
+    <div class="card-body py-2">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <small class="text-muted">Commission Aujourd'hui</small>
+          <h5 class="mb-0">{{ formatXOF(washerStats.commissionToday) }}</h5>
+          <small class="text-muted">({{ washerStats.commissionRate }}%)</small>
+        </div>
+        <i class="fas fa-hand-holding-usd text-warning fs-4"></i>
+      </div>
+    </div>
+  </div>
+</div>
+
+                <div class="col-md-3 col-sm-6">
+                  <div class="card bg-info-subtle border-0">
+                    <div class="card-body py-2">
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                          <small class="text-muted">Note Moyenne</small>
+                          <h5 class="mb-0">{{ washerStats.averageRating }}/5</h5>
+                        </div>
+                        <i class="fas fa-star text-info fs-4"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Filtres -->
+              <div class="row mt-3 g-2">
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold">Période</label>
+                  <select class="form-select form-select-sm" [(ngModel)]="selectedDateFilter"
+                          (change)="onDateFilterChange(selectedDateFilter)">
+                    <option value="today">Aujourd'hui</option>
+                    <option value="week">7 derniers jours</option>
+                    <option value="month">30 derniers jours</option>
+                    <option value="all">Toutes les dates</option>
+                    <option value="custom">Personnalisée</option>
+                  </select>
+                </div>
+
+                <div class="col-md-3" *ngIf="selectedDateFilter === 'custom'">
+                  <label class="form-label small fw-bold">Du</label>
+                  <input type="date" class="form-control form-control-sm" [(ngModel)]="startDate"
+                         (change)="applyFilters()">
+                </div>
+
+                <div class="col-md-3" *ngIf="selectedDateFilter === 'custom'">
+                  <label class="form-label small fw-bold">Au</label>
+                  <input type="date" class="form-control form-control-sm" [(ngModel)]="endDate"
+                         (change)="applyFilters()">
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold">Statut</label>
+                  <select class="form-select form-select-sm" [(ngModel)]="selectedStatusFilter"
+                          (change)="onStatusFilterChange(selectedStatusFilter)">
+                    <option value="all">Tous les statuts</option>
+                    <option value="Completed">Terminés</option>
+                    <option value="InProgress">En cours</option>
+                    <option value="Cancelled">Annulés</option>
+                    <option value="Pending">En attente</option>
+                  </select>
+                </div>
+
+                <div class="col-md-3">
+                  <label class="form-label small fw-bold">Recherche</label>
+                  <div class="input-group input-group-sm">
+                    <input type="text" class="form-control" placeholder="Plaque, client..."
+                           [(ngModel)]="searchTerm" (keyup.enter)="onSearch()">
+                    <button class="btn btn-outline-primary" type="button" (click)="onSearch()">
+                      <i class="fas fa-search"></i>
+                    </button>
+                    <button class="btn btn-outline-secondary" type="button" (click)="resetFilters()"
+                            title="Réinitialiser les filtres">
+                      <i class="fas fa-times"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                  <thead class="text-uppercase text-xs text-muted bg-light">
+                    <tr>
+                      <th>Date/Heure</th>
+                      <th>Client</th>
+                      <th>Véhicule</th>
+                      <th>Service</th>
+                      <th>Statut</th>
+                      <th>Durée</th>
+                      <th>Prix</th>
+                      <th>Note</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <!-- Message de chargement -->
+                    <tr *ngIf="isLoading">
+                      <td colspan="8" class="text-center py-5">
+                        <div class="spinner-border text-primary" role="status"></div>
+                        <p class="mt-2 text-muted">Chargement de vos lavages...</p>
+                      </td>
+                    </tr>
+
+                    <!-- Message si aucune session -->
+                    <tr *ngIf="!isLoading && filteredSessions.length === 0">
+                      <td colspan="8" class="text-center py-5 text-muted">
+                        <div class="py-4">
+                          <i class="fas fa-car-wash fa-3x text-muted mb-3"></i>
+                          <p class="mb-2 fs-5">Aucun lavage trouvé</p>
+                          <p class="mb-0">Modifiez vos filtres pour voir plus de résultats</p>
+                        </div>
+                      </td>
+                    </tr>
+
+                    <!-- Liste des sessions -->
+                    <tr *ngFor="let session of paginatedSessions" class="border-bottom">
+                      <td>
+                        <div class="d-flex flex-column">
+                          <span class="fw-medium">{{ formatDateDisplay(session.createdAt.toString()) }}</span>
+                          <small class="text-muted">{{ session.washerId === currentUser?.id ? 'Par vous' : 'Par collègue' }}</small>
+                        </div>
+                      </td>
+
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <div class="avatar avatar-sm me-2">
+                            <span class="avatar-initial rounded-circle bg-primary text-white">
+                              {{ session.customer.name?.charAt(0) || '?' }}
+                            </span>
+                          </div>
+                          <div>
+                            <h6 class="mb-0">{{ session.customer.name || 'Non renseigné' }}</h6>
+                            <small class="text-muted">{{ session.customer.phoneNumber || 'N/A' }}</small>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td>
+                        <div>
+                          <span class="d-block fw-medium">
+                            {{ session.vehicleBrand || 'N/A' }}
+                            <span *ngIf="session.vehicleColor" class="text-muted">({{ session.vehicleColor }})</span>
+                          </span>
+                          <small class="text-muted">
+                            <i class="fas fa-tag me-1"></i>
+                            {{ session.vehiclePlate || 'Sans plaque' }}
+                          </small>
+                        </div>
+                      </td>
+
+                      <td>
+                        <span class="badge bg-info-light text-info">
+                          <i class="fas fa-concierge-bell me-1"></i>
+                          {{ getServiceName(session.serviceId) }}
+                        </span>
+                      </td>
+
+                      <td>
+                        <span class="badge" [ngClass]="getStatusBadge(session.getStatus())">
+                          {{ getStatusLabel(session.getStatus()) }}
+                        </span>
+                      </td>
+
+                      <td>
+                        <span class="text-muted">
+                          <i class="fas fa-clock me-1"></i>
+                          {{ getSessionDuration(session) }}
+                        </span>
+                      </td>
+
+<td>
+  <span class="fw-bold text-success">
+    {{ formatCurrency(session.amountPaid || session.amountPaid) }}
+  </span>
+
+  <!-- Afficher uniquement si le client a bénéficié d'une réduction -->
+  <div *ngIf="session.customer.hasLoyaltyDiscount()" class="small text-warning">
+    <i class="fas fa-percentage me-1"></i>
+    Réduction: -{{ session.customer.loyaltyDiscountApplied }}%
+  </div>
+</td>
+
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <div class="rating small">
+                            <span *ngFor="let star of [1,2,3,4,5]"
+                                  [class.text-warning]="star <= (session.customerRating || 0)">
+                              <i class="fas fa-star"></i>
+                            </span>
+                          </div>
+                          <small *ngIf="session.customerRating" class="ms-2 text-muted">
+                            {{ session.customerRating }}
+                          </small>
+                          <small *ngIf="!session.customerRating" class="ms-2 text-muted">
+                            Non noté
+                          </small>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Pagination -->
+              <div class="d-flex justify-content-between align-items-center mt-4" *ngIf="filteredSessions.length > 0">
+                <div class="text-muted small">
+                  Affichage de <span class="fw-bold">{{ (currentPage - 1) * itemsPerPage + 1 }}</span>
+                  à
+                  <span class="fw-bold">{{ Math.min(currentPage * itemsPerPage, totalItems) }}</span>
+                  sur <span class="fw-bold">{{ totalItems }}</span> lavages
+                </div>
+
+                <nav aria-label="Page navigation">
+                  <ul class="pagination pagination-sm mb-0">
+                    <!-- Bouton Précédent -->
+                    <li class="page-item" [class.disabled]="currentPage === 1">
+                      <a class="page-link" (click)="goToPage(currentPage - 1)" aria-label="Previous" style="cursor: pointer;">
+                        <i class="fas fa-chevron-left"></i>
+                      </a>
+                    </li>
+
+                    <!-- Numéros de page -->
+                    <li class="page-item" *ngFor="let page of getPages()"
+                        [class.active]="page === currentPage" [class.disabled]="page === '...'">
+                      <a class="page-link" (click)="goToPage(page)" *ngIf="page !== '...'" style="cursor: pointer;">
+                        {{ page }}
+                      </a>
+                      <span class="page-link" *ngIf="page === '...'">...</span>
+                    </li>
+
+                    <!-- Bouton Suivant -->
+                    <li class="page-item" [class.disabled]="currentPage === totalPages">
+                      <a class="page-link" (click)="goToPage(currentPage + 1)" aria-label="Next" style="cursor: pointer;">
+                        <i class="fas fa-chevron-right"></i>
+                      </a>
+                    </li>
+                  </ul>
+                </nav>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <div class="footer">
+      <div>©2026 AutoWash, Tous droit reservé.</div>
+      <div>Crée par <a href="https://www.linkedin.com/in/afferyauxencedelorschabehou/">Affery Auxence Delors
+          CHABEHOU</a></div>
+    </div>
+  </div>
+</body>
+
+</html>

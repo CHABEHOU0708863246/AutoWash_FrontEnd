@@ -1,6 +1,9 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { WasherDashboardComponent } from '../../view/washer-dashboard/washer-dashboard.component';
+import { WashTodayComponent } from '../../view/washer-dashboard/wash-today/wash-today.component';
+import { PaymentsHistoryComponent } from '../../view/washer-dashboard/payments-history/payments-history.component';
+import { AttendanceTodayComponent } from '../../view/washer-dashboard/attendance-today/attendance-today.component';
 
 const routes: Routes = [
   {
@@ -11,6 +14,18 @@ const routes: Routes = [
   {
     path: 'dashboard',
     component: WasherDashboardComponent
+  },
+  {
+    path: 'wash-today',
+    component: WashTodayComponent
+  },
+  {
+    path: 'payments-history',
+    component: PaymentsHistoryComponent
+  },
+  {
+    path: 'attendance-today',
+    component: AttendanceTodayComponent
   }
 ];
 

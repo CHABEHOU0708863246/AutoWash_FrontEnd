@@ -1,0 +1,463 @@
+<html lang="fr">
+
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/7.2.0/mdb.min.css" rel="stylesheet">
+</head>
+
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar" id="sidebar">
+    <div class="logo">
+      <i class="fas fa-hashtag"></i> AUTOWASH
+    </div>
+    <div class="user-profile" *ngIf="currentUser">
+      <div class="user-photo-container">
+        <img *ngIf="currentUser.photoSafeUrl" [src]="currentUser.photoSafeUrl"
+          [alt]="'Photo de ' + (currentUser.firstName || 'Utilisateur')" class="user-avatar">
+        <div *ngIf="!currentUser.photoSafeUrl" class="user-initials">
+          {{ (currentUser.firstName?.charAt(0) || '') + (currentUser.lastName?.charAt(0) || '') }}
+        </div>
+      </div>
+      <div class="user-info">
+        <h4>{{ getFullName() }}</h4>
+        <p>{{ getUserRole() }}</p>
+      </div>
+    </div>
+    <div class="nav-menu">
+      <!-- Tableau de bord -->
+      <div class="dropdown dropdown-hover">
+        <a class="nav-item active" data-mdb-dropdown-init [routerLink]="['/washer/dashboard']">
+          <i class="fas fa-tachometer-alt"></i>
+          <span>Tableau de bord</span>
+        </a>
+      </div>
+
+      <!-- Mes lavages -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-car-side"></i>
+          <span>Mes lavages</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/washer/wash-today']"><i class="fas fa-list"></i> Lavages du
+              jour</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/washer/wash-queue']"><i class="fas fa-clock"></i> File
+              d'attente</a></li>
+        </ul>
+      </div>
+
+      <!-- Mes paiements -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-money-bill-wave"></i>
+          <span>Mes paiements</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/washer/payments-history']"><i class="fas fa-history"></i>
+              Historique</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/washer/payments-commissions']"><i
+                class="fas fa-hand-holding-usd"></i> Commissions</a></li>
+        </ul>
+      </div>
+
+      <!-- Mon planning -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-calendar-alt"></i>
+          <span>Mon planning</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/washer/schedule-week']"><i class="fas fa-calendar-week"></i>
+              Semaine</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/washer/schedule-today']"><i class="fas fa-calendar-day"></i>
+              Aujourd'hui</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/washer/attendance-today']"><i class="fas fa-calendar-day"></i>
+              Liste de presences</a></li>
+        </ul>
+      </div>
+
+      <!-- Notifications -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-bell"></i>
+          <span>Notifications</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/washer/notifications-list']"><i class="fas fa-list"></i> Liste
+              des notifications</a></li>
+          <li><a class="dropdown-item" [routerLink]="['/washer/notifications-settings']"><i class="fas fa-cog"></i>
+              Préférences</a></li>
+        </ul>
+      </div>
+
+      <!-- Paramètres -->
+      <div class="dropdown dropdown-hover">
+        <button class="nav-item" data-mdb-dropdown-init>
+          <i class="fas fa-cogs"></i>
+          <span>Paramètres</span>
+          <i class="fas fa-chevron-right dropdown-arrow"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-hover">
+          <li><a class="dropdown-item" [routerLink]="['/washer/settings-notifications']"><i class="fas fa-bell"></i>
+              Notifications</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="main-content" id="main-content">
+    <div class="top-bar">
+      <div class="menu-toggle" id="menu-toggle">
+        <i class="fas fa-bars"></i>
+      </div>
+      <div class="top-right">
+        <div class="icon-button">
+          <i class="fas fa-envelope"></i>
+        </div>
+        <div class="icon-button">
+          <i class="fas fa-bell"></i>
+          <span class="badge">3</span>
+        </div>
+        <div class="dropdown dropdown-hover">
+          <button class="user-dropdown" id="user-dropdown" data-mdb-dropdown-init>
+            <!-- Photo sécurisée si elle existe -->
+            <img *ngIf="currentUser?.photoSafeUrl as safeUrl" [src]="safeUrl" alt="User" class="user-avatar">
+            <!-- Nom complet -->
+            <span>{{ currentUser?.firstName }} {{ currentUser?.lastName }}</span>
+            <i class="fas fa-chevron-down"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-hover" id="user-dropdown-menu">
+            <li><a class="dropdown-item" [routerLink]="['/admin/washer-profil']"><i class="fas fa-user"></i> Mon
+                profil</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Paramètres</a></li>
+            <li><a class="dropdown-item" href="#"><i class="fas fa-envelope"></i> Inbox</a></li>
+            <li><a class="dropdown-item" (click)="logout()"><i class="fas fa-sign-out-alt"></i> Déconnexion</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-content">
+      <div class="container-fluid">
+        <div class="container-fluid py-4">
+          <div class="row">
+            <div class="col-12">
+              <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom">
+                  <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0 text-primary">
+                      <i class="fas fa-calendar-check me-2"></i> Ma Présence Aujourd'hui
+                    </h5>
+                    <div class="d-flex align-items-center gap-2">
+                      <!-- Centre actuel -->
+                      <div class="badge bg-primary-subtle text-primary p-2 me-2" *ngIf="currentCentre">
+                        <i class="fas fa-store me-1"></i> {{ getCurrentCentreName() }}
+                      </div>
+
+                      <!-- Date d'aujourd'hui -->
+                      <div class="badge bg-info-subtle text-info p-2 me-2">
+                        <i class="fas fa-calendar-day me-1"></i> {{ todayFormatted }}
+                      </div>
+
+                      <!-- Bouton de rafraîchissement -->
+                      <button class="btn btn-outline-primary btn-sm" (click)="refreshData()"
+                        [disabled]="isLoading || loadingHistory">
+                        <i class="fas fa-sync" [class.fa-spin]="isLoading || loadingHistory"></i>
+                        Rafraîchir
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-body">
+                  <!-- Section: Présence d'aujourd'hui -->
+                  <div class="row mb-4">
+                    <div class="col-lg-8">
+                      <div class="card border">
+                        <div class="card-body">
+                          <h6 class="card-title text-primary mb-3">
+                            <i class="fas fa-user-clock me-2"></i> Mon Statut Aujourd'hui
+                          </h6>
+
+                          <!-- Message de chargement -->
+                          <div *ngIf="isLoading" class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-2 text-muted">Vérification de votre présence...</p>
+                          </div>
+
+                          <!-- Aucune présence enregistrée -->
+                          <div *ngIf="!isLoading && !todayAttendance" class="text-center py-4">
+                            <div class="py-3">
+                              <i class="fas fa-user-slash fa-3x text-muted mb-3"></i>
+                              <h5 class="text-muted">Statut non défini</h5>
+                              <p class="text-muted">{{ getNoAttendanceMessage() }}</p>
+                            </div>
+                          </div>
+
+                          <!-- Carte de présence -->
+                          <div *ngIf="!isLoading && todayAttendance" class="attendance-card">
+                            <div class="d-flex align-items-center">
+                              <div class="attendance-icon me-3">
+                                <i class="fas fa-3x" [ngClass]="getStatusIcon(todayAttendance.status)"
+                                  [style.color]="getStatusColor(todayAttendance.status)"></i>
+                              </div>
+                              <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                  <div>
+                                    <h4 class="mb-1" [ngClass]="getStatusClass(todayAttendance.status)">
+                                      {{ getStatusText(todayAttendance.status) }}
+                                    </h4>
+                                    <p class="text-muted mb-1">
+                                      <i class="fas fa-calendar me-1"></i>
+                                      {{ formatShortDate(todayAttendance.date) }}
+                                    </p>
+                                    <div class="d-flex flex-wrap gap-3 mt-2">
+                                      <div *ngIf="todayAttendance.checkInTime" class="small">
+                                        <i class="fas fa-sign-in-alt me-1 text-success"></i>
+                                        Arrivée: {{ formatTime(todayAttendance.checkInTime) }}
+                                      </div>
+                                      <div *ngIf="todayAttendance.checkOutTime" class="small">
+                                        <i class="fas fa-sign-out-alt me-1 text-danger"></i>
+                                        Départ: {{ formatTime(todayAttendance.checkOutTime) }}
+                                      </div>
+                                      <div *ngIf="todayAttendance.scheduledStartTime" class="small">
+                                        <i class="fas fa-clock me-1 text-info"></i>
+                                        Heure prévue: {{ formatTime(todayAttendance.scheduledStartTime) }}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div class="text-end">
+                                    <span class="badge"
+                                      [ngClass]="isAttendanceValidated() ? 'bg-success' : 'bg-warning'">
+                                      <i class="fas"
+                                        [ngClass]="isAttendanceValidated() ? 'fa-check-circle' : 'fa-clock'"></i>
+                                      {{ isAttendanceValidated() ? 'Validé' : 'En attente' }}
+                                    </span>
+                                    <div *ngIf="todayAttendance.approvedBy" class="small text-muted mt-1">
+                                      Par: {{ getApproverName(todayAttendance.approvedBy) }}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <!-- Notes -->
+                                <div *ngIf="todayAttendance.notes" class="mt-3 p-2 bg-light rounded">
+                                  <small class="text-muted">
+                                    <i class="fas fa-sticky-note me-1"></i>
+                                    {{ todayAttendance.notes }}
+                                  </small>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Statistiques -->
+                    <div class="col-lg-4">
+                      <div class="card border">
+                        <div class="card-body">
+                          <h6 class="card-title text-primary mb-3">
+                            <i class="fas fa-chart-line me-2"></i> Mes Statistiques
+                          </h6>
+
+                          <div class="stats-grid">
+                            <div class="stat-item text-center">
+                              <div class="stat-value text-success">{{ attendanceStats.totalDaysWorked }}</div>
+                              <div class="stat-label">Jours travaillés</div>
+                            </div>
+                            <div class="stat-item text-center">
+                              <div class="stat-value text-danger">{{ attendanceStats.totalDaysAbsent }}</div>
+                              <div class="stat-label">Jours absents</div>
+                            </div>
+                            <div class="stat-item text-center">
+                              <div class="stat-value text-warning">{{ attendanceStats.totalDaysLate }}</div>
+                              <div class="stat-label">Retards</div>
+                            </div>
+                            <div class="stat-item text-center">
+                              <div class="stat-value text-primary">{{ attendanceStats.currentStreak }}j</div>
+                              <div class="stat-label">Série actuelle</div>
+                            </div>
+                          </div>
+
+                          <!-- Barre de progression -->
+                          <div class="mt-4">
+                            <div class="d-flex justify-content-between mb-1">
+                              <small class="text-muted">Taux de présence</small>
+                              <small class="text-muted">{{ attendanceStats.attendanceRate }}%</small>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                              <div class="progress-bar bg-success" role="progressbar"
+                                [style.width]="attendanceStats.attendanceRate + '%'">
+                              </div>
+                            </div>
+                          </div>
+
+                          <!-- Info complémentaire -->
+                          <div class="alert alert-info mt-3 mb-0 py-2" role="alert">
+                            <small>
+                              <i class="fas fa-info-circle me-1"></i>
+                              Statistiques basées sur les 7 derniers jours
+                            </small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Section: Historique récent -->
+                  <div class="row">
+                    <div class="col-12">
+                      <div class="card border">
+                        <div class="card-body">
+                          <h6 class="card-title text-primary mb-3">
+                            <i class="fas fa-history me-2"></i> Historique des 7 Derniers Jours
+                          </h6>
+
+                          <!-- Message de chargement -->
+                          <div *ngIf="loadingHistory" class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                            <span class="ms-2 text-muted">Chargement de l'historique...</span>
+                          </div>
+
+                          <!-- Tableau d'historique -->
+                          <div *ngIf="!loadingHistory">
+                            <div class="table-responsive">
+                              <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                  <tr>
+                                    <th>Date</th>
+                                    <th>Statut</th>
+                                    <th>Arrivée</th>
+                                    <th>Départ</th>
+                                    <th>Heure prévue</th>
+                                    <th>Validation</th>
+                                    <th>Notes</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <!-- Message si pas d'historique -->
+                                  <tr *ngIf="recentAttendance.length === 0">
+                                    <td colspan="7" class="text-center py-4 text-muted">
+                                      <i class="fas fa-history fa-2x mb-3"></i>
+                                      <p>Aucun historique de présence disponible</p>
+                                    </td>
+                                  </tr>
+
+                                  <!-- Lignes d'historique -->
+                                  <tr *ngFor="let record of recentAttendance" class="border-bottom">
+                                    <td>
+                                      <div class="fw-medium">{{ formatShortDate(record.date) }}</div>
+                                      <small class="text-muted">{{ formatTime(record.date) }}</small>
+                                    </td>
+                                    <td>
+                                      <span class="badge" [ngClass]="getStatusClass(record.status)">
+                                        <i class="fas me-1" [ngClass]="getStatusIcon(record.status)"></i>
+                                        {{ getStatusText(record.status) }}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      <span [class.text-success]="record.checkInTime" class="fw-medium">
+                                        {{ formatTime(record.checkInTime) }}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      <span [class.text-danger]="record.checkOutTime" class="fw-medium">
+                                        {{ formatTime(record.checkOutTime) }}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      <span class="text-muted">
+                                        {{ formatTime(record.scheduledStartTime) }}
+                                      </span>
+                                    </td>
+                                    <td>
+                                      <span *ngIf="record.approvedBy" class="text-success">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        Validé
+                                      </span>
+                                      <span *ngIf="!record.approvedBy" class="text-warning">
+                                        <i class="fas fa-clock me-1"></i>
+                                        En attente
+                                      </span>
+                                      <div *ngIf="record.approvedBy" class="small text-muted">
+                                        {{ getApproverName(record.approvedBy) }}
+                                      </div>
+                                    </td>
+                                    <td>
+                                      <small class="text-muted" *ngIf="record.notes">
+                                        {{ record.notes | slice:0:50 }}{{ record.notes.length > 50 ? '...' : '' }}
+                                      </small>
+                                      <small class="text-muted" *ngIf="!record.notes">-</small>
+                                    </td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+
+                            <!-- Légende -->
+                            <div class="mt-3">
+                              <div class="d-flex flex-wrap gap-2">
+                                <span class="badge bg-success-light text-success">
+                                  <i class="fas fa-check-circle me-1"></i> Présent
+                                </span>
+                                <span class="badge bg-danger-light text-danger">
+                                  <i class="fas fa-times-circle me-1"></i> Absent
+                                </span>
+                                <span class="badge bg-warning-light text-warning">
+                                  <i class="fas fa-clock me-1"></i> En retard
+                                </span>
+                                <span class="badge bg-info-light text-info">
+                                  <i class="fas fa-clock-half me-1"></i> Demi-journée
+                                </span>
+                                <span class="badge bg-purple-light text-purple">
+                                  <i class="fas fa-umbrella-beach me-1"></i> Congé
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Informations importantes -->
+                  <div class="alert alert-warning mt-4" role="alert">
+                    <div class="d-flex">
+                      <div class="me-3">
+                        <i class="fas fa-exclamation-triangle fa-lg"></i>
+                      </div>
+                      <div>
+                        <h6 class="alert-heading">Informations importantes</h6>
+                        <ul class="mb-0 small">
+                          <li>Votre présence doit être validée par un manager pour être officielle</li>
+                          <li>Les retards sont comptabilisés après l'heure prévue de début de service</li>
+                          <li>En cas d'absence non justifiée, contactez immédiatement votre manager</li>
+                          <li>Les demi-journées doivent être approuvées à l'avance</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>©2026 AutoWash, Tous droit reservé.</div>
+      <div>Crée par <a href="https://www.linkedin.com/in/afferyauxencedelorschabehou/">Affery Auxence Delors
+          CHABEHOU</a></div>
+    </div>
+  </div>
+</body>
+
+</html>

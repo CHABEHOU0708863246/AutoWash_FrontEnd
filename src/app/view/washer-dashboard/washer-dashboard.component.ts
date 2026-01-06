@@ -74,7 +74,7 @@ interface VehicleInQueue {
 
 @Component({
   selector: 'app-washer-dashboard',
-  imports: [RouterLink, CommonModule, FormsModule, BaseChartDirective],
+  imports: [RouterLink, CommonModule, FormsModule],
   templateUrl: './washer-dashboard.component.html',
   styleUrls: ['./washer-dashboard.component.scss'],
 })
@@ -305,22 +305,23 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
   /**
    * Configure l'abonnement aux changements de l'utilisateur
    */
-  private setupUserSubscription(): void {
-    this.currentUserSubscription = this.authService.currentUser$.subscribe(
-      (user) => {
-        if (user && user !== this.currentUser) {
-          this.currentUser = user;
-          this.loadCurrentUserPhoto();
-          this.loadWasherCentre();
-        }
+  setupUserSubscription(): void {
+  this.currentUserSubscription = this.authService.currentUser$.subscribe(
+    (user) => {
+      if (user && user !== this.currentUser) {
+        this.currentUser = user;
+        this.loadCurrentUserPhoto();
+        // Charger automatiquement le centre du laveur
+        this.loadWasherCentre();
       }
-    );
+    }
+  );
   }
 
   /**
    * Configuration de l'écoute des changements de filtre avec debounce
    */
-  private setupFilterListener(): void {
+  setupFilterListener(): void {
     this.filterSubscription = this.filterChangeSubject
       .pipe(debounceTime(300), distinctUntilChanged())
       .subscribe(() => {
@@ -331,14 +332,14 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
   /**
    * Déclencher le rechargement des données avec debounce
    */
-  private triggerFilterChange(): void {
+  triggerFilterChange(): void {
     this.filterChangeSubject.next();
   }
 
   /**
    * Configuration du rafraîchissement automatique toutes les 30 secondes
    */
-  private setupAutoRefresh(): void {
+  setupAutoRefresh(): void {
     this.dataRefreshSubscription = interval(30000).subscribe(() => {
       if (this.currentCentre?.id) {
         this.refreshDashboardData();
@@ -349,7 +350,7 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
   /**
    * Nettoye les abonnements
    */
-  private cleanupSubscriptions(): void {
+  cleanupSubscriptions(): void {
     if (this.currentUserSubscription) {
       this.currentUserSubscription.unsubscribe();
     }
@@ -370,7 +371,7 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
   /**
    * Efface les timers actifs
    */
-  private clearTimers(): void {
+  clearTimers(): void {
     if (this.currentWashTimer) {
       clearInterval(this.currentWashTimer);
     }
@@ -384,23 +385,43 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
   /**
    * Gère l'utilisateur chargé
    */
-  private handleUserLoaded(user: Users): void {
+  handleUserLoaded(user: Users): void {
     this.currentUser = user;
     this.loadCurrentUserPhoto();
 
-    if (user.centreId) {
-      console.log('✅ CentreId trouvé dans user:', user.centreId);
-      this.loadWasherCentre();
-    } else {
-      console.log('⚠️ centreId non trouvé, recherche alternative...');
-      this.findCentreForWasher();
-    }
+    // Charger immédiatement le centre du laveur
+    this.loadWasherCentre();
+  }
+
+  /**
+   * Vérifie si un centre est assigné au laveur
+   */
+  hasCentreAssigned(): boolean {
+    return !!this.currentCentre?.id;
+  }
+
+  /**
+   * Obtenir le statut du centre
+   */
+  getCentreStatus(): string {
+    if (this.loadingCentre) return 'Chargement du centre...';
+    if (this.hasCentreAssigned())
+      return `Centre: ${this.getCurrentCentreName()}`;
+    return 'Aucun centre assigné';
+  }
+
+  /**
+   * Méthode pour forcer la recherche de centre
+   */
+  searchForCentre(): void {
+    console.log('🔍 Recherche manuelle de centre...');
+    this.loadWasherCentre();
   }
 
   /**
    * Méthode de secours pour charger l'utilisateur
    */
-  private loadCurrentUserFallback(): void {
+  loadCurrentUserFallback(): void {
     this.usersService.getCurrentUser().subscribe({
       next: (user) => {
         this.handleUserLoaded(user);
@@ -415,32 +436,110 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Charger le centre du laveur
-   */
-  private loadWasherCentre(): void {
-    if (!this.currentUser?.centreId) {
-      this.findCentreForWasher();
-      return;
-    }
+ * Charger le centre du laveur
+ */
+loadWasherCentre(): void {
+  if (!this.currentUser?.id) {
+    console.warn('⚠️ Utilisateur non connecté');
+    this.loadingCentre = false;
+    return;
+  }
 
-    this.loadingCentre = true;
+  this.loadingCentre = true;
+
+  // Si l'utilisateur a un centreId, charger ce centre
+  if (this.currentUser.centreId) {
+    console.log('✅ CentreId trouvé dans user:', this.currentUser.centreId);
 
     this.centresService.getCentreById(this.currentUser.centreId).subscribe({
       next: (centre) => {
+        console.log('🔍 Centre retourné par API:', centre);
+
+        // Vérifier que le centre a bien un nom
+        if (!centre || !centre.name) {
+          console.error('❌ Centre retourné invalide ou sans nom:', centre);
+          this.tryFindCentreByWasherAssignment();
+          return;
+        }
+
         this.currentCentre = centre;
         this.loadingCentre = false;
-        console.log('✅ Centre chargé:', centre.name);
+        console.log('✅ Centre chargé:', centre.name, '(ID:', centre.id, ')');
 
-        // Charger les services et données du laveur
-        this.loadServicesForCentre(centre.id!);
-        this.loadWasherData();
+        // S'assurer que centre.id existe avant de l'utiliser
+        if (centre.id) {
+          // Charger les services et données du laveur
+          this.loadServicesForCentre(centre.id);
+          this.loadWasherData();
+        } else {
+          console.error('❌ Centre sans ID:', centre);
+          this.tryFindCentreByWasherAssignment();
+        }
       },
       error: (error) => {
-        console.error('Erreur lors du chargement du centre:', error);
+        console.error('❌ Erreur lors du chargement du centre:', error);
         this.loadingCentre = false;
-        this.findCentreForWasher();
+        this.tryFindCentreByWasherAssignment();
       },
     });
+  } else {
+    // Si pas de centreId, essayer de trouver par assignation du laveur
+    console.log('⚠️ Pas de centreId dans l\'utilisateur, recherche...');
+    this.tryFindCentreByWasherAssignment();
+  }
+}
+
+  /**
+   * Essayer de trouver un centre par l'assignation du laveur
+   */
+  tryFindCentreByWasherAssignment(): void {
+    console.log('🔍 Recherche de centre par assignation du laveur...');
+
+    this.centresService.getAllCentres().subscribe({
+      next: (centres) => {
+        console.log('📋 Centres disponibles:', centres.length);
+
+        // Chercher un centre où le laveur est assigné
+        let washerCentre: Centres | null = null;
+        if (centres.length > 0) {
+          washerCentre = centres[0];
+          console.log(
+            '🏢 Attribution du premier centre disponible:',
+            washerCentre.name
+          );
+
+          // Mettre à jour l'utilisateur avec le centreId
+          this.updateWasherWithCentre(washerCentre.id!);
+        }
+
+        if (washerCentre) {
+          this.currentCentre = washerCentre;
+          this.loadingCentre = false;
+
+          // Charger les données après avoir trouvé un centre
+          this.loadServicesForCentre(washerCentre.id!);
+          this.loadWasherData();
+        } else {
+          this.showNoCentreMessage();
+          this.loadingCentre = false;
+        }
+      },
+      error: (error) => {
+        console.error('Erreur lors de la recherche des centres:', error);
+        this.loadingCentre = false;
+        this.showNoCentreMessage();
+      },
+    });
+  }
+
+  /**
+   * Mettre à jour l'utilisateur avec le centreId
+   */
+  updateWasherWithCentre(centreId: string): void {
+    console.log('📝 Mise à jour du laveur avec centreId:', centreId);
+    if (this.currentUser) {
+      this.currentUser.centreId = centreId;
+    }
   }
 
   /**
@@ -464,7 +563,7 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
   /**
    * Trouver un centre où le laveur est assigné
    */
-  private findCentreByWasherAssignment(centres: Centres[]): void {
+  findCentreByWasherAssignment(centres: Centres[]): void {
     if (centres.length > 0) {
       const firstCentre = centres[0];
       console.log(
@@ -488,7 +587,7 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
   /**
    * Afficher un message si aucun centre n'est trouvé
    */
-  private showNoCentreMessage(): void {
+  showNoCentreMessage(): void {
     console.warn('⚠️ Aucun centre trouvé pour ce laveur');
   }
 
@@ -546,7 +645,7 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
   /**
    * Définit la photo par défaut de l'utilisateur
    */
-  private setDefaultUserPhoto(): void {
+  setDefaultUserPhoto(): void {
     this.currentUser!.photoSafeUrl = this.sanitizer.bypassSecurityTrustUrl(
       'assets/images/default-avatar.png'
     );
@@ -581,7 +680,7 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
   /**
    * Convertit l'ID de rôle en nom lisible
    */
-  private mapRoleIdToName(roleId: string): string {
+  mapRoleIdToName(roleId: string): string {
     const roleMapping: { [key: string]: string } = {
       '1': 'Admin',
       '2': 'Manager',
@@ -612,7 +711,7 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
   /**
    * Charger les services disponibles pour le centre
    */
-  private loadServicesForCentre(centreId: string): void {
+  loadServicesForCentre(centreId: string): void {
     this.loadingServices = true;
 
     this.serviceSettingsService.getServicesByCentre(centreId).subscribe({
@@ -676,8 +775,6 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
 
         // Calculer les statistiques du laveur
         this.calculateWasherStats();
-        this.updateCharts();
-        this.loadVehicleQueue();
 
         this.loadingDashboard = false;
       },
@@ -691,7 +788,7 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
   /**
    * Calculer les statistiques personnelles du laveur
    */
-  private calculateWasherStats(): void {
+  calculateWasherStats(): void {
     if (!this.kpiData) return;
 
     // Statistiques du jour
@@ -712,16 +809,12 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
       0
     );
     this.washerStats.totalRevenueThisWeek = 0;
-
-    // Mettre à jour le graphique de progression
-    this.updateProgressChart();
-    this.updateEfficiencyChart();
   }
 
   /**
    * Construire les paramètres de filtre
    */
-  private buildFilterParams(): any {
+  buildFilterParams(): any {
     const params: any = {
       centreId: this.currentCentre?.id,
       washerId: this.currentUser?.id,
@@ -750,7 +843,7 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
   /**
    * Calculer la plage de dates
    */
-  private calculateDateRange(period: string): {
+  calculateDateRange(period: string): {
     startDate?: string;
     endDate?: string;
   } {
@@ -805,140 +898,11 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
   }
   //#endregion
 
-  //#region Vehicle Queue Methods
-  /**
-   * Charger la file d'attente des véhicules
-   */
-  private loadVehicleQueue(): void {
-    // Simulation - À remplacer par un vrai appel API
-    // this.vehicleQueueService.getQueueForWasher(this.currentUser?.id).subscribe(...)
-
-    this.vehicleQueue = [
-      {
-        id: '1',
-        vehicleModel: 'Toyota Camry 2023',
-        licensePlate: 'AB-1234-CD',
-        serviceType: 'Premium',
-        customerName: 'Jean Dupont',
-        priority: 'high',
-        waitTime: 15,
-        bayNumber: '3',
-        estimatedDuration: 45,
-      },
-      {
-        id: '2',
-        vehicleModel: 'Honda Accord',
-        licensePlate: 'EF-5678-GH',
-        serviceType: 'Standard',
-        customerName: 'Marie Martin',
-        priority: 'normal',
-        waitTime: 30,
-        bayNumber: '5',
-        estimatedDuration: 30,
-      },
-      {
-        id: '3',
-        vehicleModel: 'BMW X5',
-        licensePlate: 'IJ-9012-KL',
-        serviceType: 'Express',
-        priority: 'urgent',
-        waitTime: 5,
-        estimatedDuration: 20,
-      },
-    ];
-  }
-
-  /**
-   * Obtenir le temps d'attente total
-   */
-  getTotalWaitTime(): number {
-    return this.vehicleQueue.reduce(
-      (total, vehicle) => total + vehicle.waitTime,
-      0
-    );
-  }
-
-  /**
-   * Obtenir la classe CSS selon la priorité
-   */
-  getPriorityClass(priority: string): string {
-    const classes: { [key: string]: string } = {
-      low: 'badge-low',
-      normal: 'badge-normal',
-      high: 'badge-high',
-      urgent: 'badge-urgent',
-    };
-    return classes[priority] || 'badge-normal';
-  }
-
-  /**
-   * Démarrer le lavage du véhicule suivant
-   */
-  startNextWash(): void {
-    if (this.vehicleQueue.length === 0 || this.currentVehicle) {
-      return;
-    }
-
-    // Prendre le premier véhicule de la file
-    this.currentVehicle = this.vehicleQueue.shift()!;
-
-    // Démarrer le timer
-    this.startWashTimer();
-
-    console.log('🚗 Lavage démarré:', this.currentVehicle.vehicleModel);
-  }
-
-  /**
-   * Terminer le lavage en cours
-   */
-  completeCurrentWash(): void {
-    if (!this.currentVehicle) return;
-
-    const washDuration = this.currentWashDuration;
-    const vehicleModel = this.currentVehicle.vehicleModel;
-
-    // Arrêter le timer
-    this.stopWashTimer();
-
-    // Mettre à jour les statistiques
-    this.washerStats.todayWashCount++;
-    this.washerStats.completedGoalPercentage = Math.round(
-      (this.washerStats.todayWashCount / this.washerStats.dailyGoal) * 100
-    );
-
-    // Réinitialiser le véhicule actuel
-    this.currentVehicle = null;
-
-    // Recharger les données
-    this.loadWasherData();
-
-    console.log(`✅ Lavage terminé: ${vehicleModel} en ${washDuration}s`);
-  }
-
-  /**
-   * Signaler un problème
-   */
-  reportIssue(description: string): void {
-    // Appel API pour signaler le problème
-    console.log('⚠️ Problème signalé:', description);
-    alert('Problème signalé avec succès. Un manager sera notifié.');
-  }
-
-  /**
-   * Demander une pause
-   */
-  requestBreak(): void {
-    // Appel API pour demander une pause
-    console.log('☕ Pause demandée');
-    alert('Demande de pause envoyée au manager.');
-  }
-  //#endregion
-
   //#region Timer Methods
   /**
    * Démarrer le timer de la session
    */
-  private startSessionTimer(): void {
+  startSessionTimer(): void {
     this.sessionStartTime = new Date();
     this.sessionDuration = 0;
 
@@ -950,7 +914,7 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
   /**
    * Démarrer le timer du lavage en cours
    */
-  private startWashTimer(): void {
+  startWashTimer(): void {
     this.currentWashDuration = 0;
 
     this.washTimerSubscription = interval(1000).subscribe(() => {
@@ -961,7 +925,7 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
   /**
    * Arrêter le timer du lavage
    */
-  private stopWashTimer(): void {
+  stopWashTimer(): void {
     if (this.washTimerSubscription) {
       this.washTimerSubscription.unsubscribe();
     }
@@ -1007,146 +971,9 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
   }
   //#endregion
 
-  //#region Chart Methods
-  /**
-   * Mettre à jour tous les graphiques
-   */
-  private updateCharts(): void {
-    this.updateProgressChart();
-    this.updateEfficiencyChart();
-  }
-
-  /**
-   * Mettre à jour le graphique de progression
-   */
-  private updateProgressChart(): void {
-    const completed = this.washerStats.todayWashCount;
-    const inProgress = this.currentVehicle ? 1 : 0;
-    const remaining = Math.max(
-      0,
-      this.washerStats.dailyGoal - completed - inProgress
-    );
-
-    this.progressChartData = {
-      ...this.progressChartData,
-      datasets: [
-        {
-          ...this.progressChartData.datasets[0],
-          data: [completed, inProgress, remaining],
-        },
-      ],
-    };
-  }
-
-  /**
-   * Mettre à jour le graphique d'efficacité
-   */
-  private updateEfficiencyChart(): void {
-    // Générer les labels des 7 derniers jours
-    const labels = this.generateLast7DaysLabels();
-
-    // Simuler les temps moyens (à remplacer par de vraies données)
-    const averageTimes = this.calculateAverageTimes();
-
-    this.efficiencyChartData = {
-      ...this.efficiencyChartData,
-      labels: labels,
-      datasets: [
-        {
-          ...this.efficiencyChartData.datasets[0],
-          data: averageTimes,
-        },
-      ],
-    };
-  }
-
-  /**
-   * Générer les labels des 7 derniers jours
-   */
-  private generateLast7DaysLabels(): string[] {
-    const labels: string[] = [];
-    const days = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
-
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-
-      if (i === 0) {
-        labels.push('Auj');
-      } else {
-        labels.push(days[date.getDay()]);
-      }
-    }
-
-    return labels;
-  }
-
-  /**
-   * Calculer les temps moyens des 7 derniers jours
-   */
-  private calculateAverageTimes(): number[] {
-    // Simulation - à remplacer par de vraies données
-    const times: number[] = [];
-
-    for (let i = 0; i < 7; i++) {
-      const washCount = this.last7DaysWashCount[i] || 0;
-      if (washCount > 0) {
-        // Simuler un temps moyen entre 20 et 30 minutes
-        times.push(Math.round(20 + Math.random() * 10));
-      } else {
-        times.push(0);
-      }
-    }
-
-    return times;
-  }
-
-  /**
-   * Obtenir la variation hebdomadaire
-   */
-  getWeeklyVariation(): number {
-    if (!this.weeklyComparison) return 0;
-
-    const currentWeek = this.washerStats.totalWashesThisWeek;
-    // --- Changement ici : Utilisez previousWeekWashCount à la place de lastWeekWashCount ---
-    const lastWeek = this.weeklyComparison.previousWeekWashCount || 0;
-
-    if (lastWeek === 0) return 0;
-
-    return Math.round(((currentWeek - lastWeek) / lastWeek) * 100);
-  }
-  //#endregion
-
-  //#region Filter Methods
-  /**
-   * Gérer le changement de période
-   */
-  onPeriodChange(event: any): void {
-    const newPeriod = event.target.value;
-    console.log('🔄 Changement de période:', newPeriod);
-
-    this.selectedPeriod = newPeriod;
-
-    if (this.selectedPeriod !== 'custom') {
-      this.startDate = '';
-      this.endDate = '';
-      this.triggerFilterChange();
-    }
-  }
-
-  /**
-   * Gérer le changement de service
-   */
-  onServiceChange(event: any): void {
-    const newServiceId = event.target.value;
-    console.log('🔄 Changement de service:', newServiceId);
-
-    this.selectedService = newServiceId;
-    this.triggerFilterChange();
-  }
-  //#endregion
 
   //#region Display Mode Methods
+
   /**
    * Basculer le mode kiosque
    */
@@ -1184,4 +1011,5 @@ export class WasherDashboardComponent implements OnInit, OnDestroy {
     }
   }
   //#endregion
+
 }
