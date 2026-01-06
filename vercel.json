@@ -1,27 +1,26 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist/auto-wash-frontend/browser",
-  "framework": null,
-  "installCommand": "npm install",
   "builds": [
     {
-      "src": "package.json",
-      "use": "@vercel/node"
+      "src": "dist/auto-wash-frontend/server/server.mjs",
+      "use": "@vercel/node",
+      "config": {
+        "includeFiles": [
+          "dist/auto-wash-frontend/browser/**",
+          "dist/auto-wash-frontend/server/**"
+        ],
+        "maxLambdaSize": "50mb"
+      }
     }
   ],
   "routes": [
     {
       "src": "/assets/(.*)",
-      "dest": "/assets/$1"
-    },
-    {
-      "src": "/(.*\\.(js|css|png|jpg|jpeg|gif|svg|ico|webp|woff|woff2|ttf|eot))",
-      "dest": "/$1"
+      "dest": "/dist/auto-wash-frontend/browser/assets/$1"
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/dist/auto-wash-frontend/server/server.mjs"
     }
   ]
 }
