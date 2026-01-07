@@ -8,7 +8,7 @@ import { Roles } from '../../models/Roles/Roles';
 })
 export class RolesService {
 
-  private apiUrl = 'https://localhost:7139/api/Roles';
+  private apiUrl = 'https://autowash-backend-0sx0.onrender.com/api/Roles';
   private roleUpdatedSubject = new Subject<void>();
   private rolesCache: Roles[] = [];
   private cacheExpiry: number = 0;

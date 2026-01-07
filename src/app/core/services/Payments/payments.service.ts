@@ -30,7 +30,7 @@ export class PaymentsService {
     throw new Error('Method not implemented.');
   }
 
-  private baseUrl = 'https://localhost:7139/api/Payments';
+  private baseUrl = 'https://autowash-backend-0sx0.onrender.com/api/Payments';
 
   constructor(private http: HttpClient) { }
 

@@ -11,7 +11,7 @@ import { AuthService } from '../Auth/auth.service';
 })
 export class UsersService {
 
-  private baseUrl = 'https://localhost:7139/api/User';
+  private baseUrl = 'https://autowash-backend-0sx0.onrender.com/api/User';
 
   constructor(private http: HttpClient, private authService: AuthService) { }
 

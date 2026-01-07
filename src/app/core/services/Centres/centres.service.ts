@@ -9,7 +9,7 @@ import { Users } from '../../models/Users/Users';
 })
 export class CentresService {
 
-  private readonly apiUrl = 'https://localhost:7139/api/Centres';
+  private readonly apiUrl = 'https://autowash-backend-0sx0.onrender.com/api/Centres';
   private centreUpdatedSubject = new Subject<void>();
 
   constructor(private http: HttpClient) { }
