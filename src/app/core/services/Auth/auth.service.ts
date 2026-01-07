@@ -13,7 +13,7 @@ import { ResetPasswordRequest } from '../../models/Password/ResetPasswordRequest
 })
 export class AuthService {
 
-  private apiUrl = 'https://localhost:7139/api/Auth';
+  private apiUrl = 'https://autowash-backend-0sx0.onrender.com/api/Auth';
   private loginApiUrl = `${this.apiUrl}/login`;
 
   // Clé utilisée pour stocker le token dans le localStorage

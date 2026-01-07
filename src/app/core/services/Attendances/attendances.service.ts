@@ -12,7 +12,7 @@ import { ApiResponseData } from '../../models/ApiResponseData';
 })
 export class AttendancesService {
 
-  private readonly apiUrl = 'https://localhost:7139/api/Attendance';
+  private readonly apiUrl = 'https://autowash-backend-0sx0.onrender.com/api/Attendance';
 
   constructor(private http: HttpClient) { }
 
